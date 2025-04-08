@@ -17,9 +17,19 @@ void CountAndPrint(string str, char character)
          << "' встречается " << count << " раз(а)." << endl;
 }
 
-// Добавьте сюда функцию SplitAndAnalyze.
-void SplitAndAnalyze(string str, char del, char ch)
+void SplitAndAnalyze(const string& str, char delimiter, char character)
 {
+    size_t start = 0;
+    size_t end = 0;
+
+    end = str.find(delimiter);
+    while (end != string::npos)
+    {
+        CountAndPrint(str.substr(start, end - start), character);
+        start = end + 1;
+        end = str.find(delimiter, start);
+    }
+    CountAndPrint(str.substr(start), character);
 }
 
 int main()
