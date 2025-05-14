@@ -1,0 +1,26 @@
+shu-l@XC70 MINGW64 /d/git_qt
+$ git clone git@github.com:FilimonovIV/cpp-qt.git cpp-qt
+Cloning into 'cpp-qt'...
+Enter passphrase for key '/c/Users/shu-l/.ssh/id_rsa':
+remote: Enumerating objects: 651, done.
+remote: Counting objects: 100% (651/651), done.
+remote: Compressing objects: 100% (421/421), done.
+remote: Total 651 (delta 222), reused 650 (delta 222), pack-reused 0 (from 0)
+Receiving objects: 100% (651/651), 24.72 MiB | 6.81 MiB/s, done.
+Resolving deltas: 100% (222/222), done.
+Updating files: 100% (1694/1694), done.
+
+shu-l@XC70 MINGW64 /d/git_qt
+$ cd cpp-qt
+
+shu-l@XC70 MINGW64 /d/git_qt/cpp-qt (main)
+$ git remote add -m main template https://github.com/cpppracticum/cpp-qt-template-practicum-2025
+
+shu-l@XC70 MINGW64 /d/git_qt/cpp-qt (main)
+$ git remote
+origin
+template
+
+shu-l@XC70 MINGW64 /d/git_qt/cpp-qt (main)
+$ git fetch template && git checkout template/main sprint2/final-task
+remote: Enumerating objects: 654, done.
