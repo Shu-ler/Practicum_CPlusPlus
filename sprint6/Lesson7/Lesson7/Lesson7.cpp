@@ -8,12 +8,9 @@
 using namespace std;
 
 vector<int> ReverseVector(const vector<int>& source_vector) {
-    vector<int> res;
-
-    for (int i : source_vector) {
-        res.insert(res.begin(), i);
-    }
-
+    vector<int> res(source_vector.size());
+    res = source_vector;
+    std::reverse(res.begin(), res.end());
     return res;
 }
 
@@ -30,6 +27,7 @@ int CountPops(const vector<int>& source_vector, int begin, int end) {
 }
 
 void AppendRandom(vector<int>& v, int n) {
+    v.reserve(n);
     for (int i = 0; i < n; ++i) {
         // получаем случайное число с помощью функции rand.
         // в C++ имеются более современные генераторы случайных чисел,
@@ -48,7 +46,6 @@ void Operate() {
     static const int N = 1 << 17;
 
     // заполним вектор случайными числами 0 и 1
-
     {
         LOG_DURATION("Append random"s);
         AppendRandom(random_bits, N);
