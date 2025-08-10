@@ -6,7 +6,17 @@
 using namespace std;
 
 // реализуйте эту функцию:
-size_t GetFileSize(const string& file);
+size_t GetFileSize(const string& file) {
+    auto file_size = string::npos;
+    ifstream input(file);
+
+    if (input.good()) {
+        input.seekg(0, ios::end);
+        file_size = static_cast<size_t>(input.tellg());
+    }
+
+    return file_size;
+};
 
 int main() {
     ofstream("test.txt") << "123456789"s;
