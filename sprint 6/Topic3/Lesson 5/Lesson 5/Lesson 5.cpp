@@ -35,7 +35,11 @@ void Test() {
     EncodeRLE("test.txt"s, "test.rle"s);
     DecodeRLE("test.rle"s, "test2.txt"s);
 
+    auto s1 = GetFileContents("test.txt"s);
+    auto s2 = GetFileContents("test2.txt"s);
+
     assert(GetFileContents("test.rle"s).size() < GetFileContents("test.txt"s).size() / 2);
+
     assert(GetFileContents("test.txt"s) == GetFileContents("test2.txt"s));
 }
 
