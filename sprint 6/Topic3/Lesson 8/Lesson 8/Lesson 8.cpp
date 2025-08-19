@@ -187,11 +187,13 @@ IncludeFile ContainsInclude(const string& line) {
 
 	if (regex_search(line, match, reg1)) {
 		res.inc_file_name = match[1];
+		res.include_file_path = path(res.inc_file_name);
 		res.include_find = true;
 		res.inc_type = IncludeType::WithRoot;
 	} 
 	else if (regex_search(line, match, reg2)) {
 		res.inc_file_name = match[1];
+		res.include_file_path = path(res.inc_file_name);
 		res.include_find = true;
 		res.inc_type = IncludeType::OnlySystem;
 	}
@@ -204,14 +206,27 @@ bool GetInclFile(IncludeFile& inc_file, const path& in_file, const vector<path>&
 
 	// Обработка инклюдов вида "..."
 	if (inc_file.inc_type == IncludeType::WithRoot) {  
-		auto cand_path = in_file.parent_path(); // file_name;
+		auto cand_path = in_file.parent_path() / inc_file.include_file_path;
 		if (filesystem::exists(cand_path)) {
 			inc_file.inc_stream = std::ifstream(cand_path);
 			inc_file.file_exist = static_cast<bool>(inc_file.inc_stream);
+			res = inc_file.file_exist;
 		}
 	}
 
-	return false;
+	if (!res) {
+		for (const auto std_dir : include_directories) {
+			auto cand_path = std_dir / inc_file.include_file_path;
+			if (filesystem::exists(cand_path)) {
+				inc_file.inc_stream = std::ifstream(cand_path);
+				inc_file.file_exist = static_cast<bool>(inc_file.inc_stream);
+				res = inc_file.file_exist;
+				break;
+			}
+		}
+	}
+
+	return res;
 }
 
 bool GetIncludePath(const string& line, const regex& reg, path& inc_path, const path& cur_path) {
