@@ -100,7 +100,6 @@ bool ProcessFile::DoPreprocess(ofstream& dst_stream, const vector<path>& include
 
 	size_t line_num = 0;
 	string line;
-	path inc_path;
 
 	while (success && getline(src_stream_, line)) {
 		++line_num;
