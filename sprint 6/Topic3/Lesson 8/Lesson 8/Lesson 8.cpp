@@ -19,7 +19,7 @@ enum class IncludeType {
 class ProcessFile
 {
 public:
-	ProcessFile(const path& in_file, IncludeType new_type, const vector<path>& include_directories);
+	ProcessFile(const path& target_file, const path& parent_file, IncludeType new_type, const vector<path>& include_directories);
 	ProcessFile(const path& in_file);
 	~ProcessFile() {};
 
@@ -28,6 +28,7 @@ public:
 
 	bool ConnectOutStream(const path& out_file);
 	ofstream& GetOutStream();
+	path GetFilePath() const;
 	bool DoPreprocess(ofstream& dst_stream, const vector<path>& include_directories);
 	bool ContainsInclude(const string& line);
 
@@ -43,22 +44,24 @@ private:
 	string inc_file_name_{};
 };
 
-ProcessFile::ProcessFile(const path& in_file, IncludeType new_type, const vector<path>& include_directories)  {
-	bool res = false;
+ProcessFile::ProcessFile(const path& target_file, const path& parent_file, IncludeType new_type, const vector<path>& include_directories) :
+	file_path_(target_file) {
 
 	// Обработка инклюдов вида "..."
 	if (new_type == IncludeType::WithRoot) {
-		auto cand_path = in_file.parent_path() / in_file;
+		auto cand_path = parent_file.parent_path() / file_path_;
 		if (filesystem::exists(cand_path)) {
+			file_path_ = cand_path;
 			src_stream_ = std::ifstream(cand_path);
 		}
 	}
 
 	if (!IsOk()) {
-		for (const auto std_dir : include_directories) {
-			auto cand_path = std_dir / in_file;
+		for (const auto& std_dir : include_directories) {
+			auto cand_path = std_dir / file_path_;
 			if (filesystem::exists(cand_path)) {
 				src_stream_ = std::ifstream(cand_path);
+				file_path_ = cand_path;
 				if (IsOk()) {
 					break;
 				}
@@ -67,12 +70,12 @@ ProcessFile::ProcessFile(const path& in_file, IncludeType new_type, const vector
 	}
 }
 
-ProcessFile::ProcessFile(const path& in_file) : file_path_(in_file) {
+ProcessFile::ProcessFile(const path& in_file) : file_path_(filesystem::absolute(in_file)) {
 	src_stream_.open(file_path_);
 }
 
 bool ProcessFile::IsOk() {
-	return static_cast<bool>(src_stream_);
+	return src_stream_.is_open();
 }
 
 bool ProcessFile::IsOutstreamOk() {
@@ -80,7 +83,7 @@ bool ProcessFile::IsOutstreamOk() {
 }
 
 bool ProcessFile::ConnectOutStream(const path& out_file) {
-	dst_stream_.open(out_file);
+	dst_stream_.open(out_file, ios::trunc);
 	return IsOutstreamOk();
 }
 
@@ -88,23 +91,28 @@ ofstream& ProcessFile::GetOutStream() {
 	return dst_stream_;
 }
 
+path ProcessFile::GetFilePath() const {
+	return filesystem::absolute(file_path_);
+}
+
 bool ProcessFile::DoPreprocess(ofstream& dst_stream, const vector<path>& include_directories) {
-	bool success = true;
+	bool success = IsOk();
 
 	size_t line_num = 0;
 	string line;
 	path inc_path;
 
-	while (getline(src_stream_, line) && success) {
+	while (success && getline(src_stream_, line)) {
 		++line_num;
 
 		if (ContainsInclude(line)) {
-			ProcessFile sub_file(path(inc_file_name_), inc_type_, include_directories);
+			ProcessFile sub_file(path(inc_file_name_), GetFilePath(), inc_type_, include_directories);
 			if (sub_file.IsOk()) {
 				success = sub_file.DoPreprocess(dst_stream, include_directories);
 			}
 			else {
-				ErrorMsg("777", line_num);
+				success = false;
+				ErrorMsg(inc_file_name_, line_num);
 			}
 		}
 		else {
@@ -201,7 +209,7 @@ void Test() {
 		file << "// std2\n"s;
 	}
 
-	assert((!Preprocess("sources"_p / "a.cpp"_p, "sources"_p / "a.in"_p,
+	assert(!(Preprocess("sources"_p / "a.cpp"_p, "sources"_p / "a.in"_p,
 		{ "sources"_p / "include1"_p,"sources"_p / "include2"_p })));
 
 	ostringstream test_out;
