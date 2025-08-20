@@ -36,6 +36,7 @@ public:
 
 private:
 	path file_path_;
+	string file_name_{};
 	ifstream inc_stream_;
 	ifstream src_stream_;
 	ofstream dst_stream_;
@@ -46,6 +47,8 @@ private:
 
 ProcessFile::ProcessFile(const path& target_file, const path& parent_file, IncludeType new_type, const vector<path>& include_directories) :
 	file_path_(target_file) {
+
+	file_name_ = target_file.string();
 
 	// Обработка инклюдов вида "..."
 	if (new_type == IncludeType::WithRoot) {
@@ -72,6 +75,7 @@ ProcessFile::ProcessFile(const path& target_file, const path& parent_file, Inclu
 
 ProcessFile::ProcessFile(const path& in_file) : file_path_(filesystem::absolute(in_file)) {
 	src_stream_.open(file_path_);
+	file_name_ = in_file.string();
 }
 
 bool ProcessFile::IsOk() {
@@ -143,7 +147,7 @@ void ProcessFile::ErrorMsg(const string& dst_file_name, size_t str_num) {
 	std::cout << "unknown include file "s
 		<< dst_file_name
 		<< " at file "s
-		<< file_path_.filename().string()
+		<< file_name_
 		<< " at line "s
 		<< str_num
 		<< endl;
