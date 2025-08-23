@@ -13,15 +13,13 @@ bool TestPermut(const vector<int>& v1, const vector<int>& v2) {
         return false;
     }
 
-    for (int i : v1) {
-        // проверяем, что каждый элемент первого вектора
-        // содержится одинаковое количество раз в обоих векторах
-        if (count(v1.begin(), v1.end(), i) != count(v2.begin(), v2.end(), i)) {
-            return false;
-        }
-    }
+    vector<int> w1 = v1;
+    vector<int> w2 = v2;
 
-    return true;
+    std::sort(w1.begin(), w1.end());
+    std::sort(w2.begin(), w2.end());
+
+    return w1 == w2;
 }
 
 int main() {
