@@ -8,7 +8,21 @@
 using namespace std;
 
 int EffectiveCount(const vector<int>& v, int n, int i) {
-    // место для вашего решения
+    if (v.empty()) return 0;
+
+    int64_t expected = static_cast<int64_t>(v.size()) * (i + 1) / (n + 1);
+    int64_t threshold = static_cast<int64_t>(log2(v.size()));
+
+    if (expected < threshold) {
+        auto it = find_if(v.begin(), v.end(), [i](int x) { return x > i; });
+        std::cout << "Using find_if\n";
+        return static_cast<int>(it - v.begin());
+    }
+    else {
+        auto it = upper_bound(v.begin(), v.end(), i);
+        std::cout << "Using upper_bound\n";
+        return static_cast<int>(it - v.begin());
+    }
 }
 
 int main() {
