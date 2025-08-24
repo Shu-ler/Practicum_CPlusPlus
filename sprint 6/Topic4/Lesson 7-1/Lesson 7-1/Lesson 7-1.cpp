@@ -9,11 +9,16 @@ int64_t T(int i) {
     if (i <= 1) {
         return 0;
     }
-    if (i == 2) {
-        return 1;
+    int64_t p0 = 0, p1 = 0, p2 = 1;
+
+    for (int t = 2; t < i; ++t) {
+        int64_t n = p0 + p1 + p2;
+        p0 = p1;
+        p1 = p2;
+        p2 = n;
     }
 
-    return T(i - 1) + T(i - 2) + T(i - 3);
+    return p2;
 }
 
 int main() {
