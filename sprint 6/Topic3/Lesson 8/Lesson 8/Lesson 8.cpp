@@ -24,20 +24,24 @@ public:
 	~ProcessFile() {};
 
 	bool IsOk();
+	bool DoPreprocess(ofstream& dst_stream, const vector<path>& include_directories);
+	ofstream& GetOutStream();
+	bool ConnectOutStream(const path& out_file);
+
+private:
 	bool IsOutstreamOk();
 
-	bool ConnectOutStream(const path& out_file);
-	ofstream& GetOutStream();
 	path GetFilePath() const;
-	bool DoPreprocess(ofstream& dst_stream, const vector<path>& include_directories);
 	bool ContainsInclude(const string& line);
-
 	void ErrorMsg(const string& dst_file_name, size_t str_num);
+
+	inline static const vector<pair<regex, IncludeType>> regs{ 
+		pair(regex(R"/(\s*#\s*include\s*"([^"]*)"\s*)/"), IncludeType::WithRoot),
+		pair(regex(R"/(\s*#\s*include\s*<([^>]*)>\s*)/"), IncludeType::OnlySystem) };
 
 private:
 	path file_path_;
 	string file_name_{};
-	ifstream inc_stream_;
 	ifstream src_stream_;
 	ofstream dst_stream_;
 
@@ -127,8 +131,6 @@ bool ProcessFile::DoPreprocess(ofstream& dst_stream, const vector<path>& include
 }
 
 bool ProcessFile::ContainsInclude(const string& line) {
-	static const vector<pair<regex, IncludeType>> regs{ pair(regex(R"/(\s*#\s*include\s*"([^"]*)"\s*)/"), IncludeType::WithRoot),
-														pair(regex(R"/(\s*#\s*include\s*<([^>]*)>\s*)/"), IncludeType::OnlySystem) };
 	smatch m;
 
 	inc_type_ = IncludeType::None;
