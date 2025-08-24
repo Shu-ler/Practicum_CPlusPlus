@@ -4,8 +4,22 @@
 using namespace std;
 
 template <typename F>
+string BruteForceRec(F check, const string& begin, int n) {
+    if (n == 5) {
+        return check(begin) ? begin : ""s;
+    }
+    for (char c = 'A'; c != 'Z' + 1; ++c) {
+        string res = BruteForceInternal(check, begin + string({ c }), n + 1);
+        if (!res.empty()) {
+            return res;
+        }
+    }
+    return ""s;
+}
+
+template <typename F>
 string BruteForce(F check) {
-    // верните строку str, для которой check(str) будет true
+    return BruteForceRec(check, ""s, 0);
 }
 
 int main() {
