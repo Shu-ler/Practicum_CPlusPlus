@@ -1,11 +1,12 @@
 ﻿#include <cassert>
 #include <string>
+#include <utility>
 
 // Шаблонная функция Swap обменивает значения двух объектов одного и того же типа,
 // указатели на которые она принимает в качестве аргументов
 template <typename T>
 void Swap(T* value1, T* value2) {
-    // Реализуйте тело функции самостоятельно
+    std::swap(*value1, *value2);
 }
 
 int main() {
