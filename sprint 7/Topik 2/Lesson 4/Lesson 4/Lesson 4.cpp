@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <tuple>
 
 using namespace std;
 
@@ -82,6 +83,20 @@ vector<const Cat*> GetSortedCats(const vector<Cat>& cats, const Comparator& comp
            return comp(*lhs, *rhs);
        }
     */
+    if (cats.empty()) {
+        return vector<const Cat*> {};
+    }
+
+    for (const auto& cat : cats) {
+        sorted_cat_pointers.push_back(&cat);
+    }
+    if (cats.size() == 1) {
+        return sorted_cat_pointers;
+    }
+    sort(sorted_cat_pointers.begin(), sorted_cat_pointers.end(), [comp](const Cat* lhs, const Cat* rhs) {
+        return comp(*lhs, *rhs);
+        });
+
     return sorted_cat_pointers;
 }
 
@@ -89,7 +104,18 @@ vector<const Cat*> GetSortedCats(const vector<Cat>& cats, const Comparator& comp
 // Пример вывода элементов vector<const Cat*>:
 // {{Tom, male, breed: Bengal, age:2}, {Charlie, male, breed: Balinese, age:7}}
 void PrintCatPointerValues(const vector<const Cat*>& cat_pointers, ostream& out) {
-    // Напишите функцию самостоятельно
+    out << "{";
+    if (!cat_pointers.empty()) {
+        for (const auto* cat : cat_pointers) {
+            if (cat != cat_pointers.back()) {
+                out << *cat << ", ";
+            }
+            else {
+                out << *cat;
+            }
+        }
+    }
+    out << "}";
 }
 
 int main() {
