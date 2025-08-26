@@ -70,8 +70,6 @@ ostream& operator<<(ostream& out, const Cat& cat) {
 // и возвращающая true, если значения упорядочены, и false в ином случае
 template <typename Comparator>
 vector<const Cat*> GetSortedCats(const vector<Cat>& cats, const Comparator& comp) {
-    vector<const Cat*> sorted_cat_pointers;
-
     /*
     Напишите тело функции самостоятельно. Подсказка:
     1) Поместите в массив sorted_cat_pointers адреса объектов из массива cats.
@@ -83,15 +81,11 @@ vector<const Cat*> GetSortedCats(const vector<Cat>& cats, const Comparator& comp
            return comp(*lhs, *rhs);
        }
     */
-    if (cats.empty()) {
-        return vector<const Cat*> {};
-    }
+    vector<const Cat*> sorted_cat_pointers{};
+    sorted_cat_pointers.reserve(cats.size());
 
     for (const auto& cat : cats) {
         sorted_cat_pointers.push_back(&cat);
-    }
-    if (cats.size() == 1) {
-        return sorted_cat_pointers;
     }
     sort(sorted_cat_pointers.begin(), sorted_cat_pointers.end(), [comp](const Cat* lhs, const Cat* rhs) {
         return comp(*lhs, *rhs);
@@ -104,14 +98,14 @@ vector<const Cat*> GetSortedCats(const vector<Cat>& cats, const Comparator& comp
 // Пример вывода элементов vector<const Cat*>:
 // {{Tom, male, breed: Bengal, age:2}, {Charlie, male, breed: Balinese, age:7}}
 void PrintCatPointerValues(const vector<const Cat*>& cat_pointers, ostream& out) {
-	out << "{"s;
-	for (const auto* cat : cat_pointers) {
-        out << *cat;
-		if (cat != cat_pointers.back()) {
+	out << '{';
+	for (const auto* cat_ptr : cat_pointers) {
+        out << *cat_ptr;
+		if (cat_ptr != cat_pointers.back()) {
 			out << ", "s;
 		}
 	}
-	out << "}"s;
+	out << '}';
 }
 
 int main() {
