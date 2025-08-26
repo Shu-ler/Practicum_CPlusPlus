@@ -104,18 +104,14 @@ vector<const Cat*> GetSortedCats(const vector<Cat>& cats, const Comparator& comp
 // Пример вывода элементов vector<const Cat*>:
 // {{Tom, male, breed: Bengal, age:2}, {Charlie, male, breed: Balinese, age:7}}
 void PrintCatPointerValues(const vector<const Cat*>& cat_pointers, ostream& out) {
-    out << "{";
-    if (!cat_pointers.empty()) {
-        for (const auto* cat : cat_pointers) {
-            if (cat != cat_pointers.back()) {
-                out << *cat << ", ";
-            }
-            else {
-                out << *cat;
-            }
-        }
-    }
-    out << "}";
+	out << "{"s;
+	for (const auto* cat : cat_pointers) {
+        out << *cat;
+		if (cat != cat_pointers.back()) {
+			out << ", "s;
+		}
+	}
+	out << "}"s;
 }
 
 int main() {
