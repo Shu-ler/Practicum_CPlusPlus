@@ -11,23 +11,34 @@ public:
 
     // Создаёт вектор указателей на копии объектов из other
     PtrVector(const PtrVector& other) {
-        // Реализуйте копирующий конструктор самостоятельно
+        items_.reserve(other.items_.size());
+        for (auto const ptr : other.items_) {
+            auto ttt = (ptr) ? new T(*ptr) : nullptr;
+            items_.push_back(ttt);
+        }
     }
 
     // Деструктор удаляет объекты в куче, на которые ссылаются указатели,
     // в векторе items_
     ~PtrVector() {
-        // Реализуйте тело деструктора самостоятельно
+        ClearObjects();
     }
 
     // Возвращает ссылку на вектор указателей
     vector<T*>& GetItems() noexcept {
-        // Реализуйте метод самостоятельно
+        return items_;
     }
 
     // Возвращает константную ссылку на вектор указателей
     vector<T*> const& GetItems() const noexcept {
-        // Реализуйте метод самостоятельно
+        return items_;
+    }
+
+private:
+    void ClearObjects() noexcept {
+        for (auto ptr : items_) {
+            delete ptr;
+        }
     }
 
 private:
