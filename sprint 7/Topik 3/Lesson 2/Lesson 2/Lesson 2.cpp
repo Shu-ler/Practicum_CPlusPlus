@@ -17,24 +17,25 @@ class SingleLinkedList {
     };
 
 public:
+    SingleLinkedList() {
+        size_ = 0;
+        head_ = Node{};
+    };
+
     // Возвращает количество элементов в списке
     [[nodiscard]] size_t GetSize() const noexcept {
-        // Заглушка. Реализуйте метод самостоятельно
-        assert(false);
-        return 42;
+        return size_;
     }
 
     // Сообщает, пустой ли список
     [[nodiscard]] bool IsEmpty() const noexcept {
-        // Заглушка. Реализуйте метод самостоятельно
-        assert(false);
-        return false;
+        return size_ == 0;
     }
 
 private:
     // Фиктивный узел, используется для вставки "перед первым элементом"
     Node head_;
-    size_t size_;
+    size_t size_ = 0;
 };
 
 void Test0() {
