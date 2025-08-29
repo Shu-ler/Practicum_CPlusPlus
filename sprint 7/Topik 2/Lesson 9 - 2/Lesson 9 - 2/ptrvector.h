@@ -45,6 +45,31 @@ public:
         return items_;
     }
 
+    const T* GetItem(size_t index) const noexcept {
+        if (index >= items_.size()) return nullptr;
+        return items_[index];
+    }
+
+    const T* at(size_t index) const noexcept {
+        if (index >= items_.size()) return nullptr;
+        return items_[index];
+    }
+
+    T* at(size_t index) noexcept {
+        if (index >= items_.size()) return nullptr;
+        return items_[index];
+    }
+
+    // Добавляет элемент в конец вектора
+    void PushBack(T* item) {
+        items_.push_back(item);
+    }
+
+    // Возвращает количество элементов вектора
+    size_t Size() const noexcept {
+        return items_.size();
+    }
+
 private:
     void DeleteItems() noexcept {
         for (auto p : items_) {
