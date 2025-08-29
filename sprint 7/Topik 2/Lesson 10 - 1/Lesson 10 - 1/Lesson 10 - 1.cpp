@@ -49,6 +49,27 @@ public:
         return items_;
     }
 
+    // копирующая операция присваивания
+    PtrVector& operator=(const PtrVector& rhs) {
+        if (this != &rhs) {
+            // Реализация операции присваивания с помощью идиомы Copy-and-swap.
+            // Если исключение будет выброшено, то на текущий объект оно не повлияет.
+            auto rhs_copy(rhs);
+
+            // rhs_copy содержит копию правого аргумента.
+            // Обмениваемся с ним данными.
+            
+            items_.swap(rhs_copy.items_);
+            // swap(GetItems(), rhs.GetItems());
+
+            // Теперь текущий объект содержит копию правого аргумента,
+            // а rhs_copy - прежнее состояние текущего объекта, которое при выходе
+            // из блока будет разрушено.
+        }
+
+        return *this;
+    }
+
 private:
     void DeleteItems() noexcept {
         for (auto p : items_) {
