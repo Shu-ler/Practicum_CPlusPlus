@@ -16,36 +16,150 @@ enum class IncludeType {
 	OnlySystem,
 };
 
-struct IncludeFile {
-	bool include_find = false;
-	IncludeType inc_type = IncludeType::None;
-	string inc_file_name{};
-	bool file_exist = false;
-	path include_file_path;
-	ifstream inc_stream;
+class ProcessFile
+{
+public:
+	ProcessFile(const path& target_file, const path& parent_file, IncludeType new_type, const vector<path>& include_directories);
+	ProcessFile(const path& in_file);
+	~ProcessFile() {};
+
+	bool IsOk();
+	bool DoPreprocess(ofstream& dst_stream, const vector<path>& include_directories);
+	ofstream& GetOutStream();
+	bool ConnectOutStream(const path& out_file);
+
+private:
+	bool IsOutstreamOk();
+
+	path GetFilePath() const;
+	bool ContainsInclude(const string& line);
+	void ErrorMsg(const string& dst_file_name, size_t str_num);
+
+	inline static const vector<pair<regex, IncludeType>> regs{ 
+		pair(regex(R"/(\s*#\s*include\s*"([^"]*)"\s*)/"), IncludeType::WithRoot),
+		pair(regex(R"/(\s*#\s*include\s*<([^>]*)>\s*)/"), IncludeType::OnlySystem) };
+
+private:
+	path file_path_;
+	string file_name_{};
+	ifstream src_stream_;
+	ofstream dst_stream_;
+
+	IncludeType inc_type_ = IncludeType::None;
+	string inc_file_name_{};
 };
+
+ProcessFile::ProcessFile(const path& target_file, const path& parent_file, IncludeType new_type, const vector<path>& include_directories) :
+	file_path_(target_file) {
+
+	file_name_ = target_file.string();
+
+	// Обработка инклюдов вида "..."
+	if (new_type == IncludeType::WithRoot) {
+		auto cand_path = parent_file.parent_path() / file_path_;
+		if (filesystem::exists(cand_path)) {
+			file_path_ = cand_path;
+			src_stream_ = std::ifstream(cand_path);
+		}
+	}
+
+	if (!IsOk()) {
+		for (const auto& std_dir : include_directories) {
+			auto cand_path = std_dir / file_path_;
+			if (filesystem::exists(cand_path)) {
+				src_stream_ = std::ifstream(cand_path);
+				file_path_ = cand_path;
+				if (IsOk()) {
+					break;
+				}
+			}
+		}
+	}
+}
+
+ProcessFile::ProcessFile(const path& in_file) : file_path_(filesystem::absolute(in_file)) {
+	src_stream_.open(file_path_);
+	file_name_ = in_file.string();
+}
+
+bool ProcessFile::IsOk() {
+	return src_stream_.is_open();
+}
+
+bool ProcessFile::IsOutstreamOk() {
+	return static_cast<bool>(dst_stream_);
+}
+
+bool ProcessFile::ConnectOutStream(const path& out_file) {
+	dst_stream_.open(out_file, ios::trunc);
+	return IsOutstreamOk();
+}
+
+ofstream& ProcessFile::GetOutStream() {
+	return dst_stream_;
+}
+
+path ProcessFile::GetFilePath() const {
+	return filesystem::absolute(file_path_);
+}
+
+bool ProcessFile::DoPreprocess(ofstream& dst_stream, const vector<path>& include_directories) {
+	bool success = IsOk();
+
+	size_t line_num = 0;
+	string line;
+
+	while (success && getline(src_stream_, line)) {
+		++line_num;
+
+		if (ContainsInclude(line)) {
+			ProcessFile sub_file(path(inc_file_name_), GetFilePath(), inc_type_, include_directories);
+			if (sub_file.IsOk()) {
+				success = sub_file.DoPreprocess(dst_stream, include_directories);
+			}
+			else {
+				success = false;
+				ErrorMsg(inc_file_name_, line_num);
+			}
+		}
+		else {
+			dst_stream << line << endl;
+		}
+	}
+
+	return success;
+}
+
+bool ProcessFile::ContainsInclude(const string& line) {
+	smatch m;
+
+	inc_type_ = IncludeType::None;
+
+	for (const auto& reg : regs) {
+		if (regex_search(line, m, reg.first)) {
+			inc_file_name_ = m[1];
+			inc_type_ = reg.second;
+			break;
+		}
+	}
+	return inc_type_ != IncludeType::None;
+}
+
+void ProcessFile::ErrorMsg(const string& dst_file_name, size_t str_num) {
+	std::cout << "unknown include file "s
+		<< dst_file_name
+		<< " at file "s
+		<< file_name_
+		<< " at line "s
+		<< str_num
+		<< endl;
+}
 
 path operator""_p(const char* data, std::size_t sz) {
 	return path(data, data + sz);
 }
 
 bool Preprocess(const path& in_file, const path& out_file, const vector<path>& include_directories);
-bool DoPreprocess(ifstream& src_file, const path& in_file, ofstream& dst_file, const vector<path>& include_directories);
-bool LineContainsInclude(const string& line, const regex& reg);
-IncludeFile ContainsInclude(const string& line);
-bool GetInclFile(IncludeFile& inc_file, const path& in_file, const vector<path>& include_directories);
-
-IncludeFile GetIncludeFile(const string& line, const regex& reg, const vector<path>& include_directories, const path& cur_path, bool only_systems = true);
-
-static void ErrorMsg(const string& src_file_name, const string& dst_file_name, size_t str_num) {
-	std::cout << "unknown include file "s
-		<< dst_file_name
-		<< " at file "s
-		<< src_file_name
-		<< " at line "s
-		<< str_num
-		<< endl;
-}
 
 string GetFileContents(string file) {
 	ifstream stream(file);
@@ -100,7 +214,7 @@ void Test() {
 		file << "// std2\n"s;
 	}
 
-	assert((!Preprocess("sources"_p / "a.cpp"_p, "sources"_p / "a.in"_p,
+	assert(!(Preprocess("sources"_p / "a.cpp"_p, "sources"_p / "a.in"_p,
 		{ "sources"_p / "include1"_p,"sources"_p / "include2"_p })));
 
 	ostringstream test_out;
@@ -127,153 +241,13 @@ int main() {
 }
 
 bool Preprocess(const path& in_file, const path& out_file, const vector<path>& include_directories) {
-	bool success = false;
-	ifstream src_file(in_file);
+	ProcessFile src_f(in_file);
+	bool success = src_f.IsOk();
 
-	if (static_cast<bool>(src_file)) {
-		ofstream dst_file(out_file);
-		if (static_cast<bool>(dst_file)) {
-			success = DoPreprocess(src_file, in_file, dst_file, include_directories);
-		}
+	if (success && src_f.ConnectOutStream(out_file)) {
+		success = src_f.DoPreprocess(src_f.GetOutStream(), include_directories);
 	}
 
 	return success;
 }
 
-bool DoPreprocess(ifstream& src_file, const path& in_file, ofstream& dst_file, const vector<path>& include_directories) {
-	static const regex reg1(R"/(\s*#\s*include\s*"([^"]*)"\s*)/");
-	static const regex reg2(R"/(\s*#\s*include\s*<([^>]*)>\s*)/");
-
-	bool success = true;
-
-	size_t line_num = 0;
-	string line;
-	path inc_path;
-
-	while (getline(src_file, line) && success) {
-		++line_num;
-
-		IncludeFile inc_file = ContainsInclude(line);
-
-		if (inc_file.inc_type == IncludeType::None) {
-			dst_file << line << endl;
-		}
-		else {
-			if (GetInclFile(inc_file, in_file, include_directories)) {
-				success = DoPreprocess(inc_file.inc_stream, inc_file.include_file_path, dst_file, include_directories);
-			}
-			else {
-				ErrorMsg(in_file.filename().string(), inc_path.filename().string(), line_num);
-				success = false;
-			}
-		}
-	}
-
-	return success;
-}
-
-bool LineContainsInclude(const string& line, const regex& reg) {
-	return regex_search(line, reg);
-}
-
-IncludeFile ContainsInclude(const string& line) {
-	IncludeFile res;
-
-	static const regex reg1(R"/(\s*#\s*include\s*"([^"]*)"\s*)/");
-	static const regex reg2(R"/(\s*#\s*include\s*<([^>]*)>\s*)/");
-
-	smatch match;
-	string include_file_name;
-
-	if (regex_search(line, match, reg1)) {
-		res.inc_file_name = match[1];
-		res.include_file_path = path(res.inc_file_name);
-		res.include_find = true;
-		res.inc_type = IncludeType::WithRoot;
-	} 
-	else if (regex_search(line, match, reg2)) {
-		res.inc_file_name = match[1];
-		res.include_file_path = path(res.inc_file_name);
-		res.include_find = true;
-		res.inc_type = IncludeType::OnlySystem;
-	}
-
-	return res;
-}
-
-bool GetInclFile(IncludeFile& inc_file, const path& in_file, const vector<path>& include_directories) {
-	bool res = false;
-
-	// Обработка инклюдов вида "..."
-	if (inc_file.inc_type == IncludeType::WithRoot) {  
-		auto cand_path = in_file.parent_path() / inc_file.include_file_path;
-		if (filesystem::exists(cand_path)) {
-			inc_file.inc_stream = std::ifstream(cand_path);
-			inc_file.file_exist = static_cast<bool>(inc_file.inc_stream);
-			res = inc_file.file_exist;
-		}
-	}
-
-	if (!res) {
-		for (const auto std_dir : include_directories) {
-			auto cand_path = std_dir / inc_file.include_file_path;
-			if (filesystem::exists(cand_path)) {
-				inc_file.inc_stream = std::ifstream(cand_path);
-				inc_file.file_exist = static_cast<bool>(inc_file.inc_stream);
-				res = inc_file.file_exist;
-				break;
-			}
-		}
-	}
-
-	return res;
-}
-
-bool GetIncludePath(const string& line, const regex& reg, path& inc_path, const path& cur_path) {
-	bool res = false;
-	smatch match;
-	string include_file_name;
-
-	if (regex_search(line, match, reg)) {
-		include_file_name = match[1];
-		inc_path = cur_path.parent_path() / include_file_name;
-		res = true;
-	}
-
-	return res;
-}
-
-IncludeFile GetIncludeFile(const string& line, const regex& reg, const vector<path>& include_directories, const path& cur_path, bool only_systems) {
-	IncludeFile res;
-	smatch match;
-	string include_file_name;
-
-	if (regex_search(line, match, reg)) {
-		include_file_name = match[1];
-		res.include_file_path = cur_path.parent_path() / include_file_name;
-		res.include_find = true;
-	}
-
-//	auto file_name = in_file.filename();
-
-//	if (!only_systems) {  // Обработка инклюдов вида "..."
-//		auto cand_path = in_file.parent_path() / file_name;
-//		if (filesystem::exists(cand_path)) {
-//			res.inc_file = ifstream(cand_path);
-//			res.exist = static_cast<bool>(res.inc_file);
-//		}
-//	}
-
-//	if (!res.exist) {
-//		for (const auto std_dir : include_directories) {
-//			auto cand_path = std_dir / file_name;
-//			if (filesystem::exists(cand_path)) {
-//				res.inc_file = ifstream(cand_path);
-//				res.exist = static_cast<bool>(res.inc_file);
-//				break;
-//			}
-//		}
-//	}
-
-	return res;
-}
