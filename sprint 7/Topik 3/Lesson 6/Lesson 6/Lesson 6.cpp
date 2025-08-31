@@ -202,22 +202,19 @@ public:
 	// Возвращает итератор, указывающий на позицию перед первым элементом односвязного списка.
 	// Разыменовывать этот итератор нельзя - попытка разыменования приведёт к неопределённому поведению
 	[[nodiscard]] Iterator before_begin() noexcept {
-		// TODO итератор
-		return {};
-	}
-
-	// Возвращает константный итератор, указывающий на позицию перед первым элементом односвязного списка.
-	// Разыменовывать этот итератор нельзя - попытка разыменования приведёт к неопределённому поведению
-	[[nodiscard]] ConstIterator cbefore_begin() const noexcept {
-		// TODO итератор
-		return {};
+		return Iterator{&head_};
 	}
 
 	// Возвращает константный итератор, указывающий на позицию перед первым элементом односвязного списка.
 	// Разыменовывать этот итератор нельзя - попытка разыменования приведёт к неопределённому поведению
 	[[nodiscard]] ConstIterator before_begin() const noexcept {
-		// TODO итератор
-		return {};
+		return ConstIterator{const_cast<Node*>(&head_)};
+	}
+
+	// Возвращает константный итератор, указывающий на позицию перед первым элементом односвязного списка.
+	// Разыменовывать этот итератор нельзя - попытка разыменования приведёт к неопределённому поведению
+	[[nodiscard]] ConstIterator cbefore_begin() const noexcept {
+		return ConstIterator{const_cast<Node*>(&head_)};
 	}
 
 	// Возвращает количество элементов в списке
@@ -247,8 +244,16 @@ public:
 	// Возвращает итератор на вставленный элемент
 	// Если при создании элемента будет выброшено исключение, список останется в прежнем состоянии
 	Iterator InsertAfter(ConstIterator pos, const Type& value) {
-		// TODO InsertAfter
-		return {};
+		if (size_ == 0) {
+			PushFront(value);
+			return Iterator{head_.next_node};
+		}
+		else {
+			Node* new_node = new Node(value, pos.node_->next_node);
+			pos.node_->next_node = new_node;
+			++size_;
+			return Iterator{ new_node };
+		}
 	}
 
 	// Вставляет элемент value в конец списка за время O(1)
@@ -265,14 +270,22 @@ public:
 
 	// Удаляет первый элемента непустого списка.Не выбрасывает исключений.
 	void PopFront() noexcept {
-		// TODO PopFront()
+		if (size_ > 0) {
+			Node* to_del = head_.next_node;
+			head_.next_node = to_del->next_node;
+			delete to_del;
+			--size_;
+		}
 	}
 
 	// Удаляет элемент, следующий за pos.
 	// Возвращает итератор на элемент, следующий за удалённым
 	Iterator EraseAfter(ConstIterator pos) noexcept {
-		// TODO EraseAfter(ConstIterator pos)
-		return {};
+		Node* to_del = pos.node_->next_node;
+		pos.node_->next_node = to_del->next_node;
+		delete to_del;
+		--size_;
+		return Iterator{pos.node_->next_node};
 	}
 
 	// Очищает список за время O(N)
@@ -296,8 +309,6 @@ public:
 		other.size_ = src_size;
 		other.head_.next_node = src_first_ptr;
 	}
-
-public:		// Операторы
 
 	SingleLinkedList& operator=(const SingleLinkedList& rhs) {
 		SingleLinkedList buffer(rhs);
