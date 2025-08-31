@@ -212,10 +212,6 @@ public:	// Методы
 		++size_;
 	}
 
-	void swap(SingleLinkedList& other) noexcept {
-		// TODO метод swap
-	}
-
 	// Очищает список за время O(N)
 	void Clear() noexcept {
 		while (head_.next_node != nullptr) {
@@ -226,6 +222,10 @@ public:	// Методы
 		size_ = 0;
 	}
 
+	void swap(SingleLinkedList& other) noexcept {
+		// TODO метод swap
+	}
+
 public:		// Операторы
 
 	SingleLinkedList& operator=(const SingleLinkedList& rhs) {
@@ -233,68 +233,70 @@ public:		// Операторы
 		return *this;
 	}
 
-	template <typename Type>
-	std::strong_ordering operator<=>(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
-		std::strong_ordering res = (lhs.GetSize() <=> rhs.GetSize());
-
-		if (res == std::strong_ordering::equal) {
-
-			auto lhs_it = lhs.cbegin();
-			auto rhs_it = rhs.cbegin();
-
-			auto lhs_end_it = lhs.cend();
-
-			while (lhs_it != lhs_end_it && res == std::strong_ordering::equal) {
-				res = *lh_it <=> *rh_it;
-				++lh_it;
-				++rh_it;
-			}
-		}
-
-		return res;
-	}
-
-	template <typename Type>
-	bool operator==(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
-		return (lhs <=> rhs) == std::strong_ordering::equal;
-	}
-
-	template <typename Type>
-	bool operator!=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
-		return (lhs <=> rhs) != std::strong_ordering::equal;
-	}
-
-	template <typename Type>
-	bool operator<(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
-		return (lhs <=> rhs) == std::strong_ordering::less;
-	}
-
-	template <typename Type>
-	bool operator<=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
-		return (lhs <=> rhs) != std::strong_ordering::greater;
-	}
-
-	template <typename Type>
-	bool operator>(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
-		return (lhs <=> rhs) == std::strong_ordering::greater;
-	}
-
-	template <typename Type>
-	bool operator>=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
-		return (lhs <=> rhs) != std::strong_ordering::less;
-	}
-
-private:	// Функции
-
-	template <typename Type>
-	void swap(SingleLinkedList<Type>& lhs, SingleLinkedList<Type>& rhs) noexcept {
-		// TODO функция swap
-	}
-
 private: // Члены класса
 	Node head_;			// Фиктивный узел, используется для вставки "перед первым элементом"
 	size_t size_ = 0;	// Размер списка
 };
+
+template <typename Type>
+void swap(SingleLinkedList<Type>& lhs, SingleLinkedList<Type>& rhs) noexcept {
+	// TODO функция swap
+}
+
+//
+// Операции сравнения
+//
+
+template <typename Type>
+auto operator<=>(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
+	std::strong_ordering res = (lhs.GetSize() <=> rhs.GetSize());
+
+	if (res == std::strong_ordering::equal) {
+
+		auto lhs_it = lhs.cbegin();
+		auto rhs_it = rhs.cbegin();
+
+		auto lhs_end_it = lhs.cend();
+
+		while (lhs_it != lhs_end_it && res == std::strong_ordering::equal) {
+			res = *lh_it <=> *rh_it;
+			++lh_it;
+			++rh_it;
+		}
+	}
+
+	return res;
+}
+
+template <typename Type>
+bool operator==(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
+	return (lhs <=> rhs) == std::strong_ordering::equal;
+}
+
+template <typename Type>
+bool operator!=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
+	return (lhs <=> rhs) != std::strong_ordering::equal;
+}
+
+template <typename Type>
+bool operator<(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
+	return (lhs <=> rhs) == std::strong_ordering::less;
+}
+
+template <typename Type>
+bool operator<=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
+	return (lhs <=> rhs) != std::strong_ordering::greater;
+}
+
+template <typename Type>
+bool operator>(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
+	return (lhs <=> rhs) == std::strong_ordering::greater;
+}
+
+template <typename Type>
+bool operator>=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
+	return (lhs <=> rhs) != std::strong_ordering::less;
+}
 
 // Эта функция проверяет работу класса SingleLinkedList
 void Test3() {
