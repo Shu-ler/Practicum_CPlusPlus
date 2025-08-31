@@ -223,7 +223,14 @@ public:	// Методы
 	}
 
 	void swap(SingleLinkedList& other) noexcept {
-		// TODO метод swap
+		auto size = this->size_;
+		auto first_ptr = this->head_.next_node;
+		
+		this->size_ = other.size_;
+		this->head_.next_node = other.head_.next_node;
+
+		other.size_ = size;
+		other.head_.next_node = first_ptr;
 	}
 
 public:		// Операторы
@@ -240,7 +247,7 @@ private: // Члены класса
 
 template <typename Type>
 void swap(SingleLinkedList<Type>& lhs, SingleLinkedList<Type>& rhs) noexcept {
-	// TODO функция swap
+	lhs.swap(rhs);
 }
 
 //
@@ -259,9 +266,9 @@ auto operator<=>(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>
 		auto lhs_end_it = lhs.cend();
 
 		while (lhs_it != lhs_end_it && res == std::strong_ordering::equal) {
-			res = *lh_it <=> *rh_it;
-			++lh_it;
-			++rh_it;
+			res = *lhs_it <=> *rhs_it;
+			++lhs_it;
+			++rhs_it;
 		}
 	}
 
