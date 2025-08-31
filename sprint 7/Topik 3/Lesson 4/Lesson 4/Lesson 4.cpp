@@ -37,7 +37,7 @@ class SingleLinkedList {
 		// Конвертирующий конструктор итератора из указателя на узел списка
 		explicit BasicIterator(Node* node) {
 			assert(false);
-			// Реализуйте конструктор самостоятельно
+			//TODO: Реализуйте конструктор 'explicit BasicIterator(Node* node)'
 		}
 
 	public:
@@ -62,7 +62,7 @@ class SingleLinkedList {
 		// При ValueType, совпадающем с const Type, играет роль конвертирующего конструктора
 		BasicIterator(const BasicIterator<Type>& other) noexcept {
 			assert(false);
-			// Реализуйте конструктор самостоятельно
+			//TODO: Реализуйте конструктор 'BasicIterator(const BasicIterator<Type>& other) noexcept'
 		}
 
 		// Чтобы компилятор не выдавал предупреждение об отсутствии оператора = при наличии
@@ -74,28 +74,28 @@ class SingleLinkedList {
 		// Два итератора равны, если они ссылаются на один и тот же элемент списка либо на end()
 		[[nodiscard]] bool operator==(const BasicIterator<const Type>& rhs) const noexcept {
 			assert(false);
-			// Заглушка. Реализуйте оператор самостоятельно
+			// TODO: Реализуйте оператор 'operator==(const BasicIterator<const Type>& rhs) const noexcept'
 		}
 
 		// Оператор проверки итераторов на неравенство
 		// Противоположен ==
 		[[nodiscard]] bool operator!=(const BasicIterator<const Type>& rhs) const noexcept {
 			assert(false);
-			// Заглушка. Реализуйте оператор самостоятельно
+			// TODO: Реализуйте оператор 'operator!=(const BasicIterator<const Type>& rhs) const noexcept'
 		}
 
 		// Оператор сравнения итераторов (в роли второго аргумента итератор)
 		// Два итератора равны, если они ссылаются на один и тот же элемент списка либо на end()
 		[[nodiscard]] bool operator==(const BasicIterator<Type>& rhs) const noexcept {
 			assert(false);
-			// Заглушка. Реализуйте оператор самостоятельно
+			// TODO: Реализуйте оператор 'operator==(const BasicIterator<Type>& rhs) const noexcept'
 		}
 
 		// Оператор проверки итераторов на неравенство
 		// Противоположен ==
 		[[nodiscard]] bool operator!=(const BasicIterator<Type>& rhs) const noexcept {
 			assert(false);
-			// Заглушка. Реализуйте оператор самостоятельно
+			// TODO: Реализуйте оператор 'bool operator!=(const BasicIterator<Type>& rhs) const noexcept'
 		}
 
 		// Оператор прединкремента. После его вызова итератор указывает на следующий элемент списка
@@ -103,7 +103,7 @@ class SingleLinkedList {
 		// Инкремент итератора, не указывающего на существующий элемент списка, приводит к неопределённому поведению
 		BasicIterator& operator++() noexcept {
 			assert(false);
-			// Заглушка. Реализуйте оператор самостоятельно
+			// TODO: Реализуйте оператор 'operator++() noexcept'
 		}
 
 		// Оператор постинкремента. После его вызова итератор указывает на следующий элемент списка
@@ -112,7 +112,7 @@ class SingleLinkedList {
 		// приводит к неопределённому поведению
 		BasicIterator operator++(int) noexcept {
 			assert(false);
-			// Заглушка. Реализуйте оператор самостоятельно
+			// TODO: Реализуйте оператор 'operator++(int) noexcept'
 		}
 
 		// Операция разыменования. Возвращает ссылку на текущий элемент
@@ -120,8 +120,7 @@ class SingleLinkedList {
 		// приводит к неопределённому поведению
 		[[nodiscard]] reference operator*() const noexcept {
 			assert(false);
-			// Не реализовано
-			// Заглушка. Реализуйте оператор самостоятельно
+			// TODO: Реализуйте оператор 'reference operator*() const noexcept'
 		}
 
 		// Операция доступа к члену класса. Возвращает указатель на текущий элемент списка
@@ -129,7 +128,7 @@ class SingleLinkedList {
 		// приводит к неопределённому поведению
 		[[nodiscard]] pointer operator->() const noexcept {
 			assert(false);
-			// Заглушка. Реализуйте оператор самостоятельно
+			// TODO: Реализуйте оператор 'pointer operator->() const noexcept'
 		}
 
 	private:
@@ -150,7 +149,7 @@ public:
 	// Если список пустой, возвращённый итератор будет равен end()
 	[[nodiscard]] Iterator begin() noexcept {
 		assert(false);
-		// Реализуйте самостоятельно
+		// TODO: Реализуйте 'Iterator begin() noexcept'
 		return {};
 	}
 
@@ -158,7 +157,7 @@ public:
 	// Разыменовывать этот итератор нельзя — попытка разыменования приведёт к неопределённому поведению
 	[[nodiscard]] Iterator end() noexcept {
 		assert(false);
-		// Реализуйте самостоятельно
+		// TODO: Реализуйте 'Iterator end() noexcept'
 		return {};
 	}
 
@@ -167,7 +166,7 @@ public:
 	// Результат вызова эквивалентен вызову метода cbegin()
 	[[nodiscard]] ConstIterator begin() const noexcept {
 		assert(false);
-		// Реализуйте самостоятельно
+		// TODO: Реализуйте 'ConstIterator begin() const noexcept'
 		return {};
 	}
 
@@ -176,7 +175,7 @@ public:
 	// Результат вызова эквивалентен вызову метода cend()
 	[[nodiscard]] ConstIterator end() const noexcept {
 		assert(false);
-		// Реализуйте самостоятельно
+		// TODO: Реализуйте 'ConstIterator end() const noexcept'
 		return {};
 	}
 
@@ -184,7 +183,7 @@ public:
 	// Если список пустой, возвращённый итератор будет равен cend()
 	[[nodiscard]] ConstIterator cbegin() const noexcept {
 		assert(false);
-		// Реализуйте самостоятельно
+		// TODO: Реализуйте 'ConstIterator cbegin() const noexcept'
 		return {};
 	}
 
@@ -192,15 +191,12 @@ public:
 	// Разыменовывать этот итератор нельзя — попытка разыменования приведёт к неопределённому поведению
 	[[nodiscard]] ConstIterator cend() const noexcept {
 		assert(false);
-		// Реализуйте самостоятельно
+		// TODO: Реализуйте 'ConstIterator cend() const noexcept'
 		return {};
 	}
 
-	//
-	//...
-	//
-
 public:
+
 	SingleLinkedList() = default;
 	~SingleLinkedList() {
 		Clear();
