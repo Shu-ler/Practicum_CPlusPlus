@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <iterator>
 #include <compare>
+#include <algorithm>
 
 template <typename Type>
 class SingleLinkedList {
@@ -135,11 +136,15 @@ public:	// Конструкторы и деструкторы
 	SingleLinkedList() = default;
 
 	SingleLinkedList(std::initializer_list<Type> values) {
-		// TODO конструктор SingleLinkedList(std::initializer_list<Type> values)
+		for (auto it = values.begin(); it != values.end(); ++it) {
+			PushBack(*it);
+		}
 	}
 
 	SingleLinkedList(const SingleLinkedList& other) {
-		// TODO конструктор SingleLinkedList(const SingleLinkedList& other)
+		for (auto it = other.begin(); it != other.end(); ++it) {
+			PushBack(*it);
+		}
 	}
 
 	~SingleLinkedList() {
@@ -208,8 +213,27 @@ public:	// Методы
 
 	// Вставляет элемент value в начало списка за время O(1)
 	void PushFront(const Type& value) {
+		// Вставка элемента в начало списка и увеличение размера списка
 		head_.next_node = new Node(value, head_.next_node);
 		++size_;
+
+		// Для первой вставки - привязка элемента к "хвостику"
+		if (tail_ == nullptr) {
+			tail_ = head_.next_node;
+
+		}
+	}
+
+	// Вставляет элемент value в конец списка за время O(1)
+	void PushBack(const Type& value) {
+		if (tail_ == nullptr) {
+			PushFront(value);
+		}
+		else {
+			tail_->next_node = new Node(value, nullptr);
+			tail_ = tail_->next_node;
+			++size_;
+		}
 	}
 
 	// Очищает список за время O(N)
@@ -220,29 +244,32 @@ public:	// Методы
 			delete node;
 		}
 		size_ = 0;
+		tail_ = nullptr;
 	}
 
 	void swap(SingleLinkedList& other) noexcept {
-		auto size = this->size_;
-		auto first_ptr = this->head_.next_node;
+		auto src_size = this->size_;
+		auto src_first_ptr = this->head_.next_node;
 		
 		this->size_ = other.size_;
 		this->head_.next_node = other.head_.next_node;
 
-		other.size_ = size;
-		other.head_.next_node = first_ptr;
+		other.size_ = src_size;
+		other.head_.next_node = src_first_ptr;
 	}
 
 public:		// Операторы
 
 	SingleLinkedList& operator=(const SingleLinkedList& rhs) {
-		// TODO оператор присваивания
+		SingleLinkedList buffer(rhs);
+		this->swap(buffer);
 		return *this;
 	}
 
 private: // Члены класса
-	Node head_;			// Фиктивный узел, используется для вставки "перед первым элементом"
-	size_t size_ = 0;	// Размер списка
+	Node head_;				// Фиктивный узел, используется для вставки "перед первым элементом"
+	Node* tail_ = nullptr;	// Последний узел списка
+	size_t size_ = 0;		// Размер списка
 };
 
 template <typename Type>
