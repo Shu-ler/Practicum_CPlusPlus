@@ -3,7 +3,18 @@
 
 template <typename T>
 void ReverseArray(T* start, size_t size) {
-    // Напишите тело функции самостоятельно
+    if (size > 1) {
+        T buf{};
+        auto left = start;
+        auto right = start + size - 1;
+        while (left < right) {
+            buf = *left;
+            *left = *right;
+            *right = buf;
+            ++left;
+            --right;
+        }
+    }
 }
 
 int main() {
