@@ -303,10 +303,6 @@ void swap(SingleLinkedList<Type>& lhs, SingleLinkedList<Type>& rhs) noexcept {
 	lhs.swap(rhs);
 }
 
-//
-// Операции сравнения
-//
-
 template <typename Type>
 auto operator<=>(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
 	std::strong_ordering res = (lhs.GetSize() <=> rhs.GetSize());
@@ -357,4 +353,3 @@ template <typename Type>
 bool operator>=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
 	return (lhs <=> rhs) != std::strong_ordering::less;
 }
-
