@@ -136,14 +136,16 @@ public:	// Конструкторы и деструкторы
 	SingleLinkedList() = default;
 
 	SingleLinkedList(std::initializer_list<Type> values) {
+		auto slider = begin();
 		for (auto it = values.begin(); it != values.end(); ++it) {
-			PushBack(*it);
+			slider = InsertAfter(slider, *it);
 		}
 	}
 
 	SingleLinkedList(const SingleLinkedList& other) {
+		auto slider = begin();
 		for (auto it = other.begin(); it != other.end(); ++it) {
-			PushBack(*it);
+			slider = InsertAfter(slider, *it);
 		}
 	}
 
@@ -229,15 +231,8 @@ public:
 
 	// Вставляет элемент value в начало списка за время O(1)
 	void PushFront(const Type& value) {
-		// Вставка элемента в начало списка и увеличение размера списка
-		head_.next_node = new Node(value, head_.next_node);
-		++size_;
-
-		// Для первой вставки - привязка элемента к "хвостику"
-		if (tail_ == nullptr) {
-			tail_ = head_.next_node;
-
-		}
+		head_.next_node = new Node(value, head_.next_node);	// Вставка элемента в начало списка 
+		++size_;	// Увеличение размера списка
 	}
 
 	// Вставляет элемент value после элемента, на который указывает pos.
@@ -253,18 +248,6 @@ public:
 			pos.node_->next_node = new_node;
 			++size_;
 			return Iterator{ new_node };
-		}
-	}
-
-	// Вставляет элемент value в конец списка за время O(1)
-	void PushBack(const Type& value) {
-		if (tail_ == nullptr) {
-			PushFront(value);
-		}
-		else {
-			tail_->next_node = new Node(value, nullptr);
-			tail_ = tail_->next_node;
-			++size_;
 		}
 	}
 
@@ -296,7 +279,6 @@ public:
 			delete node;
 		}
 		size_ = 0;
-		tail_ = nullptr;
 	}
 
 	void swap(SingleLinkedList& other) noexcept {
@@ -318,7 +300,6 @@ public:
 
 private: // Члены класса
 	Node head_;				// Фиктивный узел, используется для вставки "перед первым элементом"
-	Node* tail_ = nullptr;	// Последний узел списка
 	size_t size_ = 0;		// Размер списка
 };
 
