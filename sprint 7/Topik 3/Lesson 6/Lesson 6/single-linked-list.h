@@ -92,6 +92,9 @@ class SingleLinkedList {
 		// Возвращает ссылку на самого себя
 		// Инкремент итератора, не указывающего на существующий элемент списка, приводит к неопределённому поведению
 		BasicIterator& operator++() noexcept {
+			// Проверка добавлена по замечанию Дмитрия Мамонтова.
+			// Блокирует инкремент неинициализированного итератора и выход за пределы списка
+			assert(node_ != nullptr); //&& node_->next_node != nullptr);
 			node_ = node_->next_node;
 			return *this;
 		}
@@ -101,6 +104,9 @@ class SingleLinkedList {
 		// Инкремент итератора, не указывающего на существующий элемент списка,
 		// приводит к неопределённому поведению
 		BasicIterator operator++(int) noexcept {
+			// Проверка добавлена по замечанию Дмитрия Мамонтова.
+			// Блокирует инкремент неинициализированного итератора и выход за пределы списка
+			assert(node_ != nullptr && node_->next_node != nullptr);
 			auto this_save = *this;
 			node_ = node_->next_node;
 			return this_save;
@@ -131,17 +137,13 @@ public:	// Конструкторы и деструкторы
 	SingleLinkedList() = default;
 
 	SingleLinkedList(std::initializer_list<Type> values) {
-		auto slider = begin();
-		for (auto it = values.begin(); it != values.end(); ++it) {
-			slider = InsertAfter(slider, *it);
-		}
+		// Код перенесён в общий шаблонный метод по замечанию Дмитрия Мамонтова.
+		fill_by_range(values.begin(), values.end());
 	}
 
 	SingleLinkedList(const SingleLinkedList& other) {
-		auto slider = begin();
-		for (auto it = other.begin(); it != other.end(); ++it) {
-			slider = InsertAfter(slider, *it);
-		}
+		// Код перенесён в общий шаблонный метод по замечанию Дмитрия Мамонтова.
+		fill_by_range(other.begin(), other.end());
 	}
 
 	~SingleLinkedList() {
@@ -239,6 +241,10 @@ public:
 			return Iterator{ head_.next_node };
 		}
 		else {
+			// Проверка добавлена по замечанию Дмитрия Мамонтова.
+			// Блокирует обработку недопустимого итератора
+			assert(pos.node_ != nullptr);
+
 			Node* new_node = new Node(value, pos.node_->next_node);
 			pos.node_->next_node = new_node;
 			++size_;
@@ -259,6 +265,9 @@ public:
 	// Удаляет элемент, следующий за pos.
 	// Возвращает итератор на элемент, следующий за удалённым
 	Iterator EraseAfter(ConstIterator pos) noexcept {
+		// Проверка добавлена по замечанию Дмитрия Мамонтова.
+		// Блокирует обработку недопустимого итератора
+		assert(pos.node_ != nullptr);
 		Node* to_del = pos.node_->next_node;
 		pos.node_->next_node = to_del->next_node;
 		delete to_del;
@@ -277,20 +286,28 @@ public:
 	}
 
 	void swap(SingleLinkedList& other) noexcept {
-		auto src_size = this->size_;
-		auto src_first_ptr = this->head_.next_node;
-
-		this->size_ = other.size_;
-		this->head_.next_node = other.head_.next_node;
-
-		other.size_ = src_size;
-		other.head_.next_node = src_first_ptr;
+		// Исправлено по замечанию Дмитрия Мамонтова.
+		std::swap(head_, other.head_);
+		std::swap(size_, other.size_);
 	}
 
 	SingleLinkedList& operator=(const SingleLinkedList& rhs) {
-		SingleLinkedList buffer(rhs);
-		this->swap(buffer);
+		// Оптимизировано по замечанию Дмитрия Мамонтова.
+		if (this != &rhs) {		
+			SingleLinkedList buffer(rhs);
+			this->swap(buffer);
+		}
 		return *this;
+	}
+
+private:
+	// Заполняет список на основании диапазона, заданного двумя итераторами
+	template<typename SrcIt>
+	void fill_by_range(SrcIt first, SrcIt last) {
+		auto slider = begin();
+		for (auto it = first; it != last; ++it) {
+			slider = InsertAfter(slider, *it);
+		}
 	}
 
 private:
@@ -305,23 +322,11 @@ void swap(SingleLinkedList<Type>& lhs, SingleLinkedList<Type>& rhs) noexcept {
 
 template <typename Type>
 auto operator<=>(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
-	std::strong_ordering res = (lhs.GetSize() <=> rhs.GetSize());
-
-	if (res == std::strong_ordering::equal) {
-
-		auto lhs_it = lhs.cbegin();
-		auto rhs_it = rhs.cbegin();
-
-		auto lhs_end_it = lhs.cend();
-
-		while (lhs_it != lhs_end_it && res == std::strong_ordering::equal) {
-			res = *lhs_it <=> *rhs_it;
-			++lhs_it;
-			++rhs_it;
-		}
-	}
-
-	return res;
+	// Оптимизировано по замечанию Дмитрия Мамонтова.
+	return std::lexicographical_compare_three_way(
+		lhs.cbegin(), lhs.cend(),
+		rhs.cbegin(), rhs.cend()
+	);
 }
 
 template <typename Type>
