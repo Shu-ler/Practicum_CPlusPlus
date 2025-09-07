@@ -56,13 +56,13 @@ public:
 	// Возвращает ссылку на элемент с индексом index
 	Type& operator[](size_t index) noexcept {
 		assert(index < size_);
-		return items_[index];
+		return items_.GetRawPtr()[index];
 	}
 
 	// Возвращает константную ссылку на элемент с индексом index
 	const Type& operator[](size_t index) const noexcept {
 		assert(index < size_);
-		return items_[index];
+		return items_.GetRawPtr()[index];
 	}
 
 	// Возвращает константную ссылку на элемент с индексом index
@@ -71,7 +71,7 @@ public:
 		if (index >= size_) {
 			throw std::out_of_range("Index out of range");
 		}
-		return items_[index];
+		return items_.Get()[index];
 	}
 
 	// Возвращает константную ссылку на элемент с индексом index
@@ -80,7 +80,7 @@ public:
 		if (index >= size_) {
 			throw std::out_of_range("Index out of range");
 		}
-		return items_[index];
+		return items_.Get()[index];
 	}
 
 	// Обнуляет размер массива, не изменяя его вместимость
@@ -92,46 +92,22 @@ public:
 	// При увеличении размера новые элементы получают значение по умолчанию для типа Type
 	// TODO Resize
 	void Resize(size_t new_size) {
-		
-		//if (new_size <= size_) {
-		//	size_ = new_size;
-		//}
-		//else if (new_size <= capacity_) {
-		//	for (size_t i = size_; i < new_size; ++i) {
-		//		*(items_ + i) = Type{};
-		//	}
-		//	size_ = new_size;
-		//}
-		//else {
-		//	Type* temp = new Type[new_size];
-		//	std::fill(temp + size_, temp + new_size, Type{});
-		//	for (size_t i = 0; i < size_; ++i) {
-		//		(temp + i) = (items_ + i);
-		//	}
-		//	/*for (size_t i = size_;i < new_size;++i) {
-		//		*(temp + i) = Type{};
-		//	}*/
-		//	delete[] items_;
-		//	items_ = temp;
-		//	capacity_ = new_size;
-		//	size_ = new_size;
-		//}
 
 		if (new_size > capacity_) {
 			// Вычисляем новую вместимость вектора
 			const size_t new_capacity = std::max(capacity_ * 2, new_size);
 
 			// Копируем существующие элементы вектора на новое место
-			auto new_items =  ReallocateCopy(new_capacity);  // может выбросить исключение
+			auto new_items = ReallocateCopy(new_capacity);  // может бросить исключение
 			// Заполняем добавленные элементы значением по умолчанию
-			std::fill(new_items.Get() + size_, new_items.Get() + new_size, Type{});  // может выбросить исключение
+			std::fill(new_items.Get() + size_, new_items.Get() + new_size, Type{});  // может бросить исключение
 
 			items_.swap(new_items);
 			capacity_ = new_capacity;
 		}
 		else if (new_size > size_) {
 			assert(new_size <= capacity_);
-			std::fill(items_.GetRawPtr() + size_, items_.GetRawPtr() + new_size, Type{});  // может выбросить исключение
+			std::fill(items_.Get() + size_, items_.Get() + new_size, Type{});  // может бросить исключение
 		}
 
 		// Во всех случаях устанавливается новый размер
@@ -141,37 +117,46 @@ public:
 	// Возвращает итератор на начало массива
 	// Для пустого массива может быть равен (или не равен) nullptr
 	Iterator begin() noexcept {
-		// TODO: тело самостоятельно
+		return items_.Get();
 	}
 
 	// Возвращает итератор на элемент, следующий за последним
 	// Для пустого массива может быть равен (или не равен) nullptr
 	Iterator end() noexcept {
-		// TODO: тело самостоятельно
+		return items_.Get() + size_;
 	}
 
 	// Возвращает константный итератор на начало массива
 	// Для пустого массива может быть равен (или не равен) nullptr
 	ConstIterator begin() const noexcept {
-		// TODO: тело самостоятельно
+		return items_.Get();
 	}
 
 	// Возвращает итератор на элемент, следующий за последним
 	// Для пустого массива может быть равен (или не равен) nullptr
 	ConstIterator end() const noexcept {
-		// TODO: тело самостоятельно
+		return items_.Get() + size_;
 	}
 
 	// Возвращает константный итератор на начало массива
 	// Для пустого массива может быть равен (или не равен) nullptr
 	ConstIterator cbegin() const noexcept {
-		// TODO: тело самостоятельно
+		return items_.Get();
 	}
 
 	// Возвращает итератор на элемент, следующий за последним
 	// Для пустого массива может быть равен (или не равен) nullptr
 	ConstIterator cend() const noexcept {
-		// TODO: тело самостоятельно
+		return items_.Get() + size_;
+	}
+
+private:
+	// Вспомогательный метод для выделения копии текущего массива с заданной вместимостью
+	ArrayPtr<Type> ReallocateCopy(size_t new_capacity) const {
+		ArrayPtr<Type> new_items(new_capacity);  // может бросить исключение
+		size_t copy_size = std::min(new_capacity, size_);
+		std::copy(items_.Get(), items_.Get() + copy_size, new_items.Get());  // может бросить исключение
+		return new_items;
 	}
 
 private:

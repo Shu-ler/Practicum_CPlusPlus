@@ -22,11 +22,12 @@ public:
 	}
 
 	// Удаляем у класса конструктор копирования
-	ArrayPtr(const ArrayPtr&) = delete;
+	// TODO решить судьбу конструктора
+//	ArrayPtr(const ArrayPtr&) = delete;
 
 	// Деструктор. Удаляет объект, на который ссылается умный указатель.
 	~ArrayPtr() {
-		delete ptr_;
+		delete[] ptr_;
 	}
 
 	// Оператор приведения к типу bool позволяет узнать, ссылается ли умный указатель
@@ -54,6 +55,11 @@ public:
 	}
 
 	// Возвращает указатель, хранящийся внутри ScopedPtr
+	T* Get() const noexcept {
+		return ptr_;
+	}
+
+	// Возвращает указатель, хранящийся внутри ScopedPtr
 	T* GetRawPtr() const noexcept {
 		return ptr_;
 	}
@@ -64,6 +70,11 @@ public:
 		T* tmp = ptr_;
 		ptr_ = nullptr;
 		return tmp;
+	}
+
+	// Обмен значениями двух объектов 
+	void swap(ArrayPtr& other) noexcept {
+		std::swap(ptr_, other.ptr_);
 	}
 
 private:
