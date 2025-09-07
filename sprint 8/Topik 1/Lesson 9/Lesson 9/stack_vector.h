@@ -13,8 +13,21 @@ public:
         }
     }
 
-    T& operator[](size_t index);
-    const T& operator[](size_t index) const;
+    T& operator[](size_t index) {
+        if (index >= size_) {
+            using namespace std::literals;
+            throw std::out_of_range("Index out of range"s);
+        }
+        return data_[index];
+    };
+
+    const T& operator[](size_t index) const {
+        if (index >= size_) {
+            using namespace std::literals;
+            throw std::out_of_range("Index out of range"s);
+        }
+        return data_[index];
+    };
 
     auto begin() { 
         return data_.begin();
