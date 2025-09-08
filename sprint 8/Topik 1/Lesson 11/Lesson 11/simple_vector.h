@@ -5,7 +5,7 @@
 |		+7 913 240 81 77
 |		+7 905 084 20 06 (Telegram)
 |		https://github.com/Shu-ler
-*/		
+*/
 
 // Разработка контейнера SimpleVector
 // Часть вторая
@@ -14,6 +14,7 @@
 #include <initializer_list>
 #include <algorithm>
 #include <stdexcept>
+#include <compare>
 #include "array_ptr.h"
 
 template <typename Type>
@@ -47,21 +48,33 @@ public:
 		, capacity_(init.size()) {
 		std::copy(init.begin(), init.end(), items_.GetRawPtr());
 	}
+
 	// Конструктор копирования
-	SimpleVector(const SimpleVector& other) {
-		// TODO: конструктор копирования
+	SimpleVector(const SimpleVector& other)
+		: items_(other.size_)  // выделяем память для копирования элементов
+		, size_(other.size_)
+		, capacity_(other.size_) {
+		std::copy(other.items_.GetRawPtr(), other.items_.GetRawPtr() + size_, items_.GetRawPtr());
 	}
 
 	// Оператор присваивания
 	SimpleVector& operator=(const SimpleVector& rhs) {
-		// TODO: оператор присваивания
+		if (&rhs != this) {				// Проверка на самоприсваивание
+			SimpleVector rhs_copy(rhs);	// Создаём временную копию rhs
+			swap(rhs_copy);				// Меняем содержимое текущего объекта с помощью swap
+		}
 		return *this;
 	}
 
 	// Добавляет элемент в конец вектора
 	// При нехватке места увеличивает вдвое вместимость вектора
 	void PushBack(const Type& item) {
-		// TODO: метод PushBack
+		const size_t ins_index = size_;
+		if (IsFull()) {
+			Resize(NewCapacity());
+		}
+		items_.GetRawPtr()[ins_index] = item;
+		size_ = ins_index + 1;
 	}
 
 	// Вставляет значение value в позицию pos.
@@ -69,22 +82,57 @@ public:
 	// Если перед вставкой значения вектор был заполнен полностью,
 	// вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
 	Iterator Insert(ConstIterator pos, const Type& value) {
-		// TODO: метод Insert
+		// Проверяем, достаточно ли вместимости
+		if (IsFull()) {
+			// Если вместимость заполнена, увеличиваем её
+			const size_t new_capacity = NewCapacity();
+			auto new_items = ReallocateCopy(new_capacity);  // может бросить исключение
+			items_.swap(new_items);
+			capacity_ = new_capacity;
+		}
+
+		// Вычисляем индекс позиции для вставки
+		size_t index = pos - items_.GetRawPtr();
+
+		// Сдвигаем элементы вправо начиная с позиции вставки
+		for (size_t i = size_; i > index; --i) {
+			items_.GetRawPtr()[i] = items_.GetRawPtr()[i - 1];
+		}
+
+		// Вставляем новый элемент
+		items_.GetRawPtr()[index] = value;
+		size_++;
+
+		return items_.GetRawPtr() + index;  // Возвращаем итератор на вставленный элемент
 	}
 
 	// "Удаляет" последний элемент вектора. Вектор не должен быть пустым
 	void PopBack() noexcept {
-		// TODO: метод PopBack
+		if (!IsEmpty()) {
+			--size_;
+		}
 	}
 
 	// Удаляет элемент вектора в указанной позиции
 	Iterator Erase(ConstIterator pos) {
-		// TODO: метод Erase
+		// Проверяем, что итератор находится в пределах вектора
+		assert(pos >= items_.GetRawPtr() && pos < items_.GetRawPtr() + size_);
+
+		// Сдвигаем элементы влево
+		std::copy_backward(pos + 1, end(), pos);
+//		std::move(pos + 1, end(), pos);
+
+		// Уменьшаем размер вектора
+		--size_;
+
+		return Iterator(pos);
 	}
 
 	// Обменивает значение с другим вектором
 	void swap(SimpleVector& other) noexcept {
-		// TODO: метод swap
+		std::swap(items_, other.items_);
+		std::swap(size_, other.size_);
+		std::swap(capacity_, other.capacity_);
 	}
 
 	// Возвращает количество элементов в массиве
@@ -100,6 +148,11 @@ public:
 	// Сообщает, пустой ли массив
 	bool IsEmpty() const noexcept {
 		return size_ == 0;
+	}
+
+	// Сообщает, заполнен ли массив полностью
+	bool IsFull() const noexcept {
+		return size_ == capacity_;
 	}
 
 	// Возвращает ссылку на элемент с индексом index
@@ -144,7 +197,7 @@ public:
 
 		if (new_size > capacity_) {
 			// Вычисляем новую вместимость вектора
-			const size_t new_capacity = std::max(capacity_ * 2, new_size);
+			const size_t new_capacity = NewCapacity(new_size);
 
 			// Копируем существующие элементы вектора на новое место
 			auto new_items = ReallocateCopy(new_capacity);  // может бросить исключение
@@ -208,45 +261,53 @@ private:
 		return new_items;
 	}
 
+	const size_t NewCapacity(const size_t new_size = 1) {
+		return std::max(capacity_ * 2, new_size);
+	}
+
 private:
 	ArrayPtr<Type> items_;
-
 	size_t size_ = 0;
 	size_t capacity_ = 0;
 };
 
 template <typename Type>
+inline std::strong_ordering operator<=>(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
+	std::strong_ordering result = lhs.GetSize() <=> rhs.GetSize();
+	if (result != std::strong_ordering::equal) {
+		result = std::lexicographical_compare_three_way(
+			lhs.cbegin(), lhs.cend(),
+			rhs.cbegin(), rhs.cend());
+	}
+	return result;
+}
+
+template <typename Type>
 inline bool operator==(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-	// TODO: оператор ==
-	return true;
+	return (lhs <=> rhs) == std::strong_ordering::equal;
 }
 
 template <typename Type>
 inline bool operator!=(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-	// TODO: оператор !=
-	return true;
+	return (lhs <=> rhs) != std::strong_ordering::equal;
 }
 
 template <typename Type>
 inline bool operator<(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-	// TODO: оператор <
-	return true;
+	return (lhs <=> rhs) == std::strong_ordering::less;
 }
 
 template <typename Type>
 inline bool operator<=(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-	// TODO: оператор <=
-	return true;
+	return (lhs <=> rhs) != std::strong_ordering::greater;
 }
 
 template <typename Type>
 inline bool operator>(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-	// TODO: оператор >
-	return true;
+	return (lhs <=> rhs) == std::strong_ordering::greater;
 }
 
 template <typename Type>
 inline bool operator>=(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-	// TODO: оператор >=
-	return true;
+	return (lhs <=> rhs) != std::strong_ordering::less;
 }
