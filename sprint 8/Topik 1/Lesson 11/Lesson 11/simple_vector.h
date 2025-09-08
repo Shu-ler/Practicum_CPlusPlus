@@ -58,7 +58,8 @@ public:
 	}
 
 	~SimpleVector() {
-		items_.Release();
+		auto to_del = items_.Release();
+		delete[] to_del;
 	}
 
 	// Оператор присваивания
@@ -74,12 +75,9 @@ public:
 	// При нехватке места увеличивает вдвое вместимость вектора
 	void PushBack(const Type& item) {
 		if (IsFull()) {
-			Resize(size_ + 1);
-			items_[size_ - 1] = item;
+			IncCapacity();
 		}
-		else {
-			items_[size_++] = item;
-		}
+		items_[size_++] = item;
 	}
 
 	// Вставляет значение value в позицию pos.
@@ -118,12 +116,14 @@ public:
 
 	// Удаляет элемент вектора в указанной позиции
 	Iterator Erase(ConstIterator pos) {
-		Iterator non_const_pos = const_cast<Iterator>(pos);
+		assert(begin() <= pos);
+		assert(pos <= end());
+		Iterator erase_pos = const_cast<Iterator>(pos);
 		if (size_ != 0) {
-			std::copy(non_const_pos + 1, end(), non_const_pos);
-			size_--;
+			std::copy(erase_pos + 1, end(), erase_pos);
+			--size_;
 		}
-		return non_const_pos;
+		return erase_pos;
 	}
 
 	// Обменивает значение с другим вектором
