@@ -57,6 +57,10 @@ public:
 		std::copy(other.items_.GetRawPtr(), other.items_.GetRawPtr() + size_, items_.GetRawPtr());
 	}
 
+	~SimpleVector() {
+		items_.Release();
+	}
+
 	// Оператор присваивания
 	SimpleVector& operator=(const SimpleVector& rhs) {
 		if (&rhs != this) {				// Проверка на самоприсваивание
@@ -69,12 +73,13 @@ public:
 	// Добавляет элемент в конец вектора
 	// При нехватке места увеличивает вдвое вместимость вектора
 	void PushBack(const Type& item) {
-		const size_t ins_index = size_;
 		if (IsFull()) {
-			Resize(NewCapacity());
+			Resize(size_ + 1);
+			items_[size_ - 1] = item;
 		}
-		items_.GetRawPtr()[ins_index] = item;
-		size_ = ins_index + 1;
+		else {
+			items_[size_++] = item;
+		}
 	}
 
 	// Вставляет значение value в позицию pos.
@@ -82,28 +87,26 @@ public:
 	// Если перед вставкой значения вектор был заполнен полностью,
 	// вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
 	Iterator Insert(ConstIterator pos, const Type& value) {
-		// Проверяем, достаточно ли вместимости
-		if (IsFull()) {
-			// Если вместимость заполнена, увеличиваем её
-			const size_t new_capacity = NewCapacity();
-			auto new_items = ReallocateCopy(new_capacity);  // может бросить исключение
-			items_.swap(new_items);
-			capacity_ = new_capacity;
-		}
+		assert(begin() <= pos);
+		assert(pos <= end());
 
 		// Вычисляем индекс позиции для вставки
-		size_t index = pos - items_.GetRawPtr();
+		size_t offset = std::distance(cbegin(), pos);
 
-		// Сдвигаем элементы вправо начиная с позиции вставки
-		for (size_t i = size_; i > index; --i) {
-			items_.GetRawPtr()[i] = items_.GetRawPtr()[i - 1];
+		// Проверяем, достаточно ли вместимости
+		if (IsFull()) {
+			IncCapacity();
 		}
 
-		// Вставляем новый элемент
-		items_.GetRawPtr()[index] = value;
-		size_++;
+		++size_;
+		Iterator  it = begin() + offset;
+		// Сдвигаем элементы вправо начиная с позиции вставки
+		std::copy_backward(it, end() - 1, end());
 
-		return items_.GetRawPtr() + index;  // Возвращаем итератор на вставленный элемент
+		// Вставляем новый элемент
+		*it = value;
+
+		return it;  // Возвращаем итератор на вставленный элемент
 	}
 
 	// "Удаляет" последний элемент вектора. Вектор не должен быть пустым
@@ -115,22 +118,18 @@ public:
 
 	// Удаляет элемент вектора в указанной позиции
 	Iterator Erase(ConstIterator pos) {
-		// Проверяем, что итератор находится в пределах вектора
-		assert(pos >= items_.GetRawPtr() && pos < items_.GetRawPtr() + size_);
-
-		// Сдвигаем элементы влево
-		std::copy_backward(pos + 1, end(), pos);
-//		std::move(pos + 1, end(), pos);
-
-		// Уменьшаем размер вектора
-		--size_;
-
-		return Iterator(pos);
+		Iterator non_const_pos = const_cast<Iterator>(pos);
+		if (size_ != 0) {
+			std::copy(non_const_pos + 1, end(), non_const_pos);
+			size_--;
+		}
+		return non_const_pos;
 	}
 
 	// Обменивает значение с другим вектором
 	void swap(SimpleVector& other) noexcept {
-		std::swap(items_, other.items_);
+		//std::swap(items_, other.items_);
+		items_.swap(other.items_);
 		std::swap(size_, other.size_);
 		std::swap(capacity_, other.capacity_);
 	}
@@ -158,13 +157,13 @@ public:
 	// Возвращает ссылку на элемент с индексом index
 	Type& operator[](size_t index) noexcept {
 		assert(index < size_);
-		return items_.GetRawPtr()[index];
+		return items_[index];
 	}
 
 	// Возвращает константную ссылку на элемент с индексом index
 	const Type& operator[](size_t index) const noexcept {
 		assert(index < size_);
-		return items_.GetRawPtr()[index];
+		return items_[index];
 	}
 
 	// Возвращает константную ссылку на элемент с индексом index
@@ -173,7 +172,7 @@ public:
 		if (index >= size_) {
 			throw std::out_of_range("Index out of range");
 		}
-		return items_.GetRawPtr()[index];
+		return items_[index];
 	}
 
 	// Возвращает константную ссылку на элемент с индексом index
@@ -182,7 +181,7 @@ public:
 		if (index >= size_) {
 			throw std::out_of_range("Index out of range");
 		}
-		return items_.GetRawPtr()[index];
+		return items_[index];
 	}
 
 	// Обнуляет размер массива, не изменяя его вместимость
@@ -196,20 +195,14 @@ public:
 	void Resize(size_t new_size) {
 
 		if (new_size > capacity_) {
-			// Вычисляем новую вместимость вектора
-			const size_t new_capacity = NewCapacity(new_size);
-
-			// Копируем существующие элементы вектора на новое место
-			auto new_items = ReallocateCopy(new_capacity);  // может бросить исключение
-			// Заполняем добавленные элементы значением по умолчанию
-			std::fill(new_items.GetRawPtr() + size_, new_items.GetRawPtr() + new_size, Type{});  // может бросить исключение
-
-			items_.swap(new_items);
-			capacity_ = new_capacity;
+			const size_t new_capacity = NewCapacity(new_size);	// Вычисляем новую вместимость вектора
+			SimpleVector<Type> buffer(new_capacity);			// Создаем новый вектор
+			std::copy(begin(), end(), buffer.begin());			// Копируем содержимое старого
+			swap(buffer);
 		}
 		else if (new_size > size_) {
 			assert(new_size <= capacity_);
-			std::fill(items_.GetRawPtr() + size_, items_.GetRawPtr() + new_size, Type{});  // может бросить исключение
+			std::fill(end(), begin() + new_size, Type{});  // может бросить исключение
 		}
 
 		// Во всех случаях устанавливается новый размер
@@ -253,15 +246,14 @@ public:
 	}
 
 private:
-	// Вспомогательный метод для выделения копии текущего массива с заданной вместимостью
-	ArrayPtr<Type> ReallocateCopy(size_t new_capacity) const {
-		ArrayPtr<Type> new_items(new_capacity);  // может бросить исключение
-		size_t copy_size = std::min(new_capacity, size_);
-		std::copy(items_.GetRawPtr(), items_.GetRawPtr() + copy_size, new_items.GetRawPtr());  // может бросить исключение
-		return new_items;
+	void IncCapacity() {
+		SimpleVector<Type> buffer(NewCapacity());	// Создаём новый вектор с увеличенной ёмкостью
+		buffer.size_ = size_;						// Устанавливаем правильно size_
+		std::copy(begin(), end(), buffer.begin());	// Копируем элементы из текущего вектора в буфер
+		swap(buffer);								// Меняем содержимое текущего вектора с буфером
 	}
 
-	const size_t NewCapacity(const size_t new_size = 1) {
+	size_t NewCapacity(const size_t new_size = 1) {
 		return std::max(capacity_ * 2, new_size);
 	}
 
@@ -273,13 +265,9 @@ private:
 
 template <typename Type>
 inline std::strong_ordering operator<=>(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-	std::strong_ordering result = lhs.GetSize() <=> rhs.GetSize();
-	if (result != std::strong_ordering::equal) {
-		result = std::lexicographical_compare_three_way(
-			lhs.cbegin(), lhs.cend(),
-			rhs.cbegin(), rhs.cend());
-	}
-	return result;
+	return std::lexicographical_compare_three_way(
+		lhs.cbegin(), lhs.cend(),
+		rhs.cbegin(), rhs.cend());
 }
 
 template <typename Type>

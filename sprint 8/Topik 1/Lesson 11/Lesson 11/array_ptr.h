@@ -29,8 +29,7 @@ public:
 	}
 
 	// Удаляем у класса конструктор копирования
-	// TODO решить судьбу конструктора
-//	ArrayPtr(const ArrayPtr&) = delete;
+	ArrayPtr(const ArrayPtr&) = delete;
 
 	// Деструктор. Удаляет объект, на который ссылается умный указатель.
 	~ArrayPtr() {
@@ -59,6 +58,14 @@ public:
 			throw std::logic_error("Null pointer!");
 		}
 		return ptr_;
+	}
+
+	T& operator[](size_t index) noexcept {
+		return ptr_[index];
+	}
+
+	const T& operator[](size_t index) const noexcept {
+		return ptr_[index];
 	}
 
 	// Возвращает указатель, хранящийся внутри ScopedPtr
