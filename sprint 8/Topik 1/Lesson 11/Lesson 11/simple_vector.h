@@ -30,7 +30,7 @@ public:
 		: items_(size)  // может бросить исключение
 		, size_(size)
 		, capacity_(size) {
-		std::fill(items_.GetRawPtr(), items_.GetRawPtr() + size_, Type{});  // Может бросить исключение
+		std::fill(begin(), end(), Type{});  // Может бросить исключение
 	}
 
 	// Создаёт вектор из size элементов, инициализированных значением value
@@ -38,7 +38,7 @@ public:
 		: items_(size)  // может бросить исключение
 		, size_(size)
 		, capacity_(size) {
-		std::fill(items_.GetRawPtr(), items_.GetRawPtr() + size_, value);  // Может бросить исключение
+		std::fill(begin(), end(), value);  // Может бросить исключение
 	}
 
 	// Создаёт вектор из std::initializer_list
@@ -46,7 +46,7 @@ public:
 		: items_(init.size())  // Может бросить исключение
 		, size_(init.size())
 		, capacity_(init.size()) {
-		std::copy(init.begin(), init.end(), items_.GetRawPtr());
+		std::copy(init.begin(), init.end(), this->begin());
 	}
 
 	// Конструктор копирования
@@ -54,7 +54,7 @@ public:
 		: items_(other.size_)  // выделяем память для копирования элементов
 		, size_(other.size_)
 		, capacity_(other.size_) {
-		std::copy(other.items_.GetRawPtr(), other.items_.GetRawPtr() + size_, items_.GetRawPtr());
+		std::copy(other.begin(), other.end(), this->begin());
 	}
 
 	~SimpleVector() {
@@ -85,26 +85,20 @@ public:
 	// Если перед вставкой значения вектор был заполнен полностью,
 	// вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
 	Iterator Insert(ConstIterator pos, const Type& value) {
-		assert(begin() <= pos);
-		assert(pos <= end());
+		assert(begin() <= pos && pos <= end());			// Проверка попадания в диапазон
+		
+		size_t offset = std::distance(cbegin(), pos);	// Вычисление индекса позиции для вставки
 
-		// Вычисляем индекс позиции для вставки
-		size_t offset = std::distance(cbegin(), pos);
-
-		// Проверяем, достаточно ли вместимости
-		if (IsFull()) {
-			IncCapacity();
+		if (IsFull()) {									// Проверка вместимости
+			IncCapacity();								// Увеличение емкости. Итераторы инвалидируются.
 		}
 
 		++size_;
-		Iterator  it = begin() + offset;
-		// Сдвигаем элементы вправо начиная с позиции вставки
-		std::copy_backward(it, end() - 1, end());
+		Iterator  it = begin() + offset;				// Итератор на позицию вставки
+		std::copy_backward(it, end() - 1, end());		// Сдвиг элементов вправо начиная с позиции вставки
 
-		// Вставляем новый элемент
-		*it = value;
-
-		return it;  // Возвращаем итератор на вставленный элемент
+		*it = value;									// Установка значения вставленного элемента
+		return it;										// Возврат итератора на вставленный элемент
 	}
 
 	// "Удаляет" последний элемент вектора. Вектор не должен быть пустым
