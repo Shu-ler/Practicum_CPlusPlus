@@ -42,11 +42,7 @@ vector<Sentence<Token>> SplitIntoSentences(vector<Token> tokens) {
 		auto sentenceEnd = FindSentenceEnd(sentenceBegin, tokens.end());
 
 		// Создаём новое предложение и добавляем его в вектор sentences
-		Sentence<Token> currentSentence;
-		for (auto it = sentenceBegin; it != sentenceEnd; ++it) {
-			currentSentence.push_back(std::move(*it)); 
-		}
-		sentences.push_back(std::move(currentSentence));
+		sentences.push_back(Sentence<Token>{make_move_iterator(sentenceBegin), make_move_iterator(sentenceEnd)});
 
 		// Переходим к следующему предложению
 		sentenceBegin = FindSentenceBegin(sentenceEnd, tokens.end());
@@ -54,7 +50,6 @@ vector<Sentence<Token>> SplitIntoSentences(vector<Token> tokens) {
 
 	return sentences;
 }
-
 
 struct TestToken {
 	string data;
