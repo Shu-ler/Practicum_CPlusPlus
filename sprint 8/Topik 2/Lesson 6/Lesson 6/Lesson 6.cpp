@@ -92,6 +92,14 @@ void TestStartExclamation() {
 	tokens.push_back({ "Move"s });
 	tokens.push_back({ "Hello"s });
 	tokens.push_back({ "."s, true });
+	tokens.push_back({ "."s, true });
+	tokens.push_back({ "."s, true });
+	tokens.push_back({ "."s, true });
+	tokens.push_back({ "."s, true });
+	tokens.push_back({ "."s, true });
+	tokens.push_back({ "."s, true });
+	tokens.push_back({ "."s, true });
+	tokens.push_back({ "."s, true });
 	tokens.push_back({ "Goodbye"s });
 	const auto sentences = SplitIntoSentences(move(tokens));
 	assert(sentences[0][0] == TestToken({ "!"s, true }));
