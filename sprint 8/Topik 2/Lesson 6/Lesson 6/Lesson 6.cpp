@@ -17,84 +17,96 @@ using Sentence = vector<Token>;
 
 template <typename TokenForwardIt>
 TokenForwardIt FindSentenceEnd(TokenForwardIt tokens_begin, TokenForwardIt tokens_end) {
-    const TokenForwardIt before_sentence_end
-        = adjacent_find(tokens_begin, tokens_end, [](const auto& left_token, const auto& right_token) {
-        return left_token.IsEndSentencePunctuation() && !right_token.IsEndSentencePunctuation();
-            });
-    return before_sentence_end == tokens_end ? tokens_end : next(before_sentence_end);
+	const TokenForwardIt before_sentence_end
+		= adjacent_find(tokens_begin, tokens_end, [](const auto& left_token, const auto& right_token) {
+		return left_token.IsEndSentencePunctuation() && !right_token.IsEndSentencePunctuation();
+			});
+	return before_sentence_end == tokens_end ? tokens_end : next(before_sentence_end);
 }
 
-template<typename Token>
-void SkipEndSentence(auto& iter, std::vector<Token>& tokens) {
-    while (iter != tokens.end() && iter->IsEndSentencePunctuation()) {
-        iter = std::next(iter);
-    }
+template <typename T>
+T FindSentenceBegin(T tokens_begin, T tokens_end) {
+	auto sentence_begin = std::find_if(tokens_begin, tokens_end, [](const auto& token) {
+		return !token.IsEndSentencePunctuation();
+		});
+	return sentence_begin;
 }
 
 // Класс Token имеет метод bool IsEndSentencePunctuation() const
 template <typename Token>
 vector<Sentence<Token>> SplitIntoSentences(vector<Token> tokens) {
-    vector<Sentence<Token>> sentences;
-    auto sentenceBegin = tokens.begin();
+	vector<Sentence<Token>> sentences;
+	auto sentenceBegin = tokens.begin();
 
-    // Пропуск токенов, являющихся концом предложения, в начале вектора
-    SkipEndSentence(sentenceBegin, tokens);
+	while (sentenceBegin != tokens.end()) {
+		auto sentenceEnd = FindSentenceEnd(sentenceBegin, tokens.end());
 
-    while (sentenceBegin != tokens.end()) {
-        auto sentenceEnd = std::find_if(sentenceBegin, tokens.end(), [](const Token& token) {
-            return token.IsEndSentencePunctuation();
-            });
+		// Создаём новое предложение и добавляем его в вектор sentences
+		Sentence<Token> currentSentence;
+		for (auto it = sentenceBegin; it != sentenceEnd; ++it) {
+			currentSentence.push_back(std::move(*it)); 
+		}
+		sentences.push_back(std::move(currentSentence));
 
-        // Пропускаем все знаки препинания в конце предложения
-        SkipEndSentence(sentenceEnd, tokens);
+		// Переходим к следующему предложению
+		sentenceBegin = FindSentenceBegin(sentenceEnd, tokens.end());
+	}
 
-        // Создаём новое предложение и добавляем его в вектор sentences
-        Sentence<Token> currentSentence(sentenceBegin, sentenceEnd);
-        sentences.push_back(std::move(currentSentence));
-
-        // Переходим к следующему предложению
-        sentenceBegin = sentenceEnd;
-        SkipEndSentence(sentenceEnd, tokens);
-    }
-
-    return sentences;
+	return sentences;
 }
 
 
 struct TestToken {
-    string data;
-    bool is_end_sentence_punctuation = false;
+	string data;
+	bool is_end_sentence_punctuation = false;
 
-    bool IsEndSentencePunctuation() const {
-        return is_end_sentence_punctuation;
-    }
-    bool operator==(const TestToken& other) const {
-        return data == other.data && is_end_sentence_punctuation == other.is_end_sentence_punctuation;
-    }
+	bool IsEndSentencePunctuation() const {
+		return is_end_sentence_punctuation;
+	}
+	bool operator==(const TestToken& other) const {
+		return data == other.data && is_end_sentence_punctuation == other.is_end_sentence_punctuation;
+	}
 };
 
 ostream& operator<<(ostream& stream, const TestToken& token) {
-    return stream << token.data;
+	return stream << token.data;
 }
 
 // Тест содержит копирования объектов класса TestToken.
 // Для проверки отсутствия копирований в функции SplitIntoSentences
 // необходимо написать отдельный тест.
 void TestSplitting() {
-    assert(SplitIntoSentences(vector<TestToken>({ {"Split"s}, {"into"s}, {"sentences"s}, {"!"s} }))
-        == vector<Sentence<TestToken>>({ {{"Split"s}, {"into"s}, {"sentences"s}, {"!"s}} }));
+	assert(SplitIntoSentences(vector<TestToken>({ {"Split"s}, {"into"s}, {"sentences"s}, {"!"s} }))
+		== vector<Sentence<TestToken>>({ {{"Split"s}, {"into"s}, {"sentences"s}, {"!"s}} }));
 
-    assert(SplitIntoSentences(vector<TestToken>({ {"Split"s}, {"into"s}, {"sentences"s}, {"!"s, true} }))
-        == vector<Sentence<TestToken>>({ {{"Split"s}, {"into"s}, {"sentences"s}, {"!"s, true}} }));
+	assert(SplitIntoSentences(vector<TestToken>({ {"Split"s}, {"into"s}, {"sentences"s}, {"!"s, true} }))
+		== vector<Sentence<TestToken>>({ {{"Split"s}, {"into"s}, {"sentences"s}, {"!"s, true}} }));
 
-    assert(SplitIntoSentences(vector<TestToken>(
-        { {"Split"s}, {"into"s}, {"sentences"s}, {"!"s, true}, {"!"s, true}, {"Without"s}, {"copies"s}, {"."s, true} }))
-        == vector<Sentence<TestToken>>({
-            {{"Split"s}, {"into"s}, {"sentences"s}, {"!"s, true}, {"!"s, true}},
-            {{"Without"s}, {"copies"s}, {"."s, true}},
-            }));
+	assert(SplitIntoSentences(vector<TestToken>(
+		{ {"Split"s}, {"into"s}, {"sentences"s}, {"!"s, true}, {"!"s, true}, {"Without"s}, {"copies"s}, {"."s, true} }))
+		== vector<Sentence<TestToken>>({
+			{{"Split"s}, {"into"s}, {"sentences"s}, {"!"s, true}, {"!"s, true}},
+			{{"Without"s}, {"copies"s}, {"."s, true}},
+			}));
+}
+
+void TestStartExclamation() {
+	using namespace std;
+	vector<TestToken> tokens;
+	tokens.push_back({ "!"s, true });
+	tokens.push_back({ "Move"s });
+	tokens.push_back({ "Hello"s });
+	tokens.push_back({ "."s, true });
+	tokens.push_back({ "Goodbye"s });
+	const auto sentences = SplitIntoSentences(move(tokens));
+	assert(sentences[0][0] == TestToken({ "!"s, true }));
+	assert(sentences[1][0] == TestToken({ "Move"s }));
+	assert(sentences[1][1] == TestToken({ "Hello"s }));
+	assert(sentences[1][2] == TestToken({ "."s, true }));
+	assert(sentences[2][0] == TestToken({ "Goodbye"s }));
 }
 
 int main() {
-    TestSplitting();
+	TestSplitting();
+	TestStartExclamation();
 }
