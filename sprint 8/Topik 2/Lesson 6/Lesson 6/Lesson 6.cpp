@@ -2,6 +2,8 @@
 #include <cassert>
 #include <string>
 #include <vector>
+#include <utility>
+#include <iostream>
 
 using namespace std;
 
@@ -22,11 +24,42 @@ TokenForwardIt FindSentenceEnd(TokenForwardIt tokens_begin, TokenForwardIt token
     return before_sentence_end == tokens_end ? tokens_end : next(before_sentence_end);
 }
 
+template<typename Token>
+void SkipEndSentence(auto& iter, std::vector<Token>& tokens) {
+    while (iter != tokens.end() && iter->IsEndSentencePunctuation()) {
+        iter = std::next(iter);
+    }
+}
+
 // Класс Token имеет метод bool IsEndSentencePunctuation() const
 template <typename Token>
 vector<Sentence<Token>> SplitIntoSentences(vector<Token> tokens) {
-    // Напишите реализацию функции, не копируя объекты типа Token
+    vector<Sentence<Token>> sentences;
+    auto sentenceBegin = tokens.begin();
+
+    // Пропуск токенов, являющихся концом предложения, в начале вектора
+    SkipEndSentence(sentenceBegin, tokens);
+
+    while (sentenceBegin != tokens.end()) {
+        auto sentenceEnd = std::find_if(sentenceBegin, tokens.end(), [](const Token& token) {
+            return token.IsEndSentencePunctuation();
+            });
+
+        // Пропускаем все знаки препинания в конце предложения
+        SkipEndSentence(sentenceEnd, tokens);
+
+        // Создаём новое предложение и добавляем его в вектор sentences
+        Sentence<Token> currentSentence(sentenceBegin, sentenceEnd);
+        sentences.push_back(std::move(currentSentence));
+
+        // Переходим к следующему предложению
+        sentenceBegin = sentenceEnd;
+        SkipEndSentence(sentenceEnd, tokens);
+    }
+
+    return sentences;
 }
+
 
 struct TestToken {
     string data;
