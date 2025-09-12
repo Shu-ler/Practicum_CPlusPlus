@@ -3,6 +3,8 @@
 #include <iostream>
 #include <numeric>
 #include <vector>
+#include <utility>
+#include <deque>
 
 using namespace std;
 
@@ -11,7 +13,7 @@ void MakeJosephusPermutation(RandomIt first, RandomIt last, uint32_t step_size) 
     vector<typename RandomIt::value_type> pool(first, last);
     size_t cur_pos = 0;
     while (!pool.empty()) {
-        *(first++) = pool[cur_pos];
+        *(first++) = std::move(pool[cur_pos]);
         pool.erase(pool.begin() + cur_pos);
         if (pool.empty()) {
             break;
