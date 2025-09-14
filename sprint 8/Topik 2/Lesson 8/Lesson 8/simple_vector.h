@@ -37,12 +37,14 @@ public:
 
 	SimpleVector() noexcept = default;
 
-	// Создаёт вектор из size элементов, инициализированных значением по умолчанию
+	// Конструктор вектора из size элементов, инициализированных значением по умолчанию
 	explicit SimpleVector(size_t size)
 		: items_(size)  // может бросить исключение
 		, size_(size)
 		, capacity_(size) {
-		std::fill(begin(), end(), Type{});  // Может бросить исключение
+		std::generate(begin(), end(), []{ 
+			return Type{}; 
+			});
 	}
 
 	// Создаёт вектор из size элементов, инициализированных значением value
@@ -78,27 +80,48 @@ public:
 		std::copy(other.begin(), other.end(), this->begin());
 	}
 
+	// Move-конструктор
+	SimpleVector(SimpleVector&& other)
+		: items_(std::move(other.items_))
+		, size_(std::exchange(other.size_, 0))
+		, capacity_(std::exchange(other.capacity_, 0)) { 
+		}
+
 	~SimpleVector() {
 		auto to_del = items_.Release();
 		delete[] to_del;
 	}
 
 	// Оператор присваивания
-	SimpleVector& operator=(const SimpleVector& rhs) {
-		if (&rhs != this) {				// Проверка на самоприсваивание
-			SimpleVector rhs_copy(rhs);	// Создаём временную копию rhs
-			swap(rhs_copy);				// Меняем содержимое текущего объекта с помощью swap
+	SimpleVector& operator=(const SimpleVector& other) {
+		if (&other != this) {				// Проверка на самоприсваивание
+			SimpleVector other_copy(other);	// Создаём временную копию rhs
+			swap(other_copy);				// Меняем содержимое текущего объекта с помощью swap
 		}
 		return *this;
 	}
 
+	// Move-оператора присваивания
+	SimpleVector& operator=(SimpleVector&& other) {
+		items_ = std::move(other.items_);
+		size_ = std::exchange(other.size_, 0);
+		capacity_ = std::exchange(other.capacity_, 0);
+		return *this;
+	}
+
 	// Добавляет элемент в конец вектора
-	// При нехватке места увеличивает вдвое вместимость вектора
 	void PushBack(const Type& item) {
 		if (IsFull()) {
 			IncCapacity();
 		}
 		items_[size_++] = item;
+	}
+
+	void PushBack(Type&& item) {
+		if (IsFull()) {
+			IncCapacity();
+		}
+		items_[size_++] = std::move(item);
 	}
 
 	// Вставляет значение value в позицию pos.
@@ -107,7 +130,6 @@ public:
 	// вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
 	Iterator Insert(ConstIterator pos, const Type& value) {
 		assert(begin() <= pos && pos <= end());			// Проверка попадания в диапазон
-
 		size_t offset = std::distance(cbegin(), pos);	// Вычисление индекса позиции для вставки
 
 		if (IsFull()) {									// Проверка вместимости
@@ -117,10 +139,27 @@ public:
 		++size_;
 		Iterator  it = begin() + offset;				// Итератор на позицию вставки
 		std::copy_backward(it, end() - 1, end());		// Сдвиг элементов вправо начиная с позиции вставки
-
 		*it = value;									// Установка значения вставленного элемента
 		return it;										// Возврат итератора на вставленный элемент
 	}
+
+	// Вставляет значение value в позицию pos.
+	// Возвращает итератор на вставленное значение
+	Iterator Insert(ConstIterator pos, Type&& value) {
+		assert(begin() <= pos && pos <= end());			// Проверка попадания в диапазон
+		size_t offset = std::distance(cbegin(), pos);	// Вычисление индекса позиции для вставки
+
+		if (IsFull()) {									// Проверка вместимости
+			IncCapacity();								// Увеличение емкости. Итераторы инвалидируются.
+		}
+
+		++size_;
+		Iterator  it = begin() + offset;				// Итератор на позицию вставки
+		std::copy_backward(std::make_move_iterator(it), std::make_move_iterator(end() - 1), end());
+		*it = std::move(value);
+		return it;										// Возврат итератора на вставленный элемент
+	}
+
 
 	// "Удаляет" последний элемент вектора. Вектор не должен быть пустым
 	void PopBack() noexcept {

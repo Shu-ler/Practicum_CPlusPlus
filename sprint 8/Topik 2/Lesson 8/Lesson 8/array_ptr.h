@@ -13,20 +13,24 @@
 template <typename T>
 class ArrayPtr {
 public:
-	// Конструктор по умолчанию создаёт нулевой указатель,
-	// так как поле ptr_ имеет значение по умолчанию nullptr
+	// Конструктор по умолчанию 
+	// Создаёт нулевой указатель
 	ArrayPtr() = default;
 
-	// Создаёт указатель, ссылающийся на переданный raw_ptr.
-	// raw_ptr ссылается либо на объект, созданный в куче при помощи new,
-	// либо является нулевым указателем
-	// Спецификатор noexcept обозначает, что метод не бросает исключений
+	// Конструктор на базе сырого указателя
 	explicit ArrayPtr(T* raw_ptr) noexcept {
 		ptr_ = raw_ptr;
 	}
 
+	// Конструктор объекта заданного размера
 	explicit ArrayPtr(size_t size)
-		: ptr_(size != 0 ? new T[size] : nullptr) {
+		: ptr_(size > 0 ? new T[size] : nullptr) {
+	}
+
+	// Move - конструктор 
+	// Создает новый объект путем перемещения ресурсов другого объекта
+	ArrayPtr(ArrayPtr&& other) noexcept {
+		ptr_ = std::exchange(other.ptr_, nullptr);
 	}
 
 	// Удаляем у класса конструктор копирования
@@ -41,6 +45,15 @@ public:
 	// на какой-либо объект
 	explicit operator bool() const noexcept {
 		return ptr_ != nullptr;
+	}
+
+	// Move-оператор присваивания
+	ArrayPtr& operator=(ArrayPtr&& other) noexcept {
+		if (this != &other) {
+			delete[] ptr_;
+			ptr_ = std::exchange(other.ptr_, nullptr);
+		}
+		return *this;
 	}
 
 	// Оператор разыменования возвращает ссылку на объект
