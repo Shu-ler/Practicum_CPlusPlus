@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <utility>
 
 // Умный указатель, удаляющий связанный объект при своём разрушении.
 // Параметр шаблона T задаёт тип объекта, на который ссылается указатель
@@ -18,8 +19,7 @@ public:
 	ArrayPtr() = default;
 
 	// Конструктор на базе сырого указателя
-	explicit ArrayPtr(T* raw_ptr) noexcept {
-		ptr_ = raw_ptr;
+	explicit ArrayPtr(T* raw_ptr) noexcept : ptr_(raw_ptr) {
 	}
 
 	// Конструктор объекта заданного размера
@@ -29,12 +29,11 @@ public:
 
 	// Move - конструктор 
 	// Создает новый объект путем перемещения ресурсов другого объекта
-	ArrayPtr(ArrayPtr&& other) noexcept {
-		ptr_ = std::exchange(other.ptr_, nullptr);
+	ArrayPtr(ArrayPtr&& other) noexcept : ptr_(std::exchange(other.ptr_, nullptr)) {
 	}
 
 	// Удаляем у класса конструктор копирования
-	ArrayPtr(const ArrayPtr&) = delete;
+//	ArrayPtr(const ArrayPtr&) = delete;
 
 	// Деструктор. Удаляет объект, на который ссылается умный указатель.
 	~ArrayPtr() {
@@ -74,16 +73,23 @@ public:
 		return ptr_;
 	}
 
+	// Оператор индексирования (доступ к элементу массива по индексу)
 	T& operator[](size_t index) noexcept {
 		return ptr_[index];
 	}
 
+	// Константный оператор индексирования (доступ к элементу массива по индексу)
 	const T& operator[](size_t index) const noexcept {
 		return ptr_[index];
 	}
 
-	// Возвращает указатель, хранящийся внутри ScopedPtr
-	T* GetRawPtr() const noexcept {
+	// Возвращает сырой указатель
+	T* GetRawPtr() noexcept {
+		return ptr_;
+	}
+
+	// Возвращает сырой указатель
+	const T* GetRawPtr() const noexcept {
 		return ptr_;
 	}
 

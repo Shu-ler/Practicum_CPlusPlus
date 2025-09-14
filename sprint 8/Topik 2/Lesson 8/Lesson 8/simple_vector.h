@@ -1,5 +1,3 @@
-#pragma once
-
 /*
 |	Филимонов И.В.
 |		+7 913 240 81 77
@@ -7,8 +5,7 @@
 |		https://github.com/Shu-ler
 */
 
-// Разработка контейнера SimpleVector
-// Часть вторая
+#pragma once
 
 #include <cassert>
 #include <initializer_list>
@@ -20,7 +17,8 @@
 // Структура хранения потребной вместимости с конструктором
 // Используется для передачи в конструктор с зарезервированной емкостью
 struct ReserveProxyObj {
-	explicit ReserveProxyObj(size_t capacity_to_reserve) : capacity(capacity_to_reserve) {}
+	explicit ReserveProxyObj(size_t capacity_to_reserve) : capacity(capacity_to_reserve) {
+	}
 	size_t capacity;
 };
 
@@ -39,7 +37,7 @@ public:
 
 	// Конструктор вектора из size элементов, инициализированных значением по умолчанию
 	explicit SimpleVector(size_t size)
-		: items_(size)  // может бросить исключение
+		: items_(size)
 		, size_(size)
 		, capacity_(size) {
 		std::generate(begin(), end(), []{ 
@@ -47,15 +45,15 @@ public:
 			});
 	}
 
-	// Создаёт вектор из size элементов, инициализированных значением value
+	// Конструктор вектора из size элементов, инициализированных значением value
 	SimpleVector(size_t size, const Type& value)
-		: items_(size)  // может бросить исключение
+		: items_(size)  
 		, size_(size)
 		, capacity_(size) {
-		std::fill(begin(), end(), value);  // Может бросить исключение
+		std::fill(begin(), end(), value);
 	}
 
-	// Создаёт вектор из std::initializer_list
+	// Конструктор вектора из std::initializer_list
 	SimpleVector(std::initializer_list<Type> init)
 		: items_(init.size())  // Может бросить исключение
 		, size_(init.size())
@@ -63,7 +61,7 @@ public:
 		std::copy(init.begin(), init.end(), this->begin());
 	}
 
-	// Создаёт вектор с зарезервированной памятью
+	// Конструктор вектора с зарезервированной памятью
 	// Пример использования:
 	//		SimpleVector<int> v(Reserve(77));
 	SimpleVector(ReserveProxyObj reserved)
@@ -74,7 +72,7 @@ public:
 
 	// Конструктор копирования
 	SimpleVector(const SimpleVector& other)
-		: items_(other.size_)  // выделяем память для копирования элементов
+		: items_(other.size_)
 		, size_(other.size_)
 		, capacity_(other.size_) {
 		std::copy(other.begin(), other.end(), this->begin());
@@ -86,11 +84,6 @@ public:
 		, size_(std::exchange(other.size_, 0))
 		, capacity_(std::exchange(other.capacity_, 0)) { 
 		}
-
-	~SimpleVector() {
-		auto to_del = items_.Release();
-		delete[] to_del;
-	}
 
 	// Оператор присваивания
 	SimpleVector& operator=(const SimpleVector& other) {
@@ -117,6 +110,7 @@ public:
 		items_[size_++] = item;
 	}
 
+	// Добавляет элемент в конец вектора
 	void PushBack(Type&& item) {
 		if (IsFull()) {
 			IncCapacity();
@@ -126,8 +120,6 @@ public:
 
 	// Вставляет значение value в позицию pos.
 	// Возвращает итератор на вставленное значение
-	// Если перед вставкой значения вектор был заполнен полностью,
-	// вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
 	Iterator Insert(ConstIterator pos, const Type& value) {
 		assert(begin() <= pos && pos <= end());			// Проверка попадания в диапазон
 		size_t offset = std::distance(cbegin(), pos);	// Вычисление индекса позиции для вставки
@@ -160,7 +152,6 @@ public:
 		return it;										// Возврат итератора на вставленный элемент
 	}
 
-
 	// "Удаляет" последний элемент вектора. Вектор не должен быть пустым
 	void PopBack() noexcept {
 		if (!IsEmpty()) {
@@ -170,39 +161,36 @@ public:
 
 	// Удаляет элемент вектора в указанной позиции
 	Iterator Erase(ConstIterator pos) {
-		assert(begin() <= pos && pos <= end());			// Проверка попадания в диапазон
+		assert(begin() <= pos && pos < end()); // Проверка попадания в диапазон
 		Iterator erase_pos = const_cast<Iterator>(pos);
-		if (size_ != 0) {
-			std::copy(erase_pos + 1, end(), erase_pos);
-			--size_;
-		}
+		std::move(erase_pos + 1, end(), erase_pos);
+		--size_;
 		return erase_pos;
 	}
 
 	// Обменивает значение с другим вектором
 	void swap(SimpleVector& other) noexcept {
-		//std::swap(items_, other.items_);
 		items_.swap(other.items_);
 		std::swap(size_, other.size_);
 		std::swap(capacity_, other.capacity_);
 	}
 
-	// Возвращает количество элементов в массиве
+	// Возвращает количество элементов в векторе
 	size_t GetSize() const noexcept {
 		return size_;
 	}
 
-	// Возвращает вместимость массива
+	// Возвращает вместимость вектора
 	size_t GetCapacity() const noexcept {
 		return capacity_;
 	}
 
-	// Сообщает, пустой ли массив
+	// Сообщает, пустой ли вектор
 	bool IsEmpty() const noexcept {
 		return size_ == 0;
 	}
 
-	// Сообщает, заполнен ли массив полностью
+	// Сообщает, заполнен ли вектор полностью
 	bool IsFull() const noexcept {
 		return size_ == capacity_;
 	}
@@ -219,7 +207,7 @@ public:
 		return items_[index];
 	}
 
-	// Возвращает константную ссылку на элемент с индексом index
+	// Возвращает ссылку на элемент с индексом index
 	// Выбрасывает исключение std::out_of_range, если index >= size
 	Type& At(size_t index) {
 		if (index >= size_) {
@@ -237,33 +225,30 @@ public:
 		return items_[index];
 	}
 
-public: // Методы работы с вектором
-
 	// Обнуляет размер массива, не изменяя его вместимость
 	void Clear() noexcept {
 		size_ = 0;
 	}
 
-	// Изменяет размер массива.
+	// Изменяет размер вектор.
 	// При увеличении размера новые элементы получают значение по умолчанию для типа Type
-	// TODO Resize
 	void Resize(size_t new_size) {
-
 		if (new_size > capacity_) {
 			const size_t new_capacity = NewCapacity(new_size);	// Вычисляем новую вместимость вектора
 			SimpleVector<Type> buffer(new_capacity);			// Создаем новый вектор
-			std::copy(begin(), end(), buffer.begin());			// Копируем содержимое старого
+			std::move(begin(), end(), buffer.begin());			// Копируем содержимое старого
 			swap(buffer);
 		}
 		else if (new_size > size_) {
 			assert(new_size <= capacity_);
-			std::fill(end(), begin() + new_size, Type{});  // может бросить исключение
+			std::generate(end(), begin() + new_size, [] {
+				return Type{};
+				});
 		}
-
-		// Во всех случаях устанавливается новый размер
-		size_ = new_size;
+		size_ = new_size;	// Во всех случаях устанавливается новый размер
 	}
 
+	// Изменяет зарезервированную ёмкость вектора
 	void Reserve(size_t new_capacity) {
 		if (new_capacity > capacity_) {
 			size_t size_save = size_;
@@ -272,8 +257,6 @@ public: // Методы работы с вектором
 			capacity_ = new_capacity;
 		}
 	};
-
-public:	// Методы получения итераторов
 
 	// Возвращает итератор на начало массива
 	// Для пустого массива может быть равен (или не равен) nullptr
@@ -312,10 +295,11 @@ public:	// Методы получения итераторов
 	}
 
 private:
+	// Увеличивает емкость вектора
 	void IncCapacity() {
 		SimpleVector<Type> buffer(NewCapacity());	// Создаём новый вектор с увеличенной вместимостью
 		buffer.size_ = size_;						// Устанавливаем правильно size_
-		std::copy(begin(), end(), buffer.begin());	// Копируем элементы из текущего вектора в буфер
+		std::move(begin(), end(), buffer.begin());	// Перемещаем элементы из текущего вектора в буфер
 		swap(buffer);								// Меняем содержимое текущего вектора с буфером
 	}
 
