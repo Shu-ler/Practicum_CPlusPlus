@@ -33,7 +33,7 @@ public:
 	}
 
 	// Удаляем у класса конструктор копирования
-//	ArrayPtr(const ArrayPtr&) = delete;
+	ArrayPtr(const ArrayPtr&) = delete;
 
 	// Деструктор. Удаляет объект, на который ссылается умный указатель.
 	~ArrayPtr() {
