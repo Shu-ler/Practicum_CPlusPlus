@@ -15,11 +15,21 @@ public:
     }
 
     void PushCoin(int64_t value) {
-        // TODO: реализуйте метод добавления купюры или монеты
+        for (size_t index_nominals = 0; index_nominals < nominals_.size(); index_nominals++) {
+            if (nominals_[index_nominals] == value) {
+                ++counts_[index_nominals];
+                break;
+            }
+        }
     }
 
     void PrintCoins(ostream& out) const {
-        // TODO: реализуйте метод печати доступных средств
+        for (size_t i = 0; i < counts_.size(); i++) {
+            if (counts_[i] > 0) {
+                out << nominals_[i] << ": "s << counts_[i] << endl;
+            }
+        }
+
     }
 
 private:
