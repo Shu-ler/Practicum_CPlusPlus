@@ -30,8 +30,17 @@ string FindMostExpensiveCategory(const vector<Spending>& spendings) {
 }
 
 vector<Spending> LoadFromJson(istream& input) {
-    // место для вашей реализации
-    // пример корректного JSON-документа в условии
+    vector<Spending> spendings;
+
+    auto doc = Load(input);
+    auto root = doc.GetRoot();
+
+    for (const Node& node : root.AsArray()) {
+        Spending spending{ node.AsMap().at("category").AsString(), node.AsMap().at("amount").AsInt() };
+        spendings.push_back(spending);
+    }
+
+    return spendings;
 }
 
 int main() {
