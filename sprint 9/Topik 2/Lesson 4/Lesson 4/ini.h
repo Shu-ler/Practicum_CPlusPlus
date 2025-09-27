@@ -8,16 +8,16 @@ namespace ini {
 
 	class Document {
 	public:
-		// реализация методов должна быть в файле ini.cpp
 		Section& AddSection(std::string name);
 		const Section& GetSection(const std::string& name) const;
 		std::size_t GetSectionCount() const;
-
+	
 	private:
 		std::unordered_map<std::string, Section> sections_;
 	};
 
-	// определение этой функции должно быть в файле ini.cpp
 	Document Load(std::istream& input);
+	bool StringEmpty(const std::string& name);
+	std::string StringTrim(const std::string& str);
 
 } // namespace ini

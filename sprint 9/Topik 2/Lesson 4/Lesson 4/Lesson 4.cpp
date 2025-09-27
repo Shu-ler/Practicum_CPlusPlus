@@ -23,6 +23,13 @@ int main() {
     ini::Document doc = ini::Load(input);
 
     assert(doc.GetSectionCount() == 3);
+
+    auto fff = ini::Section{
+            {"potatoes"s, "10"s},
+            {"onions"s, "1"s},
+            {"cucumbers"s, "12"s},
+    };
+
     assert((doc.GetSection("vegetables"s)
         == ini::Section{
             {"potatoes"s, "10"s},
