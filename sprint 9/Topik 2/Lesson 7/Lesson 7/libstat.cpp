@@ -1,61 +1,69 @@
 #include "libstat.h"
 
-void SumAggregation::PutValue(double value) {
-    sum_ += value;
-}
+namespace statistics {
 
-std::optional<double> SumAggregation::Get() const {
-    return sum_;
-}
+	namespace aggregations {
 
-void AggregateMaximum::PutValue(double value) {
-    cur_max_ = std::max(value, cur_max_.value_or(value));
-}
+		void Sum::PutValue(double value) {
+			sum_ += value;
+		}
 
-std::optional<double> AggregateMaximum::Get() const {
-    return cur_max_;
-}
+		std::optional<double> Sum::Get() const {
+			return sum_;
+		}
 
-void AggregatorAverage::PutValue(double value) {
-    sum_.PutValue(value);
-    ++count_;
-}
+		void AggregateMaximum::PutValue(double value) {
+			cur_max_ = std::max(value, cur_max_.value_or(value));
+		}
 
-std::optional<double> AggregatorAverage::Get() const {
-    auto val = sum_.Get();
-    if (!val || count_ == 0) {
-        return std::nullopt;
-    }
+		std::optional<double> AggregateMaximum::Get() const {
+			return cur_max_;
+		}
 
-    return *val / count_;
-}
+		void AggregatorAverage::PutValue(double value) {
+			sum_.PutValue(value);
+			++count_;
+		}
 
-void AggregStd::PutValue(double value) {
-    sum_.PutValue(value);
-    sum_sq_.PutValue(value * value);
-    ++count_;
-}
+		std::optional<double> AggregatorAverage::Get() const {
+			auto val = sum_.Get();
+			if (!val || count_ == 0) {
+				return std::nullopt;
+			}
 
-std::optional<double> AggregStd::Get() const {
-    auto val = sum_.Get();
-    auto val2 = sum_sq_.Get();
+			return *val / count_;
+		}
 
-    if (!val || !val2 || count_ < 2) {
-        return std::nullopt;
-    }
+		void AggregStd::PutValue(double value) {
+			sum_.PutValue(value);
+			sum_sq_.PutValue(value * value);
+			++count_;
+		}
 
-    return ::std::sqrt((*val2 - *val * *val / count_) / count_);
-}
+		std::optional<double> AggregStd::Get() const {
+			auto val = sum_.Get();
+			auto val2 = sum_sq_.Get();
 
-void Mode::PutValue(double value) {
-    const size_t new_count = ++counts_[round(value)];
+			if (!val || !val2 || count_ < 2) {
+				return std::nullopt;
+			}
 
-    if (new_count > cur_count_) {
-        cur_max_ = value;
-        cur_count_ = new_count;
-    }
-}
+			return ::std::sqrt((*val2 - *val * *val / count_) / count_);
+		}
 
-std::optional<double> Mode::Get() const {
-    return cur_max_;
-}
+		void Mode::PutValue(double value) {
+			const size_t new_count = ++counts_[round(value)];
+
+			if (new_count > cur_count_) {
+				cur_max_ = value;
+				cur_count_ = new_count;
+			}
+		}
+
+		std::optional<double> Mode::Get() const {
+			return cur_max_;
+		}
+
+	} // namespace aggregations
+
+} // namespace statistics

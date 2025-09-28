@@ -9,102 +9,114 @@
 
 using namespace std::literals;
 
-class SumAggregation {
-public:
-    void PutValue(double value);
-    std::optional<double> Get() const;
+namespace statistics {
 
-    static std::string_view GetValueName() {
-        return "sum"sv;
-    }
+	namespace aggregations {
 
-private:
-    double sum_ = 0;
-};
+		class Sum {
+		public:
+			void PutValue(double value);
+			std::optional<double> Get() const;
 
-class AggregateMaximum {
-public:
-    void PutValue(double value);
-    std::optional<double> Get() const;
+			static std::string_view GetValueName() {
+				return "sum"sv;
+			}
 
-    static std::string_view GetValueName() {
-        return "max"sv;
-    }
+		private:
+			double sum_ = 0;
+		};
 
-private:
-    std::optional<double> cur_max_;
-};
+		class AggregateMaximum {
+		public:
+			void PutValue(double value);
+			std::optional<double> Get() const;
 
-class AggregatorAverage {
-public:
-    void PutValue(double value);
-    std::optional<double> Get() const;
+			static std::string_view GetValueName() {
+				return "max"sv;
+			}
 
-    static std::string_view GetValueName() {
-        return "mean"sv;
-    }
+		private:
+			std::optional<double> cur_max_;
+		};
 
-private:
-    ::SumAggregation sum_;
-    size_t count_ = 0;
-};
+		class AggregatorAverage {
+		public:
+			void PutValue(double value);
+			std::optional<double> Get() const;
 
-class AggregStd {
-public:
-    void PutValue(double value);
-    std::optional<double> Get() const;
+			static std::string_view GetValueName() {
+				return "mean"sv;
+			}
 
-    static std::string_view GetValueName() {
-        return "standard deviation"sv;
-    }
+		private:
+			Sum sum_;
+			size_t count_ = 0;
+		};
 
-private:
-    ::SumAggregation sum_;
-    ::SumAggregation sum_sq_;
-    size_t count_ = 0;
-};
+		class AggregStd {
+		public:
+			void PutValue(double value);
+			std::optional<double> Get() const;
 
-class Mode {
-public:
-    void PutValue(double value);
-    std::optional<double> Get() const;
+			static std::string_view GetValueName() {
+				return "standard deviation"sv;
+			}
 
-    static std::string_view GetValueName() {
-        return "mode"sv;
-    }
+		private:
+			Sum sum_;
+			Sum sum_sq_;
+			size_t count_ = 0;
+		};
 
-private:
-    std::unordered_map<double, size_t> counts_;
-    std::optional<double> cur_max_;
-    size_t cur_count_ = 0;
-};
+		class Mode {
+		public:
+			void PutValue(double value);
+			std::optional<double> Get() const;
 
-template <typename Aggreg>
-class AggregPrinter {
-public:
-    void PutValue(double value) {
-        inner_.PutValue(value);
-    }
+			static std::string_view GetValueName() {
+				return "mode"sv;
+			}
 
-    void Print(std::ostream& out) const {
-        auto val = inner_.Get();
-        out << inner_.GetValueName() << " is "sv;
-        if (val) {
-            out << *val;
-        }
-        else {
-            out << "undefined"sv;
-        }
-        out << std::endl;
-    }
+		private:
+			std::unordered_map<double, size_t> counts_;
+			std::optional<double> cur_max_;
+			size_t cur_count_ = 0;
+		};
 
-private:
-    Aggreg inner_;
-};
+	} // namespace aggregations 
 
-void TestStatAggregSum();
-void TestStatAggregMax();
-void TestStatAggregMean();
-void TestStatAggregStandardDeviation();
-void TestStatAggregMode();
-void TestStatAggregPrinter();
+	template <typename Aggreg>
+	class AggregPrinter {
+	public:
+		void PutValue(double value) {
+			inner_.PutValue(value);
+		}
+
+		void Print(std::ostream& out) const {
+			auto val = inner_.Get();
+			out << inner_.GetValueName() << " is "sv;
+			if (val) {
+				out << *val;
+			}
+			else {
+				out << "undefined"sv;
+			}
+			out << std::endl;
+		}
+
+	private:
+		Aggreg inner_;
+	};
+
+} // namespace statistics
+
+namespace statistics {
+
+	void TestStatAggregSum();
+	void TestStatAggregMax();
+	void TestStatAggregMean();
+	void TestStatAggregStandardDeviation();
+	void TestStatAggregMode();
+	void TestStatAggregPrinter();
+
+} // namespace statistics

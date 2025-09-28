@@ -1,9 +1,11 @@
 ﻿#include "libstat.h"
 
 #include <iostream>
-using namespace std;
 
 int main() {
+
+    using namespace statistics;
+
     TestStatAggregSum();
     TestStatAggregMax();
     TestStatAggregMean();
@@ -11,5 +13,5 @@ int main() {
     TestStatAggregMode();
     TestStatAggregPrinter();
 
-    cout << "Test passed!"sv << endl;
+    std::cout << "Test passed!"sv << std::endl;
 }
