@@ -2,6 +2,7 @@
 
 #include "geo.h"
 #include <string>
+#include <iostream>
 
 namespace stop {
 
@@ -53,6 +54,7 @@ namespace stop {
 		// @param os поток вывода
 		// @param stop остановка
 		friend std::ostream& operator<<(std::ostream& os, const Stop& stop) {
+			using namespace std::literals;
 			os << "Stop: "s << stop.name_ 
 				<< ", Coordinates: ("s << stop.coordinates_.lat 
 				<< ", "s << stop.coordinates_.lng 
