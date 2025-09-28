@@ -5,25 +5,40 @@
 
 namespace stop {
 
+	/*
+	 *  ласс представл€ет собой модель остановки общественного транспорта.
+	 * —одержит информацию о названии остановки и еЄ географических координатах.
+	 */
 	class Stop {
 	public:
+
+		//  онструктор по умолчанию
 		Stop() = default;
+
+		// »нициализирует новую остановку с заданными именем и координатами.
+		// @param name название остановки
+		// @param lat широта
+		// @param lon долгота
 		Stop(const std::string& name, const double lat, const double lon) :
 			name_(name),
 			coordinates_{ lat, lon } {
 		};
 
+		// ¬озвращает название остановки.
+		// @return название остановки
 		std::string GetName() const {
 			return name_;
 		};
 
+		// ¬озвращает координаты остановки.
+		// @return координаты остановки
 		Coordinates GetCoordinates() const {
 			return coordinates_;
 		}
 
 	private:
-		std::string name_{};
-		Coordinates coordinates_{ 0.0, 0.0 };
+		std::string name_{};					// Ќазвание остановки.
+		Coordinates coordinates_{ 0.0, 0.0 };	// √еографические координаты остановки.
 	};
 
 } // namespace stop
