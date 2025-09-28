@@ -28,12 +28,36 @@ namespace stop {
 		// @return название остановки
 		std::string GetName() const {
 			return name_;
-		};
+		}
 
 		// ¬озвращает координаты остановки.
 		// @return координаты остановки
 		Coordinates GetCoordinates() const {
 			return coordinates_;
+		}
+
+		// ћетод установки координат
+		// @param lat широта
+		// @param lon долгота
+		void SetCoordinates(const double lat, const double lon) {
+			coordinates_ = { lat, lon };
+		}
+
+		// ћетод проверки равенства остановок
+		// @param other втора€ остановка
+		bool operator==(const Stop& other) const {
+			return name_ == other.name_ && coordinates_ == other.coordinates_;
+		}
+
+		// ¬ывод информации об остановке
+		// @param os поток вывода
+		// @param stop остановка
+		friend std::ostream& operator<<(std::ostream& os, const Stop& stop) {
+			os << "Stop: "s << stop.name_ 
+				<< ", Coordinates: ("s << stop.coordinates_.lat 
+				<< ", "s << stop.coordinates_.lng 
+				<< ")"s;
+			return os;
 		}
 
 	private:
