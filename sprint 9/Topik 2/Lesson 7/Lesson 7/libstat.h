@@ -26,7 +26,7 @@ namespace statistics {
 			double sum_ = 0;
 		};
 
-		class AggregateMaximum {
+		class Max {
 		public:
 			void PutValue(double value);
 			std::optional<double> Get() const;
@@ -39,7 +39,7 @@ namespace statistics {
 			std::optional<double> cur_max_;
 		};
 
-		class AggregatorAverage {
+		class Mean {
 		public:
 			void PutValue(double value);
 			std::optional<double> Get() const;
@@ -53,7 +53,7 @@ namespace statistics {
 			size_t count_ = 0;
 		};
 
-		class AggregStd {
+		class StandardDeviation {
 		public:
 			void PutValue(double value);
 			std::optional<double> Get() const;
@@ -108,15 +108,15 @@ namespace statistics {
 		Aggreg inner_;
 	};
 
-} // namespace statistics
+	namespace tests {
 
-namespace statistics {
+		void AggregSum();
+		void AggregMax();
+		void AggregMean();
+		void AggregStandardDeviation();
+		void AggregMode();
+		void AggregPrinter();
 
-	void TestStatAggregSum();
-	void TestStatAggregMax();
-	void TestStatAggregMean();
-	void TestStatAggregStandardDeviation();
-	void TestStatAggregMode();
-	void TestStatAggregPrinter();
+	} // namespace tests
 
 } // namespace statistics

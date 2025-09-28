@@ -4,14 +4,12 @@
 
 int main() {
 
-    using namespace statistics;
-
-    TestStatAggregSum();
-    TestStatAggregMax();
-    TestStatAggregMean();
-    TestStatAggregStandardDeviation();
-    TestStatAggregMode();
-    TestStatAggregPrinter();
+    statistics::tests::AggregSum();
+    statistics::tests::AggregMax();
+    statistics::tests::AggregMean();
+    statistics::tests::AggregStandardDeviation();
+    statistics::tests::AggregMode();
+    statistics::tests::AggregPrinter();
 
     std::cout << "Test passed!"sv << std::endl;
 }

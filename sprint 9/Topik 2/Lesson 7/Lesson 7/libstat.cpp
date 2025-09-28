@@ -12,20 +12,20 @@ namespace statistics {
 			return sum_;
 		}
 
-		void AggregateMaximum::PutValue(double value) {
+		void Max::PutValue(double value) {
 			cur_max_ = std::max(value, cur_max_.value_or(value));
 		}
 
-		std::optional<double> AggregateMaximum::Get() const {
+		std::optional<double> Max::Get() const {
 			return cur_max_;
 		}
 
-		void AggregatorAverage::PutValue(double value) {
+		void Mean::PutValue(double value) {
 			sum_.PutValue(value);
 			++count_;
 		}
 
-		std::optional<double> AggregatorAverage::Get() const {
+		std::optional<double> Mean::Get() const {
 			auto val = sum_.Get();
 			if (!val || count_ == 0) {
 				return std::nullopt;
@@ -34,13 +34,13 @@ namespace statistics {
 			return *val / count_;
 		}
 
-		void AggregStd::PutValue(double value) {
+		void StandardDeviation::PutValue(double value) {
 			sum_.PutValue(value);
 			sum_sq_.PutValue(value * value);
 			++count_;
 		}
 
-		std::optional<double> AggregStd::Get() const {
+		std::optional<double> StandardDeviation::Get() const {
 			auto val = sum_.Get();
 			auto val2 = sum_sq_.Get();
 

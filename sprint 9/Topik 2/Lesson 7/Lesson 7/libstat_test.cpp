@@ -6,96 +6,107 @@
 
 namespace statistics {
 
-template <typename T>
-std::string GetPrinterValue(AggregPrinter<T>& printer) {
-    std::ostringstream out;
-    printer.Print(out);
+	namespace tests {
 
-    return std::move(out).str();
-}
+		using namespace aggregations;
 
-void TestStatAggregSum() {
-    aggregations::Sum aggreg;
-    assert(*aggreg.Get() == 0);
+		namespace detail {
 
-    aggreg.PutValue(10.);
-    aggreg.PutValue(20.);
-    aggreg.PutValue(-40.);
+			template <typename T>
+			std::string GetPrinterValue(statistics::AggregPrinter<T>& printer) {
+				std::ostringstream out;
+				printer.Print(out);
 
-    assert(*aggreg.Get() == -10.);
-}
+				return std::move(out).str();
+			} 
 
-void TestStatAggregMax() {
-    aggregations::AggregateMaximum aggreg;
-    assert(!aggreg.Get());
+		} // namespace detail
 
-    aggreg.PutValue(10.);
-    aggreg.PutValue(20.);
-    aggreg.PutValue(-40.);
+		void AggregSum() {
+			Sum aggreg;
+			assert(*aggreg.Get() == 0);
 
-    assert(*aggreg.Get() == 20.);
-}
+			aggreg.PutValue(10.);
+			aggreg.PutValue(20.);
+			aggreg.PutValue(-40.);
 
-void TestStatAggregMean() {
-    aggregations::AggregatorAverage aggreg;
-    assert(!aggreg.Get());
+			assert(*aggreg.Get() == -10.);
+		}
 
-    aggreg.PutValue(10.);
-    aggreg.PutValue(20.);
-    aggreg.PutValue(-40.);
-    aggreg.PutValue(30.);
+		void AggregMax() {
+			Max aggreg;
+			assert(!aggreg.Get());
 
-    assert(*aggreg.Get() == 5.);
-}
+			aggreg.PutValue(10.);
+			aggreg.PutValue(20.);
+			aggreg.PutValue(-40.);
 
-void TestStatAggregStandardDeviation() {
-    aggregations::AggregStd aggreg;
-    assert(!aggreg.Get());
+			assert(*aggreg.Get() == 20.);
+		}
 
-    aggreg.PutValue(10.);
-    aggreg.PutValue(10.);
-    aggreg.PutValue(10.);
-    aggreg.PutValue(10.);
+		void AggregMean() {
+			Mean aggreg;
+			assert(!aggreg.Get());
 
-    assert(std::abs(*aggreg.Get()) < 1e-5);
+			aggreg.PutValue(10.);
+			aggreg.PutValue(20.);
+			aggreg.PutValue(-40.);
+			aggreg.PutValue(30.);
 
-    aggreg.PutValue(20.);
-    aggreg.PutValue(20.);
-    aggreg.PutValue(20.);
-    aggreg.PutValue(20.);
+			assert(*aggreg.Get() == 5.);
+		}
 
-    assert(std::abs(*aggreg.Get() - 5.) < 1e-5);
-}
+		void AggregStandardDeviation() {
+			StandardDeviation aggreg;
+			assert(!aggreg.Get());
 
-void TestStatAggregMode() {
-    aggregations::Mode aggreg;
-    assert(!aggreg.Get());
+			aggreg.PutValue(10.);
+			aggreg.PutValue(10.);
+			aggreg.PutValue(10.);
+			aggreg.PutValue(10.);
 
-    aggreg.PutValue(1.1);
-    aggreg.PutValue(0.9);
-    aggreg.PutValue(2.1);
-    aggreg.PutValue(2.2);
-    aggreg.PutValue(2.1);
-    aggreg.PutValue(-1.0);
-    aggreg.PutValue(3.0);
-    aggreg.PutValue(3.0);
-    aggreg.PutValue(1000.);
+			assert(std::abs(*aggreg.Get()) < 1e-5);
 
-    assert(std::round(*aggreg.Get()) == 2.);
-}
+			aggreg.PutValue(20.);
+			aggreg.PutValue(20.);
+			aggreg.PutValue(20.);
+			aggreg.PutValue(20.);
 
-void TestStatAggregPrinter() {
-    AggregPrinter<aggregations::AggregateMaximum> printer;
+			assert(std::abs(*aggreg.Get() - 5.) < 1e-5);
+		}
 
-    assert(GetPrinterValue(printer) == "max is undefined\n"s);
-    printer.PutValue(10.);
-    printer.PutValue(20.);
-    printer.PutValue(-40.);
+		void AggregMode() {
+			Mode aggreg;
+			assert(!aggreg.Get());
 
-    std::ostringstream out;
-    out << 20.;
+			aggreg.PutValue(1.1);
+			aggreg.PutValue(0.9);
+			aggreg.PutValue(2.1);
+			aggreg.PutValue(2.2);
+			aggreg.PutValue(2.1);
+			aggreg.PutValue(-1.0);
+			aggreg.PutValue(3.0);
+			aggreg.PutValue(3.0);
+			aggreg.PutValue(1000.);
 
-    assert(GetPrinterValue(printer) == "max is "s + out.str() + "\n"s);
-}
+			assert(std::round(*aggreg.Get()) == 2.);
+		}
+
+		void AggregPrinter() {
+
+			statistics::AggregPrinter<Max> printer;
+
+			assert(detail::GetPrinterValue(printer) == "max is undefined\n"s);
+			printer.PutValue(10.);
+			printer.PutValue(20.);
+			printer.PutValue(-40.);
+
+			std::ostringstream out;
+			out << 20.;
+
+			assert(detail::GetPrinterValue(printer) == "max is "s + out.str() + "\n"s);
+		}
+
+	} // namespace tests
 
 } // namespace statistics
