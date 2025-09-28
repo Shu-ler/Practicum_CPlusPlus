@@ -4,15 +4,15 @@ void SumAggregation::PutValue(double value) {
     sum_ += value;
 }
 
-optional<double> SumAggregation::Get() const {
+std::optional<double> SumAggregation::Get() const {
     return sum_;
 }
 
 void AggregateMaximum::PutValue(double value) {
-    cur_max_ = max(value, cur_max_.value_or(value));
+    cur_max_ = std::max(value, cur_max_.value_or(value));
 }
 
-optional<double> AggregateMaximum::Get() const {
+std::optional<double> AggregateMaximum::Get() const {
     return cur_max_;
 }
 
@@ -21,10 +21,10 @@ void AggregatorAverage::PutValue(double value) {
     ++count_;
 }
 
-optional<double> AggregatorAverage::Get() const {
+std::optional<double> AggregatorAverage::Get() const {
     auto val = sum_.Get();
     if (!val || count_ == 0) {
-        return nullopt;
+        return std::nullopt;
     }
 
     return *val / count_;
@@ -36,12 +36,12 @@ void AggregStd::PutValue(double value) {
     ++count_;
 }
 
-optional<double> AggregStd::Get() const {
+std::optional<double> AggregStd::Get() const {
     auto val = sum_.Get();
     auto val2 = sum_sq_.Get();
 
     if (!val || !val2 || count_ < 2) {
-        return nullopt;
+        return std::nullopt;
     }
 
     return ::std::sqrt((*val2 - *val * *val / count_) / count_);
@@ -56,6 +56,6 @@ void Mode::PutValue(double value) {
     }
 }
 
-optional<double> Mode::Get() const {
+std::optional<double> Mode::Get() const {
     return cur_max_;
 }

@@ -5,8 +5,8 @@
 #include <sstream>
 
 template <typename T>
-string GetPrinterValue(AggregPrinter<T>& printer) {
-    ostringstream out;
+std::string GetPrinterValue(AggregPrinter<T>& printer) {
+    std::ostringstream out;
     printer.Print(out);
 
     return std::move(out).str();
