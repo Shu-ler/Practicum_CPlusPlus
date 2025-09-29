@@ -76,7 +76,7 @@ namespace trans_catalogue {
 		stop_by_name_[added_ptr->GetName()] = added_ptr;
 	}
 
-	void TransportCatalogue::AddBus(std::string name, std::vector<StopPtr> stops) {
+	void TransportCatalogue::AddRoute(std::string name, std::vector<StopPtr> stops) {
 		// Добавляем маршрут в вектор маршрутов
 		buses_.push_back({ std::move(name), std::move(stops) });
 
@@ -92,8 +92,8 @@ namespace trans_catalogue {
 		return (iter == stop_by_name_.end()) ? nullptr : iter->second;
 	}
 
-	BusPtr TransportCatalogue::FindBus(std::string_view bus_name) const {
-		auto iter = bus_by_name_.find(bus_name);
+	BusPtr TransportCatalogue::FindRoute(std::string_view route_name) const {
+		auto iter = bus_by_name_.find(route_name);
 		return (iter == bus_by_name_.end()) ? nullptr : iter->second;
 	}
 

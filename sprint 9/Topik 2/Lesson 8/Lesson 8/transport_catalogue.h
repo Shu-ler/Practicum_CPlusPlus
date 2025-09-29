@@ -143,13 +143,13 @@ namespace trans_catalogue {
 		void AddStop(std::string name, Coordinates pos);
 
 		// Метод добавления маршрута в справочник
-		void AddBus(std::string name, std::vector<StopPtr> stops);
+		void AddRoute(std::string name, std::vector<StopPtr> stops);
 
 		// Метод поиска остановки по имени
-		StopPtr FindStop(std::string_view bus_name) const;
+		StopPtr FindStop(std::string_view stop_name) const;
 
 		// Метод поиска маршрута по имени
-		BusPtr FindBus(std::string_view bus_name) const;
+		BusPtr FindRoute(std::string_view route_name) const;
 
 		// Метод для получения статистики по маршруту (количество остановок, 
 		// уникальные остановки, длина маршрута).

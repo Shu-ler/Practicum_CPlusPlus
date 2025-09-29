@@ -127,7 +127,7 @@ void InputReader::ApplyCommands([[maybe_unused]] trans_catalogue::TransportCatal
 		}
 		else if (command.command == "Bus") {
 			RouteStops stops = ParseStops(command.description);
-			catalogue.AddBus(command.id, stops);
+			catalogue.AddRoute(command.id, stops);
 		}
 	}
 }
