@@ -7,12 +7,6 @@
 #include <deque>
 #include <unordered_map>
 
-// Используя 'using', определяем псевдонимы для удобства
-using StopPtr = const stop::Stop*;
-using BusPtr = const bus::Bus*;
-using RouteStat = trans_catalogue::TransportCatalogue::RouteStatistics;
-using RouteStops = std::vector<StopPtr>;
-
 namespace stop {
 
 	/**
@@ -41,7 +35,6 @@ namespace stop {
 			name_(name),
 			coordinates_{ pos } {
 		};
-
 
 		// Возвращает название остановки.
 		// @return название остановки
@@ -97,11 +90,18 @@ namespace bus {
 	 */
 	class Bus {
 	public:
+		using StopPtr = const stop::Stop*;
+		using RouteStops = std::vector<StopPtr>;
+
 		// Конструктор по умолчанию
 		Bus() = default;
 
 		// Параметрический конструктор
 		Bus(const std::string& name, const RouteStops& stops);
+
+		// Возвращает название остановки.
+		// @return название остановки
+		//std::string GetName() const;
 
 		// Getter для stops_
 		const RouteStops& GetStops() const;
@@ -112,9 +112,12 @@ namespace bus {
 		// Метод для добавления остановки
 		void AddStop(StopPtr stop);
 
-		// Метод для получения статистики по маршруту (количество остановок, 
-		// уникальные остановки, длина маршрута).
-		RouteStat GetStat() const;
+
+		// Возвращает true, если маршрут кольцевой
+		static bool IsRingRoute(const std::string& route);
+
+		// Возвращает true, если маршрут обычный
+		static bool IsOrdinaryRoute(const std::string& route);
 
 	private:
 		std::string name_;	// название маршрута
@@ -127,6 +130,8 @@ namespace trans_catalogue {
 
 	class TransportCatalogue {
 	public:
+		using StopPtr = const stop::Stop*;
+		using BusPtr = const bus::Bus*;
 
 		struct RouteStatistics {
 			size_t total_stops = 0;      // Общее количество остановок в маршруте
@@ -146,6 +151,10 @@ namespace trans_catalogue {
 		// Метод поиска маршрута по имени
 		BusPtr FindBus(std::string_view bus_name) const;
 
+		// Метод для получения статистики по маршруту (количество остановок, 
+		// уникальные остановки, длина маршрута).
+		RouteStatistics GetStat() const;
+
 	private:
 		// Контейнер и 'индекс' остановок
 		std::deque<stop::Stop> stops_{};
@@ -158,4 +167,8 @@ namespace trans_catalogue {
 
 } // namespace trans_catalogue
 
+// Используя 'using', определяем псевдонимы для удобства
+using StopPtr = const stop::Stop*;
+using BusPtr = const bus::Bus*;
+using RouteStops = std::vector<StopPtr>;
 

@@ -6,6 +6,10 @@
 #include "geo.h"
 #include "transport_catalogue.h"
 
+using StopPtr = const stop::Stop*;
+using BusPtr = const bus::Bus*;
+using RouteStops = std::vector<StopPtr>;
+
 struct CommandDescription {
     // Определяет, задана ли команда (поле command непустое)
     explicit operator bool() const {
@@ -31,7 +35,7 @@ public:
     /**
      * Наполняет данными транспортный справочник, используя команды из commands_
      */
-    void ApplyCommands(TransportCatalogue& catalogue) const;
+    void ApplyCommands(trans_catalogue::TransportCatalogue& catalogue) const;
 
 private:
     std::vector<CommandDescription> commands_;
