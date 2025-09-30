@@ -7,7 +7,7 @@
 #include "transport_catalogue.h"
 
 using StopPtr = const stop::Stop*;
-using BusPtr = const bus::Bus*;
+using RoutePtr = const route::Route*;
 using RouteStops = std::vector<StopPtr>;
 
 struct CommandDescription {

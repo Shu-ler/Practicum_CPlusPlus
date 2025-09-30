@@ -3,27 +3,27 @@
 #include <optional>
 #include <utility>
 
-namespace bus {
+namespace route {
 	
-	Bus::Bus(const std::string& name, const RouteStops& stops) :
+	Route::Route(const std::string& name, const RouteStops& stops) :
 		name_(name),
 		stops_(stops) {
 	}
 
-	const RouteStops& Bus::GetStops() const {
+	const RouteStops& Route::GetStops() const {
 		return stops_;
 	}
 
-	void Bus::SetStops(const RouteStops& stops) {
+	void Route::SetStops(const RouteStops& stops) {
 		stops_ = stops;
 	}
 
-	void Bus::AddStop(StopPtr stop) {
+	void Route::AddStop(StopPtr stop) {
 		stops_.push_back(stop);
 	}
 
 
-	//RouteStat Bus::GetStat() const {
+	//RouteStat Route::GetStat() const {
 	//	RouteStat stat{};
 
 	//	// Используем множество для хранения уникальных остановок
@@ -53,15 +53,15 @@ namespace bus {
 	//	return stat;
 	//}
 
-	bool Bus::IsRingRoute(const std::string& route) {
+	bool Route::IsRingRoute(const std::string& route) {
 		return route.find('>') != std::string::npos;
 	}
 
-	bool Bus::IsOrdinaryRoute(const std::string& route)	{
+	bool Route::IsOrdinaryRoute(const std::string& route)	{
 		return route.find('-') != std::string::npos;
 	}
 
-} // namespace bus
+} // namespace route
 
 namespace trans_catalogue {
 
@@ -81,7 +81,7 @@ namespace trans_catalogue {
 		buses_.push_back({ std::move(name), std::move(stops) });
 
 		// Получаем указатель на добавленный маршрут
-		BusPtr added_ptr = &buses_.back();
+		RoutePtr added_ptr = &buses_.back();
 
 		// Обновляем ассоциативный массив для быстрого доступа по имени маршрута
 	//	bus_by_name_[added_ptr.] = added_ptr;
@@ -92,13 +92,21 @@ namespace trans_catalogue {
 		return (iter == stop_by_name_.end()) ? nullptr : iter->second;
 	}
 
-	BusPtr TransportCatalogue::FindRoute(std::string_view route_name) const {
+	RoutePtr TransportCatalogue::FindRoute(std::string_view route_name) const {
 		auto iter = bus_by_name_.find(route_name);
 		return (iter == bus_by_name_.end()) ? nullptr : iter->second;
 	}
 
 	TransportCatalogue::RouteStatistics TransportCatalogue::GetStat() const {
 		return RouteStatistics();
+	}
+
+	TransportCatalogue::StopsIndex TransportCatalogue::GetStopsIndex() {
+		return stop_by_name_;
+	}
+
+	TransportCatalogue::StopsIndex TransportCatalogue::GetStopsIndex() const {
+		return stop_by_name_;
 	}
 
 } // namespace trans_catalogue

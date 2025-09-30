@@ -103,32 +103,70 @@ void InputReader::ParseLine(std::string_view line) {
 	}
 }
 
-RouteStops ParseStops(const std::string& description) {
-	RouteStops stops;
-	char delim = bus::Bus::IsOrdinaryRoute(description)
+/**
+ * Возвращает разделитель названий остановок
+ * Для некорректной строки возвращает '*'
+ */
+char RouteStopDivider(const std::string& description) {
+	char divider = route::Route::IsOrdinaryRoute(description)
 		? '-'
-		: bus::Bus::IsRingRoute(description)
+		: route::Route::IsRingRoute(description)
 		? '>'
 		: '*';
+	return divider;
+}
 
+/**
+ * Парсит остановки.
+ * Возвращает вектор указателей на остановки
+ * Для несуществующей остановки создаёт остановку с нулевыми координатами
+ */
+RouteStops ParseStops(const std::string& description, trans_catalogue::TransportCatalogue& catalogue) {
+	RouteStops stops;
+	char delim = RouteStopDivider(description);
+	
 	if (delim != '*') {
 		std::vector<std::string_view> elements = Split(description, delim);
 		for (auto el : elements) {
-			stops.emplace_back(std::string(el)); // Добавляем остановку в вектор
+			auto stops_it = catalogue.FindStop(el);
+
+			// Для несуществующей остановки создаём остановку с нулевыми координатами
+			if (stops_it == nullptr) {
+				std::string stop_name{ el };
+				catalogue.AddStop(stop_name, { 0,0 });
+				stops_it = catalogue.FindStop(el);
+			}
+
+			// Добавляем остановку в вектор
+			stops.emplace_back(stops_it); 
 		}
 	}
 	return stops;
 }
 
 void InputReader::ApplyCommands([[maybe_unused]] trans_catalogue::TransportCatalogue& catalogue) const {
-	for (const auto& command : commands_) {
-		if (command.command == "Stop") {
-			catalogue.AddStop(command.id, ParseCoordinates(command.description));
-		}
-		else if (command.command == "Bus") {
-			RouteStops stops = ParseStops(command.description);
-			catalogue.AddRoute(command.id, stops);
-		}
+	auto slider = commands_.begin();	// Бегунок по вектору команд
+
+	// Сортируем команды по типам - "Stop" вперед
+	std::sort(commands_.begin(), commands_.end(), [](const CommandDescription& a, const CommandDescription& b) {
+		return a.command == "Stop" && b.command != "Stop";
+		});
+
+	// Находим upper_bound для "Stop"
+	auto first_bus = std::upper_bound(commands_.begin(), commands_.end(), "Stop", 
+		[](const CommandDescription& cmd, const std::string& value) {
+			return cmd.command < value;
+		});
+
+	// Обрабатываем команды типа "Stop"
+	for (; slider < first_bus; ++slider) {
+		catalogue.AddStop(slider->id, ParseCoordinates(slider->description));
+	}
+
+	// Обрабатываем команды типа "Bus"
+	for (; slider < commands_.end(); ++slider) {
+		RouteStops stops = ParseStops(slider->description, catalogue);
+		catalogue.AddRoute(slider->id, stops);
 	}
 }
 

@@ -80,28 +80,28 @@ namespace stop {
 
 } // namespace stop
 
-namespace bus {
+namespace route {
 
 	/**
-	 * Класс Bus моделирует автобусный маршрут и содержит следующие компоненты : 
+	 * Класс Route моделирует автобусный маршрут и содержит следующие компоненты : 
 	 *  - name_ : строка, хранящая название маршрута.
 	 *  - stops_ : вектор указателей на остановки(StopPtr), 
 	 *		представляющий последовательность остановок в маршруте.
 	 */
-	class Bus {
+	class Route {
 	public:
 		using StopPtr = const stop::Stop*;
 		using RouteStops = std::vector<StopPtr>;
 
 		// Конструктор по умолчанию
-		Bus() = default;
+		Route() = default;
 
 		// Параметрический конструктор
-		Bus(const std::string& name, const RouteStops& stops);
+		Route(const std::string& name, const RouteStops& stops);
 
-		// Возвращает название остановки.
-		// @return название остановки
-		//std::string GetName() const;
+		// Возвращает название маршрута.
+		// @return название маршрута
+		std::string GetName() const;
 
 		// Getter для stops_
 		const RouteStops& GetStops() const;
@@ -124,14 +124,15 @@ namespace bus {
 		RouteStops stops_;	// вектор указателей на остановки
 	};
 
-} // namespace bus
+} // namespace route
 
 namespace trans_catalogue {
 
 	class TransportCatalogue {
 	public:
 		using StopPtr = const stop::Stop*;
-		using BusPtr = const bus::Bus*;
+		using StopsIndex = std::unordered_map<std::string_view, StopPtr>;
+		using RoutePtr = const route::Route*;
 
 		struct RouteStatistics {
 			size_t total_stops = 0;      // Общее количество остановок в маршруте
@@ -149,26 +150,29 @@ namespace trans_catalogue {
 		StopPtr FindStop(std::string_view stop_name) const;
 
 		// Метод поиска маршрута по имени
-		BusPtr FindRoute(std::string_view route_name) const;
+		RoutePtr FindRoute(std::string_view route_name) const;
 
 		// Метод для получения статистики по маршруту (количество остановок, 
 		// уникальные остановки, длина маршрута).
 		RouteStatistics GetStat() const;
 
+		StopsIndex GetStopsIndex();
+		StopsIndex GetStopsIndex() const;
+
 	private:
 		// Контейнер и 'индекс' остановок
 		std::deque<stop::Stop> stops_{};
-		std::unordered_map<std::string_view, StopPtr> stop_by_name_{};
+		StopsIndex stop_by_name_{};
 
 		// Контейнер и 'индекс' маршрутов
-		std::deque<bus::Bus> buses_{};
-		std::unordered_map<std::string_view, BusPtr> bus_by_name_{};
+		std::deque<route::Route> buses_{};
+		std::unordered_map<std::string_view, RoutePtr> bus_by_name_{};
 	};
 
 } // namespace trans_catalogue
 
 // Используя 'using', определяем псевдонимы для удобства
 using StopPtr = const stop::Stop*;
-using BusPtr = const bus::Bus*;
+using RoutePtr = const route::Route*;
 using RouteStops = std::vector<StopPtr>;
 
