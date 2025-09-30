@@ -145,15 +145,16 @@ RouteStops ParseStops(const std::string& description, trans_catalogue::Transport
 }
 
 void InputReader::ApplyCommands([[maybe_unused]] trans_catalogue::TransportCatalogue& catalogue) const {
-	auto slider = commands_.begin();	// Бегунок по вектору команд
+	auto slider = commands_.begin();			// Бегунок по вектору команд
+	std::string stop_cmd("Stop");	// Константная строка "Stop"
 
 	// Сортируем команды по типам - "Stop" вперед
 	std::sort(commands_.begin(), commands_.end(), [](const CommandDescription& a, const CommandDescription& b) {
-		return a.command == "Stop" && b.command != "Stop";
+		return a.command < b.command;
 		});
 
 	// Находим upper_bound для "Stop"
-	auto first_bus = std::upper_bound(commands_.begin(), commands_.end(), "Stop", 
+	auto first_bus = std::upper_bound(commands_.begin(), commands_.end(), stop_cmd,
 		[](const CommandDescription& cmd, const std::string& value) {
 			return cmd.command < value;
 		});
