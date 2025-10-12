@@ -57,9 +57,6 @@ namespace trans_cat {
 		void AddStop(std::string name, Coordinates pos);
 
 		// Метод добавления маршрута в справочник
-		void AddRoute(std::string name, StopsList stops);
-
-		// Метод добавления маршрута в справочник
 		void AddRoute(std::string name, StopsNames stops_names);
 
 		// Метод поиска остановки по имени
@@ -76,6 +73,10 @@ namespace trans_cat {
 		// Если остановка не найдена или через неё не проходит ни один маршрут,
 		// возвращается пустое множеств
 		const RouteSet& GetRoutesByStop(StopPtr stop) const;
+
+	private:
+		// Метод добавления маршрута в справочник
+		void AddRoute(std::string name, StopsList stops);
 
 	private:
 		// Контейнер и 'индекс' остановок

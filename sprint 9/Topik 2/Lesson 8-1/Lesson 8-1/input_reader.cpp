@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cassert>
 #include <iterator>
+#include <iostream>
+#include "stat_reader.h"
 
 /**
  * Парсит строку вида "10.123,  -30.1837" и возвращает пару координат (широта, долгота)
@@ -117,5 +119,28 @@ void InputReader::ApplyCommands([[maybe_unused]] trans_cat::TransportCatalogue& 
         if (cur.command != stop_cmd) {
             catalogue.AddRoute(cur.id, ParseRoute(cur.description));
         }
+    }
+}
+
+void InputReader::LoadCatalog(std::istream& input, trans_cat::TransportCatalogue& catalogue) {
+    int base_request_count;
+    input >> base_request_count >> std::ws;
+
+    for (int i = 0; i < base_request_count; ++i) {
+        std::string line;
+        std::getline(input, line);
+        ParseLine(line);
+    }
+    ApplyCommands(catalogue);
+}
+
+void InputReader::ProcessRequest(std::istream& input, std::ostream& output, trans_cat::TransportCatalogue& catalogue) {
+    int stat_request_count;
+    input >> stat_request_count >> std::ws;
+
+    for (int i = 0; i < stat_request_count; ++i) {
+        std::string line;
+        std::getline(input, line);
+        stat_r::ParseAndPrintStat(catalogue, line, output);
     }
 }
