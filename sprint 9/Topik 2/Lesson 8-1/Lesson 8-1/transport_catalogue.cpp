@@ -22,6 +22,26 @@ namespace trans_cat {
 		route_by_name_[added_ptr->name_] = added_ptr;
 	}
 
+	void TransportCatalogue::AddRoute(std::string name, std::vector<std::string_view> stops_names) {
+		// Создаём вектор указателей на остановки
+		std::vector<StopPtr> stops;
+		for (auto stop_name : stops_names) {
+			StopPtr stop = FindStop(stop_name);
+			if (stop == nullptr) {
+				// Если остановка не найдена, можно вывести сообщение об ошибке или проигнорировать
+				continue;
+			}
+			stops.push_back(stop);
+		}
+
+		// Создаём новый маршрут и добавляем его в контейнер
+		routes_.push_back({ std::move(name), std::move(stops) });
+
+		// Добавляем указатель на маршрут в индекс по имени
+		auto added_ptr = &routes_.back();
+		route_by_name_[added_ptr->name_] = added_ptr;
+	}
+
 	StopPtr TransportCatalogue::FindStop(std::string_view stop_name) const {
 		auto iter = stop_by_name_.find(stop_name);
 		return (iter == stop_by_name_.end()) ? nullptr : iter->second;

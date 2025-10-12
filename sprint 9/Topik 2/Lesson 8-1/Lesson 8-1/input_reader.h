@@ -31,7 +31,17 @@ public:
     /**
      * Ќаполн€ет данными транспортный справочник, использу€ команды из commands_
      */
-    void ApplyCommands(TransportCatalogue& catalogue) const;
+    void ApplyCommands(trans_cat::TransportCatalogue& catalogue) const;
+
+    /**
+     * ¬озвращает разделитель названий остановок
+     * ƒл€ некорректной строки возвращает '*'
+     */
+    static char RouteStopDivider(const std::string_view description);
+
+private:
+    static bool IsOrdinaryRoute(const std::string_view description);
+    static bool IsRingRoute(const std::string_view description);
 
 private:
     std::vector<CommandDescription> commands_;

@@ -95,6 +95,25 @@ CommandDescription ParseCommandDescription(std::string_view line) {
             std::string(line.substr(colon_pos + 1)) };
 }
 
+/**
+ * Парсит остановки.
+ * Возвращает вектор названий остановок
+ */
+std::vector<std::string_view> ParseStops(const std::string& description) {
+    std::vector<std::string_view> stops_names;
+    char delim = InputReader::RouteStopDivider(description);
+
+    if (delim != '*') {
+        std::vector<std::string_view> elements = Split(description, delim);
+        for (auto el : elements) {
+
+            // Добавляем остановку в вектор
+            stops_names.emplace_back(el);
+        }
+    }
+    return stops_names;
+}
+
 void InputReader::ParseLine(std::string_view line) {
     auto command_description = ParseCommandDescription(line);
     if (command_description) {
@@ -102,6 +121,39 @@ void InputReader::ParseLine(std::string_view line) {
     }
 }
 
-void InputReader::ApplyCommands([[maybe_unused]] TransportCatalogue& catalogue) const {
-    // Реализуйте метод самостоятельно
+void InputReader::ApplyCommands([[maybe_unused]] trans_cat::TransportCatalogue& catalogue) const {
+    const std::string stop_cmd("Stop");
+
+    // Обрабатываем команды типа "Stop"
+    for (auto const& cur : commands_) {
+        if (cur.command == stop_cmd) {
+            catalogue.AddStop(cur.id, ParseCoordinates(cur.description));
+        }
+    }
+
+    // Обрабатываем команды типа "Bus"
+    for (auto const& cur : commands_) {
+        if (cur.command != stop_cmd) {
+            auto stops_names = ParseStops(cur.description);
+            catalogue.AddRoute(cur.id, stops_names);
+        }
+    }
+
 }
+
+char InputReader::RouteStopDivider(const std::string_view description) {
+    char divider = IsOrdinaryRoute(description)
+        ? '-'
+        : IsRingRoute(description) ? '>' : '*';
+    return divider;
+}
+
+bool InputReader::IsOrdinaryRoute(const std::string_view description) {
+    return description.find('-') != std::string::npos;
+}
+
+bool InputReader::IsRingRoute(const std::string_view description) {
+    return description.find('>') != std::string::npos;
+}
+
+

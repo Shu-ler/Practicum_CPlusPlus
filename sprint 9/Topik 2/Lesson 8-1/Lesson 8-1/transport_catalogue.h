@@ -50,6 +50,9 @@ namespace trans_cat {
 		// Метод добавления маршрута в справочник
 		void AddRoute(std::string name, StopsList stops);
 
+		// Метод добавления маршрута в справочник
+		void AddRoute(std::string name, std::vector<std::string_view> stops_names);
+
 		// Метод поиска остановки по имени
 		StopPtr FindStop(std::string_view stop_name) const;
 

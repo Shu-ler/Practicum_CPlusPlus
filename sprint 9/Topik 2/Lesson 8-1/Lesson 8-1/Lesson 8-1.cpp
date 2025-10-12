@@ -7,7 +7,7 @@
 using namespace std;
 
 int main() {
-    TransportCatalogue catalogue;
+    trans_cat::TransportCatalogue catalogue;
 
     int base_request_count;
     cin >> base_request_count >> ws;
