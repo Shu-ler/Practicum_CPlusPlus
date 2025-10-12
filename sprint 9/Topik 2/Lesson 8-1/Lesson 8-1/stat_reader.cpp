@@ -19,7 +19,7 @@ void ParseAndPrintStat(const trans_cat::TransportCatalogue& tansport_catalogue, 
 			output << "Bus " << route_name << ": "
 				<< stat.total_stops << " stops on route, "
 				<< stat.unique_stops << " unique stops, "
-				<< std::fixed << std::setprecision(6) << stat.route_length << " route length" << std::endl;
+				<< std::fixed << std::setprecision(2) << stat.route_length << " route length" << std::endl;
 		}
 		else {
 			// Если маршрут не найден

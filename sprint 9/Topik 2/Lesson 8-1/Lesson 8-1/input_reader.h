@@ -33,16 +33,6 @@ public:
      */
     void ApplyCommands(trans_cat::TransportCatalogue& catalogue) const;
 
-    /**
-     * Возвращает разделитель названий остановок
-     * Для некорректной строки возвращает '*'
-     */
-    static char RouteStopDivider(const std::string_view description);
-
-private:
-    static bool IsOrdinaryRoute(const std::string_view description);
-    static bool IsRingRoute(const std::string_view description);
-
 private:
     std::vector<CommandDescription> commands_;
 };
