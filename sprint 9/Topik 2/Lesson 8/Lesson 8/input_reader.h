@@ -25,6 +25,14 @@ struct CommandDescription {
     std::string description;  // Параметры команды
 };
 
+//bool operator<(const CommandDescription& lhs, const CommandDescription& rhs) {
+//    return lhs.command < rhs.command; // Сортировка по полю command
+//}
+//
+//bool operator<(const CommandDescription& lhs, const std::string& rhs) {
+//    return lhs.command < rhs; // Сравнение поля command со строкой
+//}
+
 class InputReader {
 public:
     /**
@@ -35,7 +43,7 @@ public:
     /**
      * Наполняет данными транспортный справочник, используя команды из commands_
      */
-    void ApplyCommands(trans_catalogue::TransportCatalogue& catalogue) const;
+    void ApplyCommands(trans_catalogue::TransportCatalogue& catalogue);
 
 private:
     std::vector<CommandDescription> commands_;

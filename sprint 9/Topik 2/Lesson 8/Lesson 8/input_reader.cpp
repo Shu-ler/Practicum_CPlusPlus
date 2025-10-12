@@ -4,6 +4,7 @@
 #include <cassert>
 #include <iterator>
 #include <iostream>
+#include <string>
 
 /**
  * Парсит строку вида "10.123,  -30.1837" и возвращает пару координат (широта, долгота)
@@ -144,30 +145,40 @@ RouteStops ParseStops(const std::string& description, trans_catalogue::Transport
 	return stops;
 }
 
-void InputReader::ApplyCommands([[maybe_unused]] trans_catalogue::TransportCatalogue& catalogue) const {
-	auto slider = commands_.begin();			// Бегунок по вектору команд
-	std::string stop_cmd("Stop");	// Константная строка "Stop"
+void InputReader::ApplyCommands([[maybe_unused]] trans_catalogue::TransportCatalogue& catalogue) {
+	const std::string stop_cmd("Stop");
+//	auto slider = commands_.begin();			// Бегунок по вектору команд
 
-	// Сортируем команды по типам - "Stop" вперед
-	std::sort(commands_.begin(), commands_.end(), [](const CommandDescription& a, const CommandDescription& b) {
-		return a.command < b.command;
-		});
+	//// Сортируем команды по типам - "Stop" вперед
+	//std::sort(commands_.begin(), commands_.end());
 
-	// Находим upper_bound для "Stop"
-	auto first_bus = std::upper_bound(commands_.begin(), commands_.end(), stop_cmd,
-		[](const CommandDescription& cmd, const std::string& value) {
-			return cmd.command < value;
-		});
+	//// Находим upper_bound для "Stop"
+	//auto first_bus = std::upper_bound(commands_.begin(), commands_.end(), stop_cmd);
 
 	// Обрабатываем команды типа "Stop"
-	for (; slider < first_bus; ++slider) {
-		catalogue.AddStop(slider->id, ParseCoordinates(slider->description));
+	//for (; slider < first_bus; ++slider) {
+	//	catalogue.AddStop(slider->id, ParseCoordinates(slider->description));
+	//}
+
+	// Обрабатываем команды типа "Bus"
+	//for (; slider < commands_.end(); ++slider) {
+	//	RouteStops stops = ParseStops(slider->description, catalogue);
+	//	catalogue.AddRoute(slider->id, stops);
+	//}
+
+	// Обрабатываем команды типа "Stop"
+	for (auto const& cur : commands_) {
+		if (cur.command == stop_cmd) {
+			catalogue.AddStop(cur.id, ParseCoordinates(cur.description));
+		}
 	}
 
 	// Обрабатываем команды типа "Bus"
-	for (; slider < commands_.end(); ++slider) {
-		RouteStops stops = ParseStops(slider->description, catalogue);
-		catalogue.AddRoute(slider->id, stops);
+	for (auto const& cur : commands_) {
+		if (cur.command != stop_cmd) {
+			RouteStops stops = ParseStops(cur.description, catalogue);
+			catalogue.AddRoute(cur.id, stops);
+		}
 	}
 }
 

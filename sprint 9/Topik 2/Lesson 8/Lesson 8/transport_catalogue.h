@@ -101,7 +101,9 @@ namespace route {
 
 		// Возвращает название маршрута.
 		// @return название маршрута
-		std::string GetName() const;
+		std::string GetName() const {
+			return name_;
+		};
 
 		// Getter для stops_
 		const RouteStops& GetStops() const;
@@ -141,7 +143,7 @@ namespace trans_catalogue {
 		};
 
 		// Метод добавления остановки в справочник
-		void AddStop(std::string name, Coordinates pos);
+		void AddStop(std::string_view name, Coordinates pos);
 
 		// Метод добавления маршрута в справочник
 		void AddRoute(std::string name, std::vector<StopPtr> stops);
@@ -154,7 +156,7 @@ namespace trans_catalogue {
 
 		// Метод для получения статистики по маршруту (количество остановок, 
 		// уникальные остановки, длина маршрута).
-		RouteStatistics GetStat() const;
+		RouteStatistics GetStat(RoutePtr route) const;
 
 		StopsIndex GetStopsIndex();
 		StopsIndex GetStopsIndex() const;

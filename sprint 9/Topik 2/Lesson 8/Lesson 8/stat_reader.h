@@ -5,5 +5,8 @@
 
 #include "transport_catalogue.h"
 
-void ParseAndPrintStat(const trans_catalogue::TransportCatalogue& tansport_catalogue, std::string_view request,
+using RoutePtr = const route::Route*;
+
+void ParseAndPrintStat(const trans_catalogue::TransportCatalogue& tansport_catalogue, 
+    std::string_view request,
     std::ostream& output);

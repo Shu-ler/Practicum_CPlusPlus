@@ -22,37 +22,6 @@ namespace route {
 		stops_.push_back(stop);
 	}
 
-
-	//RouteStat Route::GetStat() const {
-	//	RouteStat stat{};
-
-	//	// Используем множество для хранения уникальных остановок
-	//	std::unordered_set<std::string_view> seen_stops{};
-	//	std::optional<Coordinates> prev_pos{};
-
-	//	for (auto stop : stops_) {
-
-	//		// Увеличиваем общее количество остановок
-	//		++stat.total_stops;
-
-	//		// Проверяем, является ли остановка уникальной
-	//		if (seen_stops.count(stop->name) == 0) {
-	//			++stat.unique_stops; // Увеличиваем количество уникальных остановок
-	//			seen_stops.insert(stop->name);
-	//		}
-
-	//		// Если есть предыдущая позиция, вычисляем расстояние между остановками
-	//		if (prev_pos) {
-	//			stat.route_length += ComputeDistance(*prev_pos, stop->position);
-	//		}
-
-	//		// Обновляем предыдущую позицию
-	//		prev_pos = stop->position;
-	//	}
-
-	//	return stat;
-	//}
-
 	bool Route::IsRingRoute(const std::string& route) {
 		return route.find('>') != std::string::npos;
 	}
@@ -65,15 +34,16 @@ namespace route {
 
 namespace trans_catalogue {
 
-	void TransportCatalogue::AddStop(std::string name, Coordinates pos) {
-		// Добавляем остановку в вектор остановок
-		stops_.push_back({ std::move(name), pos });
+	void TransportCatalogue::AddStop(std::string_view name, Coordinates pos) {
+		// Добавляем остановку в дек остановок
+		stops_.push_back({ name, pos });
 
 		// Получаем указатель на добавленную остановку
-		StopPtr added_ptr = &stops_.back();
+		auto added_ptr = stops_.back();
 
 		// Обновляем ассоциативный массив для быстрого доступа по имени остановки
-		stop_by_name_[added_ptr->GetName()] = added_ptr;
+		auto key = added_ptr.GetName();
+		stop_by_name_[key] = &added_ptr;
 	}
 
 	void TransportCatalogue::AddRoute(std::string name, std::vector<StopPtr> stops) {
@@ -84,11 +54,11 @@ namespace trans_catalogue {
 		RoutePtr added_ptr = &buses_.back();
 
 		// Обновляем ассоциативный массив для быстрого доступа по имени маршрута
-	//	bus_by_name_[added_ptr.] = added_ptr;
+		bus_by_name_[added_ptr->GetName()] = added_ptr;
 	}
 
 	StopPtr TransportCatalogue::FindStop(std::string_view stop_name) const {
-		auto iter = stop_by_name_.find(stop_name);
+		auto iter = stop_by_name_.find(std::string(stop_name));
 		return (iter == stop_by_name_.end()) ? nullptr : iter->second;
 	}
 
@@ -97,7 +67,27 @@ namespace trans_catalogue {
 		return (iter == bus_by_name_.end()) ? nullptr : iter->second;
 	}
 
-	TransportCatalogue::RouteStatistics TransportCatalogue::GetStat() const {
+	TransportCatalogue::RouteStatistics TransportCatalogue::GetStat(RoutePtr route) const {
+		RouteStatistics stat{};
+		
+		// Подсчёт общего количества остановок
+		stat.total_stops = route->GetStops().size();
+
+		// Определение уникальных остановок
+		std::unordered_set<std::string_view> unique_stops;
+		for (auto stop : route->GetStops()) {
+			unique_stops.insert(stop->GetName());
+		}
+		stat.unique_stops = unique_stops.size();
+
+		// Расчёт длины маршрута
+		std::optional<Coordinates> prev_pos;
+		for (auto stop : route->GetStops()) {
+			if (prev_pos) {
+				stat.route_length += ComputeDistance(*prev_pos, stop->GetCoordinates());
+			}
+			prev_pos = stop->GetCoordinates();
+		}
 		return RouteStatistics();
 	}
 
