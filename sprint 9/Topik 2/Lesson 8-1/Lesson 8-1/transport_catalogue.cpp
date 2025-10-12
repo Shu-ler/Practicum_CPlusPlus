@@ -20,11 +20,16 @@ namespace trans_cat {
 		// Добавляем указатель на маршрут в индекс по имени
 		auto added_ptr = &routes_.back();
 		route_by_name_[added_ptr->name_] = added_ptr;
+
+		// Заполняем индекс остановок и маршрутов
+		for (auto stop : added_ptr->stops_) {
+			stop_to_routes_[stop].insert(added_ptr);
+		}
 	}
 
-	void TransportCatalogue::AddRoute(std::string name, std::vector<std::string_view> stops_names) {
+	void TransportCatalogue::AddRoute(std::string name, StopsNames stops_names) {
 		// Создаём вектор указателей на остановки
-		std::vector<StopPtr> stops;
+		StopsList stops;
 		for (auto stop_name : stops_names) {
 			StopPtr stop = FindStop(stop_name);
 			if (stop == nullptr) {
@@ -33,13 +38,7 @@ namespace trans_cat {
 			}
 			stops.push_back(stop);
 		}
-
-		// Создаём новый маршрут и добавляем его в контейнер
-		routes_.push_back({ std::move(name), std::move(stops) });
-
-		// Добавляем указатель на маршрут в индекс по имени
-		auto added_ptr = &routes_.back();
-		route_by_name_[added_ptr->name_] = added_ptr;
+		AddRoute(name, stops);
 	}
 
 	StopPtr TransportCatalogue::FindStop(std::string_view stop_name) const {
@@ -73,8 +72,13 @@ namespace trans_cat {
 			}
 			prev_pos = stop->coordinates_;
 		}
-
 		return stat;
+	}
+
+	const RouteSet& TransportCatalogue::GetRoutesByStop(StopPtr stop) const {
+		static const RouteSet dummy;
+		auto iter = stop_to_routes_.find(stop);
+		return iter == stop_to_routes_.end() ? dummy : iter->second;
 	}
 
 }	// namespace trans_cat

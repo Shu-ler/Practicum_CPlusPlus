@@ -120,5 +120,3 @@ void InputReader::ApplyCommands([[maybe_unused]] trans_cat::TransportCatalogue& 
         }
     }
 }
-
-

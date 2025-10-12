@@ -5,6 +5,7 @@
 #include <vector>
 #include <deque>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace trans_cat {
 
@@ -18,6 +19,7 @@ namespace trans_cat {
 
 	using StopPtr = const Stop*;
 	using StopsList = std::vector<StopPtr>;
+	using StopsNames = std::vector<std::string_view>;
 	using StopsStorage = std::deque<Stop>;
 	using StopsIndex = std::unordered_map<std::string_view, Stop*>;
 
@@ -32,6 +34,8 @@ namespace trans_cat {
 	using RoutePtr = const Route*;
 	using RouteStorage = std::deque<Route>;
 	using RouteIndex = std::unordered_map<std::string_view, Route*>;
+	using RouteSet = std::unordered_set<RoutePtr>;
+	using StopRouteIndex = std::unordered_map<StopPtr, RouteSet>;
 
 	/**
 	 * Структура RouteStatistics - хранение статистики маршрута общественного транспорта.
@@ -51,7 +55,7 @@ namespace trans_cat {
 		void AddRoute(std::string name, StopsList stops);
 
 		// Метод добавления маршрута в справочник
-		void AddRoute(std::string name, std::vector<std::string_view> stops_names);
+		void AddRoute(std::string name, StopsNames stops_names);
 
 		// Метод поиска остановки по имени
 		StopPtr FindStop(std::string_view stop_name) const;
@@ -63,6 +67,11 @@ namespace trans_cat {
 		// уникальные остановки, длина маршрута).
 		RouteStatistics GetStat(RoutePtr route) const;
 
+		// Возвращает множество маршрутов, проходящих через заданную остановку.
+		// Если остановка не найдена или через неё не проходит ни один маршрут,
+		// возвращается пустое множеств
+		const RouteSet& GetRoutesByStop(StopPtr stop) const;
+
 	private:
 		// Контейнер и 'индекс' остановок
 		StopsStorage stops_{};
@@ -71,6 +80,9 @@ namespace trans_cat {
 		// Контейнер и 'индекс' маршрутов
 		RouteStorage routes_{};
 		RouteIndex route_by_name_{};
+
+		// 'Индекс' остановок и маршрутов
+		StopRouteIndex stop_to_routes_;
 	};
 
 }	// namespace trans_cat
