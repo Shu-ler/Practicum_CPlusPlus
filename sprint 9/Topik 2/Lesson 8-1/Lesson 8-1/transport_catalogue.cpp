@@ -32,11 +32,9 @@ namespace trans_cat {
 		StopsList stops;
 		for (auto stop_name : stops_names) {
 			StopPtr stop = FindStop(stop_name);
-			if (stop == nullptr) {
-				// ≈сли остановка не найдена, можно вывести сообщение об ошибке или проигнорировать
-				continue;
+			if (stop != nullptr) {
+				stops.push_back(stop);
 			}
-			stops.push_back(stop);
 		}
 		AddRoute(name, stops);
 	}

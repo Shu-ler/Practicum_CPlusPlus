@@ -103,7 +103,7 @@ void InputReader::ParseLine(std::string_view line) {
 }
 
 void InputReader::ApplyCommands([[maybe_unused]] trans_cat::TransportCatalogue& catalogue) const {
-    const std::string stop_cmd("Stop");
+    static const std::string stop_cmd("Stop");
 
     // Обрабатываем команды типа "Stop"
     for (auto const& cur : commands_) {
@@ -115,8 +115,7 @@ void InputReader::ApplyCommands([[maybe_unused]] trans_cat::TransportCatalogue& 
     // Обрабатываем команды типа "Bus"
     for (auto const& cur : commands_) {
         if (cur.command != stop_cmd) {
-            auto stops_names = ParseRoute(cur.description);
-            catalogue.AddRoute(cur.id, stops_names);
+            catalogue.AddRoute(cur.id, ParseRoute(cur.description));
         }
     }
 }

@@ -2,6 +2,24 @@
 #include <iomanip>
 #include <algorithm>
 
+void ParseAndPrintStat(const trans_cat::TransportCatalogue& tansport_catalogue, std::string_view request,
+	std::ostream& output) {
+	// Разбиваем запрос на название маршрута и команду
+	size_t pos = request.find(' ');
+	std::string_view command = request.substr(0, pos);
+	std::string_view obj_name = request.substr(pos + 1);
+
+	if (command == "Bus") {
+		ProcessBusRequest(tansport_catalogue, obj_name, output);
+	}
+	else if (command == "Stop") {
+		ProcessStopRequest(tansport_catalogue, obj_name, output);
+	}
+	else {
+		output << "Unknown command" << std::endl;
+	}
+}
+
 void ProcessBusRequest(const trans_cat::TransportCatalogue& tansport_catalogue,
 	const std::string_view& obj_name, std::ostream& output) {
 
@@ -60,23 +78,5 @@ void ProcessStopRequest(const trans_cat::TransportCatalogue& tansport_catalogue,
 	else {
 		// Остановка не найдена
 		output << "Stop " << obj_name << ": not found" << std::endl;
-	}
-}
-
-void ParseAndPrintStat(const trans_cat::TransportCatalogue& tansport_catalogue, std::string_view request,
-	std::ostream& output) {
-	// Разбиваем запрос на название маршрута и команду
-	size_t pos = request.find(' ');
-	std::string_view command = request.substr(0, pos);
-	std::string_view obj_name = request.substr(pos + 1);
-
-	if (command == "Bus") {
-		ProcessBusRequest(tansport_catalogue, obj_name, output);
-	}
-	else if (command == "Stop") {
-		ProcessStopRequest(tansport_catalogue, obj_name, output);
-	}
-	else {
-		output << "Unknown command" << std::endl;
 	}
 }
