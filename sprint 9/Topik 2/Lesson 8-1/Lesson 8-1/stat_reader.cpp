@@ -1,13 +1,14 @@
 #include "stat_reader.h"
 #include <iomanip>
+#include <algorithm>
 
-void ProcessBusRequest(const trans_cat::TransportCatalogue& tansport_catalogue, 
+void ProcessBusRequest(const trans_cat::TransportCatalogue& tansport_catalogue,
 	const std::string_view& obj_name, std::ostream& output) {
 
 	// Ищем маршрут в транспортном справочнике
 	auto route = tansport_catalogue.FindRoute(obj_name);
 	if (route) {
-	
+
 		// Получаем статистику по маршруту
 		trans_cat::RouteStatistics stat = tansport_catalogue.GetStat(route);
 
@@ -18,13 +19,13 @@ void ProcessBusRequest(const trans_cat::TransportCatalogue& tansport_catalogue,
 			<< std::fixed << std::setprecision(2) << stat.route_length << " route length" << std::endl;
 	}
 	else {
-		
+
 		// Если маршрут не найден
 		output << "Bus " << obj_name << ": not found" << std::endl;
 	}
 }
 
-void ProcessStopRequest(const trans_cat::TransportCatalogue& tansport_catalogue, 
+void ProcessStopRequest(const trans_cat::TransportCatalogue& tansport_catalogue,
 	const std::string_view& obj_name, std::ostream& output) {
 	auto stop = tansport_catalogue.FindStop(obj_name);
 	if (stop) {
@@ -35,16 +36,25 @@ void ProcessStopRequest(const trans_cat::TransportCatalogue& tansport_catalogue,
 			output << "Stop " << obj_name << ": no buses" << std::endl;
 		}
 		else {
-			output << "Stop " << obj_name << ": buses ";
-			bool first_stop = true;
+			// Собираем названия маршрутов в вектор
+			std::vector<std::string> route_names;
 			for (auto& route : routes_set) {
-				if (!first_stop) {
+				route_names.push_back(route->name_);
+			}
+
+			// Сортируем вектор с названиями маршрутов
+			std::sort(route_names.begin(), route_names.end());
+
+			// Выводим отсортированные названия маршрутов
+			output << "Stop " << obj_name << ": buses ";
+
+			for (const auto& route_name : route_names) {
+				output << route_name;
+				if (route_name != route_names.back()) {
 					output << " ";
 				}
-				output << route->name_;
-				first_stop = false;
 			}
-		//	output << std::endl;
+			output << std::endl;
 		}
 	}
 	else {
