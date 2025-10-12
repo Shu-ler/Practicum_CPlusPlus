@@ -45,10 +45,10 @@ namespace trans_cat {
 	class TransportCatalogue {
 	public:
 		// Метод добавления остановки в справочник
-		void AddStop(std::string_view name, Coordinates pos);
+		void AddStop(std::string name, Coordinates pos);
 
 		// Метод добавления маршрута в справочник
-		void AddRoute(std::string name, std::vector<StopPtr> stops);
+		void AddRoute(std::string name, StopsList stops);
 
 		// Метод поиска остановки по имени
 		StopPtr FindStop(std::string_view stop_name) const;
