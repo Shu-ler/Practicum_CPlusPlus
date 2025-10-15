@@ -39,6 +39,32 @@ public:
         : name_(name) {
     }
 
+    // Конструктор копирования
+    Witch(const Witch& other)
+        : name_(other.name_)
+        , cat_(make_unique<Cat>(*other.cat_)) // Создаём копию кота
+    {
+    }
+
+    // При явном объявлении конструктора копирования и копирующего оператора присваивания
+    // компилятор не будет генерировать перемещающий конструктор и перемещающий оператор присваивания
+    // Поэтому явно просим компилятор сгенерировать их
+    
+    // Перемещающий конструктор
+    Witch(Witch&&) = default;
+
+    // Перемещающий оператор присваивания
+    Witch& operator=(Witch&&) = default;
+
+    // Оператор копирующего присваивания
+    Witch& operator=(const Witch& rhs) {
+        if (this != &rhs) { // Проверка на самоприсваивание
+            name_ = rhs.name_;
+            cat_ = make_unique<Cat>(*rhs.cat_); // Создаём копию кота
+        }
+        return *this;
+    }
+
     const string& GetName() const noexcept {
         return name_;
     }
