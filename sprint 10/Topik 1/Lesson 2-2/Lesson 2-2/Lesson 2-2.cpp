@@ -59,7 +59,7 @@ TreeNode<T>* next(TreeNode<T>* node) noexcept {
         return begin(node->right.get());
     }
     while (node->parent) {
-        bool is_right = (node == node->parent->right);
+        bool is_right = (node == node->parent->right.get()); // node->parent->right);
         if (!is_right) {
             return node->parent;
         }
@@ -88,9 +88,9 @@ int main() {
     using namespace std;
     using T = TreeNode<int>;
     auto root1 = N(6, N(4, N(3), N(5)), N(7));
-    assert(CheckTreeProperty(root1));
+    assert(CheckTreeProperty(root1.get()));
 
-    T* iter = begin(root1);
+    T* iter = begin(root1.get());
     while (iter) {
         cout << iter->value << " "s;
         iter = next(iter);
@@ -98,5 +98,5 @@ int main() {
     cout << endl;
 
     auto root2 = N(6, N(4, N(3), N(5)), N(7, N(8)));
-    assert(!CheckTreeProperty(root2));
+    assert(!CheckTreeProperty(root2.get()));
 }
