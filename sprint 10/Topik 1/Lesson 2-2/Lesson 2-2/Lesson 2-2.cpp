@@ -56,7 +56,7 @@ TreeNode<T>* begin(TreeNode<T>* node) noexcept {
 template <typename T>
 TreeNode<T>* next(TreeNode<T>* node) noexcept {
     if (node->right) {
-        return begin(node->right);
+        return begin(node->right.get());
     }
     while (node->parent) {
         bool is_right = (node == node->parent->right);
