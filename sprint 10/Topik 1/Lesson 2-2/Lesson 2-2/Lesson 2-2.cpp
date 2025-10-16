@@ -84,20 +84,6 @@ TreeNodePtr<int> N(int val, TreeNodePtr<int>&& left = {}, TreeNodePtr<int>&& rig
     return node;
 }
 
-// Благодаря умным указателям эта функция больше не понадобится.
-// Удалите её.
-template<class T>
-void DeleteTree(TreeNode<T>* node) {
-    if (!node) {
-        return;
-    }
-
-    DeleteTree(node->left);
-    DeleteTree(node->right);
-
-    delete node;
-}
-
 int main() {
     using namespace std;
     using T = TreeNode<int>;
@@ -113,8 +99,4 @@ int main() {
 
     auto root2 = N(6, N(4, N(3), N(5)), N(7, N(8)));
     assert(!CheckTreeProperty(root2));
-
-    // Удалите вызовы функции DeleteTree.
-    DeleteTree(root1);
-    DeleteTree(root2);
 }
