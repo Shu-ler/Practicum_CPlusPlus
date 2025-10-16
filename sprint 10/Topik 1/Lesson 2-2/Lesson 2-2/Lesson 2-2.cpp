@@ -12,15 +12,15 @@ template <typename T>
 struct TreeNode {
     // Используйте TreeNodePtr<T> вместо сырых указателей.
     // Примите умные указатели по rvalue-ссылке.
-    TreeNode(T val, TreeNode<T>* left, TreeNode<T>* right)
+    TreeNode(T val, TreeNodePtr<T> left, TreeNodePtr<T> right)
         : value(std::move(val))
-        , left(left)
-        , right(right) {
+        , left(std::move(left))
+        , right(std::move(right)) {
     }
 
     T value;
-    TreeNode* left;  // Замените TreeNode* на TreeNodePtr<T>
-    TreeNode* right; // Замените TreeNode* на TreeNodePtr<T>
+    TreeNodePtr<T> left;  // Замените TreeNode* на TreeNodePtr<T>
+    TreeNodePtr<T> right; // Замените TreeNode* на TreeNodePtr<T>
 
     // parent оставьте обычным указателем, иначе возникнет
     // кольцевая зависимость.
