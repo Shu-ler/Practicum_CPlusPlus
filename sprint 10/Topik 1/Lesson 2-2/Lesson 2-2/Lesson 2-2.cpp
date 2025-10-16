@@ -35,8 +35,8 @@ bool CheckTreeProperty(const TreeNode<T>* node, const T* min, const T* max) noex
     if ((min && node->value <= *min) || (max && node->value >= *max)) {
         return false;
     }
-    return CheckTreeProperty(node->left, min, &node->value)
-        && CheckTreeProperty(node->right, &node->value, max);
+    return CheckTreeProperty(node->left.get(), min, &node->value)
+        && CheckTreeProperty(node->right.get(), &node->value, max);
 }
 
 template <class T>
