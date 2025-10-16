@@ -47,7 +47,7 @@ bool CheckTreeProperty(const TreeNode<T>* node) noexcept {
 template <typename T>
 TreeNode<T>* begin(TreeNode<T>* node) noexcept {
     while (node->left) {
-        node = node->left;
+        node = node->left.get();
     }
 
     return node;
