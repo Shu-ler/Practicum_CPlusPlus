@@ -71,13 +71,14 @@ TreeNode<T>* next(TreeNode<T>* node) noexcept {
 
 // Замените указатели на умные. Сигнатура функции должна стать такой:
 // TreeNodePtr<int> N(int val, TreeNodePtr<int>&& left = {}, TreeNodePtr<int>&& right = {})
-TreeNode<int>* N(int val, TreeNode<int>* left = {}, TreeNode<int>* right = {}) {
-    auto node = new TreeNode<int>(val, left, right);
+TreeNodePtr<int> N(int val, TreeNodePtr<int>&& left = {}, TreeNodePtr<int>&& right = {}) {
+    TreeNodePtr<int> node = std::make_unique<TreeNode<int>>(val, std::move(left), std::move(right));
+
     if (node->left) {
-        node->left->parent = node;
+        node->left.get()->parent = node.get();
     }
     if (node->right) {
-        node->right->parent = node;
+        node->right.get()->parent = node.get();
     }
 
     return node;
