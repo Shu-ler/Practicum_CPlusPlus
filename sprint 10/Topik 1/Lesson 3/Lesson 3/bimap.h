@@ -2,9 +2,26 @@
 
 #include <optional>
 #include <string_view>
+#include <memory>
 
 class BiMap {
 public:
+    BiMap();
+
+    // Копирующий конструктор
+    BiMap(const BiMap& other);
+
+    // Перемещающий конструктор
+    BiMap(BiMap&& other) noexcept;
+
+    ~BiMap();
+
+    // Копирующее присваивание
+    BiMap& operator=(const BiMap& other);
+
+    // Перемещающее присваивание
+    BiMap& operator=(BiMap&& other) noexcept;
+    
     /**
      * Добавляет в словарь пару "ключ-значение".
      * В случае успеха возвращает true.
@@ -25,5 +42,8 @@ public:
     std::optional<std::string_view> FindKey(std::string_view value) const noexcept;
 
 private:
-    /* Класс должен использовать идиому Pimpl, поддерживать копирование и перемещение */
+    // Объявляем вложенную структуру Impl, не раскрывая здесь её содержимое
+    struct Impl;
+    // unique_ptr автоматически удалит связанные с классом данные
+    std::unique_ptr<Impl> impl_;
 };
