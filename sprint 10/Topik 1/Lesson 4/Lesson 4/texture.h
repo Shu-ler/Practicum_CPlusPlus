@@ -9,7 +9,7 @@ public:
 
     // Возвращает размер изображения
     Size GetSize() const {
-        // Заглушка. Реализуйте метод самостоятельно
+        // TODO: GetSize для Texture
         return { 0, 0 };
     }
 
@@ -17,7 +17,7 @@ public:
     // Если координаты выходят за границы изображения, возвращается пробел
     char GetPixelColor(Point p) const {
         (void)p;
-        // Заглушка. Реализуйте метод самостоятельно
+        // TODO: GetPixelColor для Texture
         return ' ';
     }
 
