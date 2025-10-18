@@ -9,16 +9,18 @@ public:
 
     // Возвращает размер изображения
     Size GetSize() const {
-        // TODO: GetSize для Texture
-        return { 0, 0 };
+        return GetImageSize(image_);
     }
 
     // Возвращает цвет пикселя.
     // Если координаты выходят за границы изображения, возвращается пробел
     char GetPixelColor(Point p) const {
-        (void)p;
-        // TODO: GetPixelColor для Texture
-        return ' ';
+        if (IsPointInSize(p, GetSize())) {
+            return image_.at(p.y).at(p.x);
+        }
+        else {
+            return ' ';
+        }
     }
 
 private:

@@ -38,3 +38,8 @@ inline bool IsPointInEllipse(Point p, Size size) {
     // ѕровер€ем, лежит ли точка в единичном круге
     return x * x + y * y <= 1;
 }
+
+// ѕровер€ет, содержитс€ ли заданна€ точка в пр€моугольнике заданного размера
+inline bool IsPointInSize(Point p, Size size) {
+    return p.x >= 0 && p.y >= 0 && p.x < size.width && p.y < size.height;
+}
