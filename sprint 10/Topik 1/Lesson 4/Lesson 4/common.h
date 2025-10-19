@@ -43,3 +43,10 @@ inline bool IsPointInEllipse(Point p, Size size) {
 inline bool IsPointInSize(Point p, Size size) {
     return p.x >= 0 && p.y >= 0 && p.x < size.width && p.y < size.height;
 }
+
+// Устанавливает цвет пикселя в изображении
+inline void SetPixelColor(Image& image, Point p, char color) {
+    if (IsPointInSize(p, GetImageSize(image))) {
+        image[p.y][p.x] = color;
+    }
+}

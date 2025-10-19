@@ -3,6 +3,7 @@
 #include <iostream>
 #include <map>
 #include <string_view>
+#include <utility>
 
 // Холст, на котором размещаются фигуры
 class Canvas {

@@ -10,24 +10,23 @@ class Shape {
 public:
     // Фигура после создания имеет нулевые координаты и размер,
     // а также не имеет текстуры
-    explicit Shape(ShapeType type) {
-        // TODO: Конструктор Shape(ShapeType type)
-        (void)type;
+    explicit Shape(ShapeType type)
+        : size_{ 0, 0 }, pos_{ 0, 0 }, type_(type) {
     }
 
+    // Установка позиции фигуры
     void SetPosition(Point pos) {
-        (void)pos;
-        // TODO: Метод SetPosition
+        pos_ = pos;
     }
 
+    // Установка размера фигуры
     void SetSize(Size size) {
-        (void)size;
-        // TODO: Метод SetSize
+        size_ = size;
     }
 
+    // Устанавка текстуры фигуры
     void SetTexture(std::shared_ptr<Texture> texture) {
-        (void)texture;
-        // TODO: Метод SetTexture
+        texture_ = std::move(texture);
     }
 
     // Рисует фигуру на указанном изображении
@@ -36,7 +35,42 @@ public:
     // должны отображаться с помощью символа точка '.'
     // Части фигуры, выходящие за границы объекта image, должны отбрасываться.
     void Draw(Image& image) const {
-        (void)image;
-        // TODO: Метод Draw
+        for (int y = 0; y < size_.height; ++y) {
+            for (int x = 0; x < size_.width; ++x) {
+                const Point local_point{ x, y };
+                const Point image_point{ x + pos_.x, y + pos_.y };
+                if (IsPointInShape(local_point)) {
+                    SetPixelColor(image, image_point, GetTextureColor(local_point));
+                }
+            }
+        }
     }
+
+private:
+    
+    char GetTextureColor(Point local_point) const {
+        if (texture_ && IsPointInSize(local_point, texture_->GetSize())) {
+            return texture_->GetPixelColor(local_point);
+        }
+        else {
+            return '.';
+        }
+    }
+
+    bool IsPointInShape(Point local_point) const {
+        switch (type_) {
+        case ShapeType::RECTANGLE:
+            return IsPointInSize(local_point, size_);
+        case ShapeType::ELLIPSE:
+            return IsPointInEllipse(local_point, size_);
+        default:
+            return false;
+        }
+    }
+
+private:
+    Size size_;
+    Point pos_;
+    ShapeType type_;
+    std::shared_ptr<const Texture> texture_;
 };
