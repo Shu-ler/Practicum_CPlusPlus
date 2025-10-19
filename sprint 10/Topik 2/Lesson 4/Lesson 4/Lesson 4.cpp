@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <string>
 #include <string_view>
+#include <algorithm>
 
 using namespace std;
 
@@ -16,12 +17,7 @@ const string_view PLANETS[] = {
 // clang-format on
 
 bool IsPlanet(string_view name) {
-    for (auto const& Planet : PLANETS) {
-        if (Planet == name) {
-            return true;
-        }
-    }
-    return false;
+    return ranges::find(PLANETS, name) != end(PLANETS);
 }
 
 void Test(string_view name) {
