@@ -11,7 +11,11 @@ public:
 
     // Конструктор по умолчанию. Заполняет тайл указанным цветом.
     Tile(char color = ' ') noexcept {
-        /* Реализуйте недостающий код самостоятельно. */
+        for (auto& row : pixels_) {
+            for (auto& pixel : row) {
+                pixel = color;
+            }
+        }
 
         // -------------- не удалять ------------
         assert(instance_count_ >= 0);
@@ -20,7 +24,7 @@ public:
     }
 
     Tile(const Tile& other) {
-        /* Реализуйте недостающий код самостоятельно. */
+        pixels_ = other.pixels_;
 
         // -------------- не удалять ------------
         assert(instance_count_ >= 0);
@@ -40,15 +44,20 @@ public:
      * Если координаты выходят за пределы тайла, метод ничего не делает.
      */
     void SetPixel(Point p, char color) noexcept {
-        /* Реализуйте недостающий код самостоятельно. */
+        if (p.x < 0 || p.x >= SIZE || p.y < 0 || p.y >= SIZE) {
+            return;
+        }
+        pixels_[p.y][p.x] = color;
     }
 
     /**
      * Возвращает цвет пикселя. Если координаты выходят за пределы тайла, возвращается пробел.
      */
     char GetPixel(Point p) const noexcept {
-        /* Реализуйте недостающий функционал самостоятельно. */
-        return ' ';
+        if (p.x < 0 || p.x >= SIZE || p.y < 0 || p.y >= SIZE) {
+            return ' ';
+        }
+        return pixels_[p.y][p.x];
     }
 
     // Возвращает количество экземпляра класса Tile в программе.
@@ -63,6 +72,5 @@ private:
     inline static int instance_count_ = 0;
     // -------------- не удалять ------------
 
-    /* Разместите здесь поля для хранения пикселей тайла. */
-
+    std::array<std::array<char, SIZE>, SIZE> pixels_;
 };

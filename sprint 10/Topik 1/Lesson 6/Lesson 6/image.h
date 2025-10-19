@@ -26,9 +26,7 @@ public:
 
     // Возвращает размер изображения в пикселях.
     Size GetSize() const noexcept {
-        /* Реализуйте метод самостоятельно. */
-
-        return { 0, 0 };
+        return size_;
     }
 
     /**
@@ -36,8 +34,9 @@ public:
      * изображения, возвращает «пробел».
      */
     char GetPixel(Point p) const noexcept {
-        /* Реализуйте метод самостоятельно. */
-
+        if (p.x >= 0 && p.x < size_.width && p.y >= 0 && p.y < size_.height) {
+            return tiles_[GetTileIndex(p)]->GetPixel(GetPosWithinTile(p));
+        }
         return ' ';
     }
 
@@ -46,7 +45,9 @@ public:
      * действие игнорируется.
      */
     void SetPixel(Point p, char color) {
-        /* Реализуйте метод самостоятельно. */
+        if (p.x >= 0 && p.x < size_.width && p.y >= 0 && p.y < size_.height) {
+            tiles_[GetTileIndex(p)].Write()->SetPixel(GetPosWithinTile(p), color);
+        }
     }
 
 private:
@@ -56,6 +57,11 @@ private:
     int GetTileIndex(Point p) const noexcept {
         assert((p.x >= 0) && (p.x < size_.width) && (p.y >= 0) && (p.y < size_.height));
         return (p.y / Tile::SIZE) * size_in_tiles_.width + (p.x / Tile::SIZE);
+    }
+
+    // Возвращать позицию пикселя внутри тайла на основе глобальных координат изображения
+    Point GetPosWithinTile(Point p) const noexcept {
+        return { p.x % Tile::SIZE, p.y % Tile::SIZE };
     }
 
     Size size_;                   // Размер изображения в пикселях.
