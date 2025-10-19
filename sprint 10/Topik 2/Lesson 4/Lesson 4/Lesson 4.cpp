@@ -1,4 +1,5 @@
 ﻿#include <iostream>
+#include <string>
 #include <string_view>
 
 using namespace std;
@@ -6,7 +7,6 @@ using namespace std;
 
 // clang-format off
 
-const int NUM_PLANETS = 9;
 const string_view PLANETS[] = {
     "Mercury"sv, "Venus"sv, "Earth"sv,
     "Mars"sv, "Jupiter"sv, "Saturn"sv,
@@ -16,8 +16,8 @@ const string_view PLANETS[] = {
 // clang-format on
 
 bool IsPlanet(string_view name) {
-    for (int i = 0; i < NUM_PLANETS; ++i) {
-        if (PLANETS[i] == name) {
+    for (auto const& Planet : PLANETS) {
+        if (Planet == name) {
             return true;
         }
     }
@@ -30,8 +30,7 @@ void Test(string_view name) {
 }
 
 int main() {
-    Test("Earth"sv);
-    Test("Jupiter"sv);
-    Test("Pluto"sv);
-    Test("Moon"sv);
+    std::string name;
+    std::getline(std::cin, name);
+    Test(name);
 }
