@@ -79,4 +79,19 @@ namespace trans_cat {
 		return iter == stop_to_routes_.end() ? dummy : iter->second;
 	}
 
+	void TransportCatalogue::SetDistance(StopPtr from, StopPtr to, int distance) {
+		distances_[{from, to}] = distance;
+	}
+
+	int TransportCatalogue::GetDistance(StopPtr from, StopPtr to) const {
+		int distance = -1;	// Для отсутствующей пары остановок устанавливаем значение -1
+		
+		auto iter = distances_.find({ from, to });
+		if (iter != distances_.end()) {
+			distance = iter->second;
+		}
+
+		return distance;
+	}
+
 }	// namespace trans_cat

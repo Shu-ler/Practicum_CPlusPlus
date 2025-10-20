@@ -47,6 +47,16 @@ namespace trans_cat {
 	};
 
 	/**
+	 * Хэшер для пар остановок.
+	*/
+	struct StopsPairHasher {
+		template <typename First, typename Second>
+		size_t operator()(const std::pair<First, Second>& obj) const {
+			return std::hash<First>()(obj.first) + 37 * std::hash<Second>()(obj.second);
+		}
+	};
+
+	/**
 	 * Справочник транспортного каталога, содержащий информацию о остановках и маршрутах общественного транспорта.
 	 * Этот класс отвечает за хранение данных, таких как названия остановок, их географические координаты, а также
 	 * маршруты и связанные с ними остановки.
@@ -74,6 +84,12 @@ namespace trans_cat {
 		// возвращается пустое множеств
 		const RouteSet& GetRoutesByStop(StopPtr stop) const;
 
+		// Метод установки расстояния между двумя остановками
+		void SetDistance(StopPtr from, StopPtr to, int distance);
+
+		// Метод получения расстояния между двумя остановками
+		int GetDistance(StopPtr from, StopPtr to) const;
+
 	private:
 		// Метод добавления маршрута в справочник
 		void AddRoute(std::string name, StopsList stops);
@@ -89,6 +105,9 @@ namespace trans_cat {
 
 		// 'Индекс' остановок и маршрутов
 		StopRouteIndex stop_to_routes_;
+
+		// Контейнер хранения расстояний между остановками
+		std::unordered_map<std::pair<StopPtr, StopPtr>, int, StopsPairHasher> distances_;
 	};
 
 }	// namespace trans_cat
