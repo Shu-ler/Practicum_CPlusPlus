@@ -31,12 +31,6 @@ namespace trans_cat {
 		StopsList stops_;	// —писок остановок (вектор указателей на остановки)
 	};
 
-	using RoutePtr = const Route*;
-	using RouteStorage = std::deque<Route>;
-	using RouteIndex = std::unordered_map<std::string_view, Route*>;
-	using RouteSet = std::unordered_set<RoutePtr>;
-	using StopRouteIndex = std::unordered_map<StopPtr, RouteSet>;
-
 	/**
 	 * —труктура RouteStatistics - хранение статистики маршрута общественного транспорта.
 	 */
@@ -55,6 +49,13 @@ namespace trans_cat {
 			return std::hash<First>()(obj.first) + 37 * std::hash<Second>()(obj.second);
 		}
 	};
+
+	using RoutePtr = const Route*;
+	using RouteStorage = std::deque<Route>;
+	using RouteIndex = std::unordered_map<std::string_view, Route*>;
+	using RouteSet = std::unordered_set<RoutePtr>;
+	using StopRouteIndex = std::unordered_map<StopPtr, RouteSet>;
+	using StopsDistancesStorage = std::unordered_map<std::pair<StopPtr, StopPtr>, int, StopsPairHasher>;
 
 	/**
 	 * —правочник транспортного каталога, содержащий информацию о остановках и маршрутах общественного транспорта.
@@ -107,7 +108,7 @@ namespace trans_cat {
 		StopRouteIndex stop_to_routes_;
 
 		//  онтейнер хранени€ рассто€ний между остановками
-		std::unordered_map<std::pair<StopPtr, StopPtr>, int, StopsPairHasher> distances_;
+		StopsDistancesStorage distances_;
 	};
 
 }	// namespace trans_cat
