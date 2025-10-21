@@ -77,6 +77,25 @@ std::vector<std::string_view> ParseRoute(std::string_view route) {
 }
 
 CommandDescription ParseCommandDescription(std::string_view line) {
+    CommandDescription result{};
+    std::smatch match;
+
+    // Преобразуем string_view в string
+    std::string line_str(line);
+
+    for (const auto& cmd_reg : InputReader::cmd_regs) {
+        if (std::regex_match(line_str, match, cmd_reg.first)) {
+            result.command = cmd_reg.second;
+            result.id = match[1].str();
+            result.description = match[2].str();
+            break;
+        }
+    }
+
+    return result;
+}
+
+CommandDescription ParseCommandDescriptionOld(std::string_view line) {  // TODO удалить из релиза
     auto colon_pos = line.find(':');
     if (colon_pos == line.npos) {
         return {};
