@@ -27,6 +27,42 @@ Coordinates ParseCoordinates(std::string_view str) {
     return { lat, lng };
 }
 
+trans_cat::StopData ParseStopData(std::string str) {
+    trans_cat::StopData result;
+    std::smatch coords_match;
+    
+    // Выделение географических координат
+    if (!std::regex_match(str, coords_match, InputReader::coords_regex)) {
+        throw std::invalid_argument("Invalid stop data format");
+    }
+
+    // Попытка получения географических координат
+    try {
+        result.coordinates_.lat = std::stod(std::string(coords_match[1].str()));
+        result.coordinates_.lng = std::stod(std::string(coords_match[2].str()));
+    }
+    catch (...) {
+        throw std::invalid_argument("Invalid coordinates in stop data");
+    }
+
+    // Остаток строки - набор расстояний и наименований соседних остановок
+    std::string remaining_string(coords_match[3].str());
+    
+    // Итераторы - бегунок и конец строки
+    std::sregex_iterator it(remaining_string.begin(), remaining_string.end(), InputReader::distance_regex);
+    std::sregex_iterator end;
+
+    // Парсинг соседних остановок
+    for (; it != end; ++it) {
+        std::smatch match = *it;
+        int distance = std::stoi(match[1].str());
+        std::string name(match[2].str());
+        result.nearby_stops.emplace(std::move(name), distance);
+    }
+
+    return result;
+}
+
 /**
  * Удаляет пробелы в начале и конце строки
  */
@@ -121,6 +157,18 @@ void InputReader::ParseLine(std::string_view line) {
     if (command_description) {
         commands_.push_back(std::move(command_description));
     }
+    
+    //// Если команда добавления остановки
+    //if (command_description.command == "Stop") {
+    //    
+    //    // Разбираем расстояния до соседних остановок
+    //    std::vector<std::string_view> distances = Split(command_description.description, ',');
+
+    //    // Сохраняем расстояния
+    //    for (const auto& distance : distances) {
+    //        // Здесь нужно добавить код для разбора расстояния и сохранения его в структуре данных
+    //    }
+    //}
 }
 
 void InputReader::ApplyCommands([[maybe_unused]] trans_cat::TransportCatalogue& catalogue) const {

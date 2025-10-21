@@ -20,9 +20,10 @@ struct CommandDescription {
 		return !operator bool();
 	}
 
-	std::string command;      // Ќазвание команды
-	std::string id;           // id маршрута или остановки
-	std::string description;  // ѕараметры команды
+	std::string command{};		// Ќазвание команды
+	std::string id{};			// id маршрута или остановки
+	std::string description{};	// ѕараметры команды
+	std::string distances{};	// ƒл€ команд Stop - рассто€ни€ до соседних остановок
 };
 
 /**
@@ -31,10 +32,26 @@ struct CommandDescription {
 class InputReader {
 public:
 
-	// Ўаблоны регул€рных выражений дл€ парсинга команд
+	// Regex дл€ парсинга команд
+	// 
+	// ƒл€ команды Stop:
+	// ^ Stop([^ \s:] + (? : [^ \s:] *)*) : (.*)$
+	//		[^ \s:] + (? : [^ \s:] *) * Ч id может содержать пробелы, но не включает ':'
+	//		(.*) Ч всЄ остальное Ч description (координаты и рассто€ни€ до соседних остановок)
+	//
+	// ƒл€ команды Bus:
+	// ^ Bus([^ \s:] + ) : (.*)$
+	//		([^ \s:] + ) Ч id без пробелов и ':'
+	//		(.*) Ч всЄ остальное Ч description (маршрут)
 	inline static const std::vector<std::pair<std::regex, std::string>> cmd_regs{
 		std::pair(std::regex(R"(^Stop ([^\s:]+(?: [^\s:]*)*): (.*)$)"), "Stop"),
 		std::pair(std::regex(R"(^Bus ([^\s:]+): (.*)$)"), "Bus") };
+
+	// Regex дл€ координат. »звлекает широту, долготу и оставшуюс€ часть строки
+	inline static const std::regex coords_regex{ R"(^([\d.]+),\s*([\d.]+),\s*(.*)$)" };
+
+	// Regex дл€ рассто€ний. »звлекает рассто€ние и им€ остановки
+	inline static const std::regex distance_regex{R"((\d+)m to ([^,]+))"};
 
 	/**
 	 * «аполнение транспортного справочника из указанного потока

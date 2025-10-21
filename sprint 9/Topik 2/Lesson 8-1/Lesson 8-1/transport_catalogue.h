@@ -24,11 +24,11 @@
 namespace trans_cat {
 
 	/**
-	 * Структура Stop - хранение данных остановки общественного транспорта.
+	 * Структура Stop - хранение данных остановки общественного транспорта
 	 */
-	struct  Stop {
-		std::string name_{};					// Название остановки.
-		Coordinates coordinates_{ 0.0, 0.0 };	// Географические координаты остановки.
+	struct Stop {
+		std::string name_{};					// Название остановки
+		Coordinates coordinates_{ 0.0, 0.0 };	// Географические координаты остановки
 	};
 
 	using StopPtr = const Stop*;
@@ -38,7 +38,15 @@ namespace trans_cat {
 	using StopsIndex = std::unordered_map<std::string_view, Stop*>;
 
 	/**
-	 * Структура Route - хранение данных маршрута общественного транспорта.
+	 * Структура StopData - хранение данных остановки для создания остановки
+	 */
+	struct StopData	{
+		Coordinates coordinates_{ 0.0, 0.0 };						// Географические координаты остановки
+		std::unordered_map<std::string_view, int> nearby_stops{};	// Расстояния до соседних остановок
+	};
+
+	/**
+	 * Структура Route - хранение данных маршрута общественного транспорта
 	 */
 	struct Route {
 		std::string name_;	// Название маршрута
@@ -46,7 +54,7 @@ namespace trans_cat {
 	};
 
 	/**
-	 * Структура RouteStatistics - хранение статистики маршрута общественного транспорта.
+	 * Структура RouteStatistics - хранение статистики маршрута общественного транспорта
 	 */
 	struct RouteStatistics {
 		size_t total_stops = 0;      // Общее количество остановок в маршруте
