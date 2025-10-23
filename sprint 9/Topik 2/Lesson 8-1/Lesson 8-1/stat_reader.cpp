@@ -23,37 +23,39 @@ namespace stat_r {
 	}
 
 	void ProcessBusRequest(const trans_cat::TransportCatalogue& transport_catalogue,
-		const std::string_view& obj_name, std::ostream& output) {
+		const std::string_view& route_name, std::ostream& output) {
 
 		// Ищем маршрут в транспортном справочнике
-		auto route = transport_catalogue.FindRoute(obj_name);
+		auto route = transport_catalogue.FindRoute(route_name);
 		if (route) {
 
 			// Получаем статистику по маршруту
 			trans_cat::RouteStatistics stat = transport_catalogue.GetStat(route);
 
 			// Выводим статистику в нужном формате
-			output << "Bus " << obj_name << ": "
+			output << "Bus " << route_name << ": "
 				<< stat.total_stops << " stops on route, "
 				<< stat.unique_stops << " unique stops, "
-				<< std::fixed << std::setprecision(2) << stat.route_length << " route length" << std::endl;
+				<< std::fixed << std::setprecision(0) << stat.route_length << " route length, "
+				<< std::fixed << std::setprecision(5) << stat.curvature << " curvature" 
+				<< std::endl;
 		}
 		else {
 
 			// Если маршрут не найден
-			output << "Bus " << obj_name << ": not found" << std::endl;
+			output << "Bus " << route_name << ": not found" << std::endl;
 		}
 	}
 
 	void ProcessStopRequest(const trans_cat::TransportCatalogue& transport_catalogue,
-		const std::string_view& obj_name, std::ostream& output) {
-		auto stop = transport_catalogue.FindStop(obj_name);
+		const std::string_view& stop_name, std::ostream& output) {
+		auto stop = transport_catalogue.FindStop(stop_name);
 		if (stop) {
 			// Остановка найдена
 			auto& routes_set = transport_catalogue.GetRoutesByStop(stop);
 
 			if (routes_set.empty()) {
-				output << "Stop " << obj_name << ": no buses" << std::endl;
+				output << "Stop " << stop_name << ": no buses" << std::endl;
 			}
 			else {
 				// Собираем названия маршрутов в вектор
@@ -66,7 +68,7 @@ namespace stat_r {
 				std::sort(route_names.begin(), route_names.end());
 
 				// Выводим отсортированные названия маршрутов
-				output << "Stop " << obj_name << ": buses ";
+				output << "Stop " << stop_name << ": buses ";
 
 				for (const auto& route_name : route_names) {
 					output << route_name;
@@ -79,7 +81,7 @@ namespace stat_r {
 		}
 		else {
 			// Остановка не найдена
-			output << "Stop " << obj_name << ": not found" << std::endl;
+			output << "Stop " << stop_name << ": not found" << std::endl;
 		}
 	}
 

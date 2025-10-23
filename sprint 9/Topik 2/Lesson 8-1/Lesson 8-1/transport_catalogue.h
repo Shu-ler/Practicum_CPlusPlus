@@ -37,7 +37,7 @@ namespace trans_cat {
 	using StopsStorage = std::deque<Stop>;
 	using StopsIndex = std::unordered_map<std::string_view, Stop*>;
 
-	/**
+	/*
 	 * Структура StopData - хранение данных остановки для создания остановки
 	 */
 	struct StopData	{
@@ -45,7 +45,7 @@ namespace trans_cat {
 		std::unordered_map<std::string, int> nearby_stops{};	// Расстояния до соседних остановок
 	};
 
-	/**
+	/*
 	 * Структура Route - хранение данных маршрута общественного транспорта
 	 */
 	struct Route {
@@ -53,18 +53,20 @@ namespace trans_cat {
 		StopsList stops_;	// Список остановок (вектор указателей на остановки)
 	};
 
-	/**
+	/*
 	 * Структура RouteStatistics - хранение статистики маршрута общественного транспорта
 	 */
 	struct RouteStatistics {
-		size_t total_stops = 0;      // Общее количество остановок в маршруте
-		size_t unique_stops = 0;     // Количество уникальных остановок
-		double route_length = 0.0;   // Длина маршрута в метрах
+		size_t total_stops = 0;				// Общее количество остановок в маршруте
+		size_t unique_stops = 0;			// Количество уникальных остановок
+		double route_length = 0.0;			// Длина маршрута в метрах
+		double route_length_direct = 0.0;	// Длина маршрута по прямой (географическое расстояние) в метрах;
+		double curvature = 0.0;				// Извилистость маршрута
 	};
 
-	/**
+	/*
 	 * Хэшер для пар остановок.
-	*/
+	 */
 	struct StopsPairHasher {
 		template <typename First, typename Second>
 		size_t operator()(const std::pair<First, Second>& obj) const {
@@ -79,11 +81,11 @@ namespace trans_cat {
 	using StopRouteIndex = std::unordered_map<StopPtr, RouteSet>;
 	using StopsDistancesStorage = std::unordered_map<std::pair<StopPtr, StopPtr>, int, StopsPairHasher>;
 
-	/**
+	/*
 	 * Справочник транспортного каталога, содержащий информацию о остановках и маршрутах общественного транспорта.
 	 * Этот класс отвечает за хранение данных, таких как названия остановок, их географические координаты, а также
 	 * маршруты и связанные с ними остановки.
-	*/
+	 */
 	class TransportCatalogue {
 	public:
 

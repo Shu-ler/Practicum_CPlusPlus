@@ -42,12 +42,12 @@ public:
 	 *
 	 * ƒл€ команды Bus:
 	 * ^ Bus([^ \s:] + ) : (.*)$
-	 *		([^ \s:] + ) Ч id без пробелов и ':'
+	 *		[^ \s:] + (? : [^ \s:] *) * Ч id может содержать пробелы, но не включает ':'
 	 *		(.*) Ч всЄ остальное Ч description (маршрут)
 	 */
 	inline static const std::vector<std::pair<std::regex, std::string>> cmd_regs{
 		std::pair(std::regex(R"(^Stop ([^\s:]+(?: [^\s:]*)*): (.*)$)"), "Stop"),
-		std::pair(std::regex(R"(^Bus ([^\s:]+): (.*)$)"), "Bus") };
+		std::pair(std::regex(R"(^Bus ([^\s:]+(?: [^\s:]*)*): (.*)$)"), "Bus") };
 
 	/*
 	 * Regex дл€ координат. »звлекает широту, долготу и опциональную оставшуюс€ часть строки

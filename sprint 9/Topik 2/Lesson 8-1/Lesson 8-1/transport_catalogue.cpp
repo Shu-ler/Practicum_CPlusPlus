@@ -67,14 +67,26 @@ namespace trans_cat {
 		}
 		stat.unique_stops = unique_stops.size();
 
-		// Подсчёт длины маршрута
+		// Подсчёт длины маршрута в географических координатах и фактических расстояниях
 		std::optional<Coordinates> prev_pos;
+		std::optional<StopPtr> prev_stop;
 		for (auto stop : route->stops_) {
 			if (prev_pos) {
-				stat.route_length += ComputeDistance(*prev_pos, stop->coordinates_);
+				stat.route_length_direct += ComputeDistance(*prev_pos, stop->coordinates_);
+				if (prev_stop) {
+					int road_distance = GetDistance(*prev_stop, stop);
+					stat.route_length += road_distance;
+				}
 			}
 			prev_pos = stop->coordinates_;
+			prev_stop = stop;
 		}
+
+		// Расчёт извилистости маршрута
+		stat.curvature = (stat.route_length_direct > 0) 
+			? stat.route_length / stat.route_length_direct 
+			: 0;
+
 		return stat;
 	}
 
@@ -85,11 +97,19 @@ namespace trans_cat {
 	}
 
 	int TransportCatalogue::GetDistance(StopPtr from, StopPtr to) const {
-		int distance = -1;	// Для отсутствующей пары остановок устанавливаем значение -1
+		int distance = 0;	// Для отсутствующей пары остановок устанавливаем значение 0
 
+		// Пытаемся найти расстояние от from до to
 		auto iter = distances_.find({ from, to });
 		if (iter != distances_.end()) {
 			distance = iter->second;
+		}
+		else {
+			// Если не нашли, пытаемся найти расстояние от to до from
+			auto reverse_iter = distances_.find({ to, from });
+			if (reverse_iter != distances_.end()) {
+				distance = reverse_iter->second;
+			}
 		}
 
 		return distance;
