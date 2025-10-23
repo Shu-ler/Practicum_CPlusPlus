@@ -90,10 +90,15 @@ namespace trans_cat {
 		return stat;
 	}
 
-	const RouteSet& TransportCatalogue::GetRoutesByStop(StopPtr stop) const {
-		static const RouteSet dummy;
-		auto iter = stop_to_routes_.find(stop);
-		return iter == stop_to_routes_.end() ? dummy : iter->second;
+	const std::set<std::string_view> TransportCatalogue::GetRoutesNamesByStop(StopPtr stop) const {
+		std::set<std::string_view> routes_name;
+
+		auto routes_set = GetRoutesByStop(stop);
+		for (const auto& route : routes_set) {
+			routes_name.insert(route->name_); 
+		}
+
+		return routes_name;
 	}
 
 	int TransportCatalogue::GetDistance(StopPtr from, StopPtr to) const {
@@ -174,5 +179,10 @@ namespace trans_cat {
 		}
 	}
 
+	const RouteSet& TransportCatalogue::GetRoutesByStop(StopPtr stop) const {
+		static const RouteSet dummy;
+		auto iter = stop_to_routes_.find(stop);
+		return iter == stop_to_routes_.end() ? dummy : iter->second;
+	}
 
 }	// namespace trans_cat

@@ -6,6 +6,7 @@ namespace stat_r {
 
 	void ParseAndPrintStat(const trans_cat::TransportCatalogue& transport_catalogue, std::string_view request,
 		std::ostream& output) {
+
 		// Разбиваем запрос на название маршрута и команду
 		size_t pos = request.find(' ');
 		std::string_view command = request.substr(0, pos);
@@ -37,7 +38,7 @@ namespace stat_r {
 				<< stat.total_stops << " stops on route, "
 				<< stat.unique_stops << " unique stops, "
 				<< std::fixed << std::setprecision(0) << stat.route_length << " route length, "
-				<< std::fixed << std::setprecision(5) << stat.curvature << " curvature" 
+				<< std::fixed << std::setprecision(5) << stat.curvature << " curvature"
 				<< std::endl;
 		}
 		else {
@@ -51,28 +52,22 @@ namespace stat_r {
 		const std::string_view& stop_name, std::ostream& output) {
 		auto stop = transport_catalogue.FindStop(stop_name);
 		if (stop) {
+		
 			// Остановка найдена
-			auto& routes_set = transport_catalogue.GetRoutesByStop(stop);
+			auto& routes_names = transport_catalogue.GetRoutesNamesByStop(stop);
 
-			if (routes_set.empty()) {
+			if (routes_names.empty()) {
 				output << "Stop " << stop_name << ": no buses" << std::endl;
 			}
 			else {
-				// Собираем названия маршрутов в вектор
-				std::vector<std::string> route_names;
-				for (auto& route : routes_set) {
-					route_names.push_back(route->name_);
-				}
-
-				// Сортируем вектор с названиями маршрутов
-				std::sort(route_names.begin(), route_names.end());
 
 				// Выводим отсортированные названия маршрутов
 				output << "Stop " << stop_name << ": buses ";
 
-				for (const auto& route_name : route_names) {
-					output << route_name;
-					if (route_name != route_names.back()) {
+				auto it = routes_names.begin();
+				for (; it != routes_names.end(); ++it) {
+					output << *it;
+					if (std::next(it) != routes_names.end()) {
 						output << " ";
 					}
 				}
@@ -80,6 +75,7 @@ namespace stat_r {
 			}
 		}
 		else {
+			
 			// Остановка не найдена
 			output << "Stop " << stop_name << ": not found" << std::endl;
 		}
