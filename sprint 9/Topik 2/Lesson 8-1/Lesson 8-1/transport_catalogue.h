@@ -42,7 +42,7 @@ namespace trans_cat {
 	 */
 	struct StopData	{
 		Coordinates coordinates{ 0.0, 0.0 };						// Географические координаты остановки
-		std::unordered_map<std::string_view, int> nearby_stops{};	// Расстояния до соседних остановок
+		std::unordered_map<std::string, int> nearby_stops{};	// Расстояния до соседних остановок
 	};
 
 	/**
@@ -86,8 +86,6 @@ namespace trans_cat {
 	*/
 	class TransportCatalogue {
 	public:
-		// Метод добавления остановки в справочник
-		void AddStop(std::string name, Coordinates pos);
 
 		// Метод добавления остановки в справочник
 		// Возвращает указатель на добавленную остановку
@@ -116,13 +114,19 @@ namespace trans_cat {
 
 	private:
 
-		Stop* CreateStop(std::string& name, StopData& stopdata);
+		// Создаёт новую остановку и добавляет её в транспортный справочник.
+	 	Stop* CreateStop(std::string& name, StopData& stopdata);
 
+		// Создаёт новую остановку без координат и расстояний и добавляет её в транспортный справочник.
+		StopPtr CreateStopWithoutData(std::string& name);
+
+		// Метод установки координат остановки
 		void SetCoordinates(Stop* stop, StopData& stopdata);
 
 		// Метод установки расстояния между двумя остановками
 		void SetDistance(StopPtr from, StopPtr to, int distance);
 
+		// Метод установки расстояний между остановками
 		void SetDistances(Stop* added_stop, StopData& stopdata);
 
 		// Метод добавления маршрута в справочник
