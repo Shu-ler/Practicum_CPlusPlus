@@ -7,28 +7,10 @@
 #include "stat_reader.h"
 
 /**
- * ѕарсит строку вида "10.123,  -30.1837" и возвращает пару координат (широта, долгота)
+ * ѕарсит строку с координатами остановки и рассто€ни€ми до соседних остановок
  */
-Coordinates ParseCoordinates(std::string_view str) {
-    static const double nan = std::nan("");
-
-    auto not_space = str.find_first_not_of(' ');
-    auto comma = str.find(',');
-
-    if (comma == str.npos) {
-        return { nan, nan };
-    }
-
-    auto not_space2 = str.find_first_not_of(' ', comma + 1);
-
-    double lat = std::stod(std::string(str.substr(not_space, comma - not_space)));
-    double lng = std::stod(std::string(str.substr(not_space2)));
-
-    return { lat, lng };
-}
-
 trans_cat::StopData ParseStopData(std::string str) {
-    trans_cat::StopData result;
+    trans_cat::StopData stop_data;
     std::smatch coords_match;
     
     // ¬ыделение географических координат
@@ -38,8 +20,8 @@ trans_cat::StopData ParseStopData(std::string str) {
 
     // ѕопытка получени€ географических координат
     try {
-        result.coordinates_.lat = std::stod(std::string(coords_match[1].str()));
-        result.coordinates_.lng = std::stod(std::string(coords_match[2].str()));
+        stop_data.coordinates.lat = std::stod(std::string(coords_match[1].str()));
+        stop_data.coordinates.lng = std::stod(std::string(coords_match[2].str()));
     }
     catch (...) {
         throw std::invalid_argument("Invalid coordinates in stop data");
@@ -57,10 +39,10 @@ trans_cat::StopData ParseStopData(std::string str) {
         std::smatch match = *it;
         int distance = std::stoi(match[1].str());
         std::string name(match[2].str());
-        result.nearby_stops.emplace(std::move(name), distance);
+        stop_data.nearby_stops.emplace(std::move(name), distance);
     }
 
-    return result;
+    return stop_data;
 }
 
 /**
@@ -131,44 +113,11 @@ CommandDescription ParseCommandDescription(std::string_view line) {
     return result;
 }
 
-CommandDescription ParseCommandDescriptionOld(std::string_view line) {  // TODO удалить из релиза
-    auto colon_pos = line.find(':');
-    if (colon_pos == line.npos) {
-        return {};
-    }
-
-    auto space_pos = line.find(' ');
-    if (space_pos >= colon_pos) {
-        return {};
-    }
-
-    auto not_space = line.find_first_not_of(' ', space_pos);
-    if (not_space >= colon_pos) {
-        return {};
-    }
-
-    return { std::string(line.substr(0, space_pos)),
-            std::string(line.substr(not_space, colon_pos - not_space)),
-            std::string(line.substr(colon_pos + 1)) };
-}
-
 void InputReader::ParseLine(std::string_view line) {
     auto command_description = ParseCommandDescription(line);
     if (command_description) {
         commands_.push_back(std::move(command_description));
     }
-    
-    //// ≈сли команда добавлени€ остановки
-    //if (command_description.command == "Stop") {
-    //    
-    //    // –азбираем рассто€ни€ до соседних остановок
-    //    std::vector<std::string_view> distances = Split(command_description.description, ',');
-
-    //    // —охран€ем рассто€ни€
-    //    for (const auto& distance : distances) {
-    //        // «десь нужно добавить код дл€ разбора рассто€ни€ и сохранени€ его в структуре данных
-    //    }
-    //}
 }
 
 void InputReader::ApplyCommands([[maybe_unused]] trans_cat::TransportCatalogue& catalogue) const {
@@ -177,7 +126,7 @@ void InputReader::ApplyCommands([[maybe_unused]] trans_cat::TransportCatalogue& 
     // ќбрабатываем команды типа "Stop"
     for (auto const& cur : commands_) {
         if (cur.command == stop_cmd) {
-            catalogue.AddStop(cur.id, ParseCoordinates(cur.description));
+            catalogue.AddStop(cur.id, ParseStopData(cur.description));
         }
     }
 

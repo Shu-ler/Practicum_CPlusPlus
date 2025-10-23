@@ -41,7 +41,7 @@ namespace trans_cat {
 	 * Структура StopData - хранение данных остановки для создания остановки
 	 */
 	struct StopData	{
-		Coordinates coordinates_{ 0.0, 0.0 };						// Географические координаты остановки
+		Coordinates coordinates{ 0.0, 0.0 };						// Географические координаты остановки
 		std::unordered_map<std::string_view, int> nearby_stops{};	// Расстояния до соседних остановок
 	};
 
@@ -89,6 +89,10 @@ namespace trans_cat {
 		// Метод добавления остановки в справочник
 		void AddStop(std::string name, Coordinates pos);
 
+		// Метод добавления остановки в справочник
+		// Возвращает указатель на добавленную остановку
+		StopPtr AddStop(std::string name, StopData stopdata);
+
 		// Метод добавления маршрута в справочник
 		void AddRoute(std::string name, StopsNames stops_names);
 
@@ -107,13 +111,20 @@ namespace trans_cat {
 		// возвращается пустое множеств
 		const RouteSet& GetRoutesByStop(StopPtr stop) const;
 
-		// Метод установки расстояния между двумя остановками
-		void SetDistance(StopPtr from, StopPtr to, int distance);
-
 		// Метод получения расстояния между двумя остановками
 		int GetDistance(StopPtr from, StopPtr to) const;
 
 	private:
+
+		Stop* CreateStop(std::string& name, StopData& stopdata);
+
+		void SetCoordinates(Stop* stop, StopData& stopdata);
+
+		// Метод установки расстояния между двумя остановками
+		void SetDistance(StopPtr from, StopPtr to, int distance);
+
+		void SetDistances(Stop* added_stop, StopData& stopdata);
+
 		// Метод добавления маршрута в справочник
 		void AddRoute(std::string name, StopsList stops);
 

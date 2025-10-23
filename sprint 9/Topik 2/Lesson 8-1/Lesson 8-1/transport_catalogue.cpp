@@ -1,6 +1,8 @@
 #include "transport_catalogue.h"
 #include <unordered_set>
 #include <optional>
+#include <ranges>
+#include <string_view>
 
 namespace trans_cat {
 
@@ -11,6 +13,41 @@ namespace trans_cat {
 		// Добавляем указатель на остановку в индекс по имени
 		auto added_ptr = &stops_.back();
 		stop_by_name_[added_ptr->name_] = added_ptr;
+	}
+
+	StopPtr TransportCatalogue::AddStop(std::string name, StopData stopdata) {
+		Stop* added_stop = nullptr;
+
+		// Проверка наличия остановки в каталоге
+		auto it = stop_by_name_.find(name);
+
+		// Остановка не найдена - создание новой остановки
+		if (it == stop_by_name_.end()) {
+			added_stop = CreateStop(name, stopdata);
+		} 
+
+		// Остановка найдена - изменение координат 
+		else {
+			added_stop = it->second;
+			SetCoordinates(added_stop, stopdata);
+		}
+
+		// Заполнение данных соседних остановок
+		SetDistances(added_stop, stopdata);
+
+		return added_stop;
+	}
+
+	Stop* TransportCatalogue::CreateStop(std::string& name, StopData& stopdata) {
+		
+		// Создаём новую остановку и добавляем её в контейнер
+		stops_.push_back({ std::move(name), stopdata.coordinates });
+
+		// Добавляем указатель на остановку в индекс по имени
+		auto added_stop = &stops_.back();
+		stop_by_name_[added_stop->name_] = added_stop;
+
+		return added_stop;
 	}
 
 	void TransportCatalogue::AddRoute(std::string name, StopsList stops) {
@@ -25,6 +62,11 @@ namespace trans_cat {
 		for (auto stop : added_ptr->stops_) {
 			stop_to_routes_[stop].insert(added_ptr);
 		}
+	}
+
+	void TransportCatalogue::SetCoordinates(Stop* stop, StopData& stopdata) {
+		stop->coordinates_.lat = stopdata.coordinates.lat;
+		stop->coordinates_.lng = stopdata.coordinates.lng;
 	}
 
 	void TransportCatalogue::AddRoute(std::string name, StopsNames stops_names) {
@@ -81,6 +123,18 @@ namespace trans_cat {
 
 	void TransportCatalogue::SetDistance(StopPtr from, StopPtr to, int distance) {
 		distances_[{from, to}] = distance;
+	}
+
+	void TransportCatalogue::SetDistances(Stop* added_stop, StopData& stopdata) {
+		for (const auto& stop : stopdata.nearby_stops) {
+			auto target_stop = FindStop(stop.first);
+			if (target_stop == nullptr) {
+				StopData blank_data{};
+				std::string stop_name(stop.first);
+				target_stop = AddStop(stop_name, blank_data);
+			}
+			SetDistance(added_stop, target_stop, stop.second);
+		}
 	}
 
 	int TransportCatalogue::GetDistance(StopPtr from, StopPtr to) const {
