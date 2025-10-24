@@ -6,7 +6,7 @@
 
 namespace trans_cat {
 
-	StopPtr TransportCatalogue::AddStop(std::string name, StopData stopdata) {
+	StopPtr TransportCatalogue::AddStop(std::string name, StopData& stopdata) {
 		Stop* added_stop = nullptr;
 
 		// Проверка наличия остановки в каталоге
@@ -29,7 +29,7 @@ namespace trans_cat {
 		return added_stop;
 	}
 
-	void TransportCatalogue::AddRoute(std::string name, StopsNames stops_names) {
+	void TransportCatalogue::AddRoute(std::string name, StopsNames& stops_names) {
 		// Создаём вектор указателей на остановки
 		StopsList stops;
 		for (auto stop_name : stops_names) {
@@ -82,7 +82,7 @@ namespace trans_cat {
 			prev_stop = stop;
 		}
 
-		// Расчёт извилистости маршрута
+		// Вычисление извилистости маршрута
 		stat.curvature = (stat.route_length_direct > 0) 
 			? stat.route_length / stat.route_length_direct 
 			: 0;
@@ -110,14 +110,16 @@ namespace trans_cat {
 			distance = iter->second;
 		}
 		else {
-			// Если не нашли, пытаемся найти расстояние от to до from
+			// Если не нашли - пытаемся найти расстояние от to до from
 			auto reverse_iter = distances_.find({ to, from });
 			if (reverse_iter != distances_.end()) {
 				distance = reverse_iter->second;
 			}
 		}
 
-		return distance;
+		// Возвращаем найденное расстояние.
+		// Если не найдено - возвращаем расстояние по географическим координатам
+		return (distance == 0) ? ComputeDistance(from->coordinates_, to->coordinates_) : distance;
 	}
 
 	/*

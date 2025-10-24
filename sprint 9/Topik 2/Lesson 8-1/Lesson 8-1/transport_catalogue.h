@@ -79,10 +79,10 @@ namespace trans_cat {
 
 		// ћетод добавлени€ остановки в справочник
 		// ¬озвращает указатель на добавленную остановку
-		StopPtr AddStop(std::string name, StopData stopdata);
+		StopPtr AddStop(std::string name, StopData& stopdata);
 
 		// ћетод добавлени€ маршрута в справочник
-		void AddRoute(std::string name, StopsNames stops_names);
+		void AddRoute(std::string name, StopsNames& stops_names);
 
 		// ћетод поиска остановки по имени
 		StopPtr FindStop(std::string_view stop_name) const;
@@ -100,6 +100,10 @@ namespace trans_cat {
 		const std::set<std::string_view> GetRoutesNamesByStop(StopPtr stop) const;
 
 		// ћетод получени€ рассто€ни€ между двум€ остановками
+		// ¬озвращает:
+		//	- если есть в distances_ от 'from' до 'to' - это значение;
+		//	- иначе если есть в distances_ от 'to' до 'from' - это значение;
+		//	- иначе - рассто€ние, вычесленное по 'пр€мой' между географическими координатами остановок
 		int GetDistance(StopPtr from, StopPtr to) const;
 
 	private:
