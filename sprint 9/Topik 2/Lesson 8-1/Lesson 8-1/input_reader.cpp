@@ -17,8 +17,8 @@
  * @return Структура `StopData` с разложенными данными
  * @throws std::invalid_argument Если формат данных некорректен или координаты не могут быть преобразованы
  */
-trans_cat::StopData ParseStopData(std::string str) {
-	trans_cat::StopData stop_data;
+trans_cat::TransferStopData ParseStopData(std::string str) {
+	trans_cat::TransferStopData stop_data;
 	std::smatch coords_match;
 
 	// Выделение географических координат

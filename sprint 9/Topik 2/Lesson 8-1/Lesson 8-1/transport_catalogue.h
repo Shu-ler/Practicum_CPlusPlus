@@ -25,10 +25,10 @@ namespace trans_cat {
 	using StopsIndex = std::unordered_map<std::string_view, Stop*>;
 
 	/*
-	 * Структура StopData - передача данных остановки из функции парсинга команды добавления остановки
-	 * в метод добавления остановки в справочник
+	 * Структура TransferStopData - передача данных остановки из функции парсинга команды добавления остановки
+	 * в метод добавления остановки в справочник и другие функции, использующие данные парсинга
 	 */
-	struct StopData {
+	struct TransferStopData {
 		Coordinates coordinates{ 0.0, 0.0 };					// Географические координаты остановки
 		std::unordered_map<std::string, int> nearby_stops{};	// Расстояния до соседних остановок
 	};
@@ -79,7 +79,7 @@ namespace trans_cat {
 
 		// Метод добавления остановки в справочник
 		// Возвращает указатель на добавленную остановку
-		StopPtr AddStop(std::string name, StopData stopdata);
+		StopPtr AddStop(std::string name, TransferStopData stopdata);
 
 		// Метод добавления маршрута в справочник
 		void AddRoute(std::string name, StopsNames stops_names);
@@ -109,19 +109,19 @@ namespace trans_cat {
 	private:
 
 		// Создаёт новую остановку и добавляет её в транспортный справочник.
-		Stop* CreateStop(std::string& name, StopData& stopdata);
+		Stop* CreateStop(std::string& name, TransferStopData& stopdata);
 
 		// Создаёт новую остановку без координат и расстояний и добавляет её в транспортный справочник.
 		StopPtr CreateStopWithoutData(std::string& name);
 
 		// Метод установки координат остановки
-		void SetCoordinates(Stop* stop, StopData& stopdata);
+		void SetCoordinates(Stop* stop, TransferStopData& stopdata);
 
 		// Метод установки расстояния между двумя остановками
 		void SetDistance(StopPtr from, StopPtr to, int distance);
 
 		// Метод установки расстояний между остановками
-		void SetDistances(Stop* added_stop, StopData& stopdata);
+		void SetDistances(Stop* added_stop, TransferStopData& stopdata);
 
 		// Метод добавления маршрута в справочник
 		void AddRoute(std::string name, StopsList stops);
