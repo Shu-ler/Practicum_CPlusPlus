@@ -17,8 +17,8 @@
  * @return Структура `StopData` с разложенными данными
  * @throws std::invalid_argument Если формат данных некорректен или координаты не могут быть преобразованы
  */
-trans_cat::TransferStopData ParseStopData(std::string str) {
-	trans_cat::TransferStopData stop_data;
+StopData ParseStopData(std::string str) {
+	StopData stop_data;
 	std::smatch coords_match;
 
 	// Выделение географических координат
@@ -146,7 +146,16 @@ void InputReader::ApplyCommands([[maybe_unused]] trans_cat::TransportCatalogue& 
 
 		// Обрабатываем команды типа "Stop"
 		if (cur.command == stop_cmd) {
-			catalogue.AddStop(cur.id, ParseStopData(cur.description));
+			auto stop_data = ParseStopData(cur.description);
+			auto added_stop = catalogue.AddStop(cur.id, stop_data.coordinates);
+			for (const auto& stop : stop_data.nearby_stops) {
+				auto target_stop = catalogue.FindStop(stop.first);
+				if (target_stop == nullptr) {
+					std::string stop_name(stop.first);
+					target_stop = catalogue.AddStop(stop_name, {0,0});
+				}
+				catalogue.SetDistance(added_stop, target_stop, stop.second);
+			}
 		}
 		
 		// Обрабатываем команды типа "Bus"

@@ -6,7 +6,7 @@
 
 namespace trans_cat {
 
-	StopPtr TransportCatalogue::AddStop(std::string name, TransferStopData stopdata) {
+	StopPtr TransportCatalogue::AddStop(std::string name, Coordinates pos) {
 		Stop* added_stop = nullptr;
 
 		// Проверка наличия остановки в каталоге
@@ -14,17 +14,14 @@ namespace trans_cat {
 
 		// Остановка не найдена - создание новой остановки
 		if (it == stop_by_name_.end()) {
-			added_stop = CreateStop(name, stopdata);
+			added_stop = CreateStop(name, pos);
 		}
 
 		// Остановка найдена - изменение координат 
 		else {
 			added_stop = it->second;
-			SetCoordinates(added_stop, stopdata);
+			SetCoordinates(added_stop, pos);
 		}
-
-		// Заполнение данных соседних остановок
-		SetDistances(added_stop, stopdata);
 
 		return added_stop;
 	}
@@ -36,7 +33,7 @@ namespace trans_cat {
 			StopPtr stop = FindStop(stop_name);
 			if (stop == nullptr) {
 				std::string buffer_name(stop_name);
-				stop = CreateStopWithoutData(buffer_name);
+				stop = AddStop(buffer_name, {0,0});
 			}
 			stops.push_back(stop);
 
@@ -122,6 +119,10 @@ namespace trans_cat {
 		return (distance == 0) ? ComputeDistance(from->coordinates_, to->coordinates_) : distance;
 	}
 
+	void TransportCatalogue::SetDistance(StopPtr from, StopPtr to, int distance) {
+		distances_[{from, to}] = distance;
+	}
+
 	/*
 	 * Создаёт новую остановку и добавляет её в транспортный справочник.
 	 *
@@ -129,10 +130,10 @@ namespace trans_cat {
 	 * @param stopdata Данные об остановке, включая координаты и информацию о соседних остановках
 	 * @return Указатель на созданную остановку
 	 */
-	Stop* TransportCatalogue::CreateStop(std::string& name, TransferStopData& stopdata) {
+	Stop* TransportCatalogue::CreateStop(std::string& name, Coordinates pos) {
 
 		// Создаём новую остановку и добавляем её в контейнер
-		stops_.push_back({ std::move(name), stopdata.coordinates });
+		stops_.push_back({ std::move(name), pos });
 
 		// Добавляем указатель на остановку в индекс по имени
 		auto added_stop = &stops_.back();
@@ -141,30 +142,9 @@ namespace trans_cat {
 		return added_stop;
 	}
 
-	StopPtr TransportCatalogue::CreateStopWithoutData(std::string& name) {
-		TransferStopData blank_data{};
-		return AddStop(name, blank_data);
-	}
-
-	void TransportCatalogue::SetCoordinates(Stop* stop, TransferStopData& stopdata) {
-		stop->coordinates_.lat = stopdata.coordinates.lat;
-		stop->coordinates_.lng = stopdata.coordinates.lng;
-	}
-
-
-	void TransportCatalogue::SetDistance(StopPtr from, StopPtr to, int distance) {
-		distances_[{from, to}] = distance;
-	}
-
-	void TransportCatalogue::SetDistances(Stop* added_stop, TransferStopData& stopdata) {
-		for (const auto& stop : stopdata.nearby_stops) {
-			auto target_stop = FindStop(stop.first);
-			if (target_stop == nullptr) {
-				std::string stop_name(stop.first);
-				target_stop = CreateStopWithoutData(stop_name);
-			}
-			SetDistance(added_stop, target_stop, stop.second);
-		}
+	void TransportCatalogue::SetCoordinates(Stop* stop, Coordinates pos) {
+		stop->coordinates_.lat = pos.lat;
+		stop->coordinates_.lng = pos.lng;
 	}
 
 	void TransportCatalogue::AddRoute(std::string name, StopsList stops) {
