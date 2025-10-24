@@ -10,7 +10,7 @@
 
 namespace trans_cat {
 
-	/**
+	/*
 	 * Структура Stop - хранение данных остановки общественного транспорта
 	 */
 	struct Stop {
@@ -25,10 +25,11 @@ namespace trans_cat {
 	using StopsIndex = std::unordered_map<std::string_view, Stop*>;
 
 	/*
-	 * Структура StopData - хранение данных остановки для создания остановки
+	 * Структура StopData - передача данных остановки из функции парсинга команды добавления остановки 
+	 * в метод добавления остановки в справочник
 	 */
 	struct StopData	{
-		Coordinates coordinates{ 0.0, 0.0 };						// Географические координаты остановки
+		Coordinates coordinates{ 0.0, 0.0 };					// Географические координаты остановки
 		std::unordered_map<std::string, int> nearby_stops{};	// Расстояния до соседних остановок
 	};
 
