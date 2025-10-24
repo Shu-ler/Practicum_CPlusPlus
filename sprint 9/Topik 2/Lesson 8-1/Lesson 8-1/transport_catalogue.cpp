@@ -6,7 +6,7 @@
 
 namespace trans_cat {
 
-	StopPtr TransportCatalogue::AddStop(std::string name, StopData& stopdata) {
+	StopPtr TransportCatalogue::AddStop(std::string name, StopData stopdata) {
 		Stop* added_stop = nullptr;
 
 		// Проверка наличия остановки в каталоге
@@ -15,7 +15,7 @@ namespace trans_cat {
 		// Остановка не найдена - создание новой остановки
 		if (it == stop_by_name_.end()) {
 			added_stop = CreateStop(name, stopdata);
-		} 
+		}
 
 		// Остановка найдена - изменение координат 
 		else {
@@ -29,7 +29,7 @@ namespace trans_cat {
 		return added_stop;
 	}
 
-	void TransportCatalogue::AddRoute(std::string name, StopsNames& stops_names) {
+	void TransportCatalogue::AddRoute(std::string name, StopsNames stops_names) {
 		// Создаём вектор указателей на остановки
 		StopsList stops;
 		for (auto stop_name : stops_names) {
@@ -83,8 +83,8 @@ namespace trans_cat {
 		}
 
 		// Вычисление извилистости маршрута
-		stat.curvature = (stat.route_length_direct > 0) 
-			? stat.route_length / stat.route_length_direct 
+		stat.curvature = (stat.route_length_direct > 0)
+			? stat.route_length / stat.route_length_direct
 			: 0;
 
 		return stat;
@@ -95,7 +95,7 @@ namespace trans_cat {
 
 		auto routes_set = GetRoutesByStop(stop);
 		for (const auto& route : routes_set) {
-			routes_name.insert(route->name_); 
+			routes_name.insert(route->name_);
 		}
 
 		return routes_name;
@@ -130,7 +130,7 @@ namespace trans_cat {
 	 * @return Указатель на созданную остановку
 	 */
 	Stop* TransportCatalogue::CreateStop(std::string& name, StopData& stopdata) {
-		
+
 		// Создаём новую остановку и добавляем её в контейнер
 		stops_.push_back({ std::move(name), stopdata.coordinates });
 
