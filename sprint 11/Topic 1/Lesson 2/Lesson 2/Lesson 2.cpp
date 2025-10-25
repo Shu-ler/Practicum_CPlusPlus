@@ -1,14 +1,61 @@
 ﻿#include <cassert>
 #include <string>
+#include <stdexcept>
+#include <iostream>
 
 using namespace std;
 
+inline const int NUM_BRICKS_PER_SQUARE_METER = 32;
+
 class House {
-    // Реализуйте самостоятельно
+public:
+    House(int length, int width, int height)
+        : length_{ length }, width_{ width }, height_{ height } {
+    };
+
+    int GetLength() const {
+        return length_;
+    }
+
+    int GetWidth() const {
+        return width_;
+    }
+
+    int GetHeight() const {
+        return height_;
+    }
+
+private:
+    int length_ = 0;
+    int width_ = 0;
+    int height_ = 0;
 };
 
 class Resources {
-    // Реализуйте самостоятельно
+public:
+    Resources(int brick_count)
+        : brick_count_{brick_count} {
+    };
+
+    int GetBrickCount() const {
+        return brick_count_;
+    }
+
+    void TakeBricks(int count) {
+        
+        if (count < 0) {
+            throw std::out_of_range("Количество кирпичей должно быть положительным.");
+        }
+
+        if (count > brick_count_) {
+            throw std::out_of_range("Количество кирпичей не должно превышать имеющееся количество.");
+        }
+
+        brick_count_ -= count;
+    }
+
+private:
+    int brick_count_ = 0;
 };
 
 struct HouseSpecification {
@@ -18,7 +65,37 @@ struct HouseSpecification {
 };
 
 class Builder {
-    // Реализуйте самостоятельно
+
+public:
+    explicit Builder(Resources& resources)
+        : resources_(resources) {
+    }
+
+    House BuildHouse(const HouseSpecification& spec) {
+
+        // Рассчитываем периметр дома
+        const int perimeter = 2 * (spec.width + spec.length);
+
+        // Рассчитываем площадь стен
+        const int wall_area = perimeter * spec.height;
+
+        // Определяем необходимое количество кирпичей
+        const int num_bricks = NUM_BRICKS_PER_SQUARE_METER * wall_area;
+
+        // Проверяем наличие достаточного количества кирпичей
+        if (num_bricks > resources_.GetBrickCount()) {
+            throw std::runtime_error("Недостаточно кирпичей для построения дома");
+        }
+
+        // Используем ресурсы
+        resources_.TakeBricks(num_bricks);
+
+        // Возвращаем построенный дом
+        return House{ spec.length, spec.width, spec.height };
+    }
+
+private:
+    Resources& resources_;
 };
 
 int main() {
