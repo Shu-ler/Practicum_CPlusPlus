@@ -28,23 +28,122 @@ ostream& operator<<(ostream& out, Color color) {
     return out;
 }
 
+/*
+ * Класс Shape является базовым классом для представления геометрических фигур.
+ * Он определяет общий интерфейс для работы с фигурами, включая получение цвета, 
+ * площади и типа фигуры
+ */
 class Shape {
-    // Напишите реализацию самостоятельно
+public:
+    Shape(Color color)
+        : color_{ color } {
+    };
+
+    // Возвращает текущий цвет фигуры
+    Color GetColor() const {
+        return color_;
+    }
+
+    // Устанавливает новый цвет фигуры
+    void SetColor(Color color) {
+        color_ = color;
+    }
+
+    // Возвращает площадь фигуры (виртуальный метод)
+    virtual double GetArea() const {
+        return 0.0;
+    }
+
+    // Возвращает строку, представляющую тип фигуры (виртуальный метод)
+    virtual std::string GetType() const {
+        return "Shape";
+    }
+
+private:
+    Color color_;
 };
 
-class Rectangle {
-    // Напишите реализацию самостоятельно
+/* 
+ * Класс Rectangle представляет прямоугольник и наследует свойства от класса Shape
+ */
+class Rectangle : public Shape {
+public:
+    Rectangle(double width, double height, Color color)
+        : Shape(color), width_(width), height_(height) {
+    };
+
+    // Возвращает ширину прямоугольника
+    double GetWidth() const {
+        return width_;
+    }
+
+    // Возвращает высоту прямоугольника
+    double GetHeight() const {
+        return height_;
+    }
+
+    // Устанавливает новые значения ширины и высоты прямоугольника
+    void SetSize(double width, double height) {
+        width_ = width;
+        height_ = height;
+    }
+
+    // Вычисляет и возвращает площадь прямоугольника
+    double GetArea() const override {
+        return width_ * height_;
+    }
+
+    // Возвращает строку, представляющую тип фигуры ("Rectangle")
+    std::string GetType() const override {
+        return "Rectangle";
+    }
+
+private:
+    double width_ = 0;
+    double height_ = 0;
 };
 
-class Circle {
-    // Напишите реализацию самостоятельно
+/*
+ * Класс Circle представляет окружность и наследует свойства от класса Shape
+ */
+class Circle : public Shape {
+public:
+    Circle(double radius, Color color)
+        : Shape(color), radius_(radius) {
+    };
+
+    // Возвращает радиус окружности
+    double GetRadius() const {
+        return radius_;
+    }
+
+    // Устанавливает новое значение радиуса окружности
+    void SetRadius(double radius) {
+        radius_ = radius;
+    }
+
+    // Вычисляет и возвращает площадь окружности
+    double GetArea() const override {
+        return M_PI * radius_ * radius_;
+    }
+
+    // Возвращает строку, представляющую тип фигуры ("Circle")
+    std::string GetType() const override {
+        return "Circle";
+    }
+    
+private:
+    double radius_ = 0.0;
 };
 
 // Возвращает суммарную площадь фигур, указатели на которые находятся в переданной коллекции collection
 template <typename ShapeCollection>
 double CalcSumArea(const ShapeCollection& collection) {
-    // Заглушка. Напишите реализацию самостоятельно
-    return 0;
+    double sum = 0.0;
+    for (const auto& shape : collection) {
+        sum += shape->GetArea();
+    }
+    return sum;
 }
 
 void PrintShapeInfo(const Shape& shape) {
