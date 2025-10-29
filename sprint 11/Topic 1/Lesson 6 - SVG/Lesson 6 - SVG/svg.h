@@ -130,7 +130,7 @@ namespace svg {
         // Задаёт толщину шрифта (атрибут font-weight)
         Text& SetFontWeight(std::string font_weight);
 
-        // Задаёт текстовое содержимое объекта (отображается внутри тега text)
+        // Задаёт текстовое содержимое объекта (отображается внутри тега <text>)
         Text& SetData(std::string data);
 
     private:
@@ -139,7 +139,7 @@ namespace svg {
     private:
         Point position_{ 0,0 };     // Координаты опорной точки (атрибуты x и y)
         Point offset_{ 0,0 };       // Cмещение относительно опорной точки (атрибуты dx, dy)
-        uint32_t size_ = 0;         // Размер шрифта (атрибут font-size)
+        uint32_t size_ = 1;         // Размер шрифта (атрибут font-size)
         std::string font_family_{}; // Название шрифта (атрибут font-family)
         std::string font_weight_{}; // Толщина шрифта (атрибут font-weight)
         std::string data_{};        // Содержимое объекта (отображается внутри тега <text>)
@@ -153,7 +153,10 @@ namespace svg {
          Document doc;
          doc.Add(Circle().SetCenter({20, 30}).SetRadius(15));
         */
-        // void Add(???);
+        template <typename ObjectType>
+        void Add(ObjectType object) {
+            AddPtr(std::make_unique<ObjectType>(std::move(object)));
+        }
 
         // Добавляет в svg-документ объект-наследник svg::Object
         void AddPtr(std::unique_ptr<Object>&& obj);
@@ -161,7 +164,8 @@ namespace svg {
         // Выводит в ostream svg-представление документа
         void Render(std::ostream& out) const;
 
-        // Прочие методы и данные, необходимые для реализации класса Document
+    private:
+        std::vector<std::unique_ptr<Object>> objects_;
     };
 
 }  // namespace svg

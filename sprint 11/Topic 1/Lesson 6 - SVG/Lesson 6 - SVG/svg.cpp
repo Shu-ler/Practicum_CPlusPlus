@@ -148,4 +148,25 @@ namespace svg {
             << std::endl;
     }
 
+    // ---------- Document ------------------
+
+    void Document::AddPtr(std::unique_ptr<Object>&& obj) {
+        objects_.emplace_back(std::move(obj));
+    }
+
+    void Document::Render(std::ostream& out) const {
+
+        // Вывод заголовка файла
+        out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n";
+        out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n";
+
+        // Вывод содержимого файла
+        for (const auto& obj : objects_) {
+            obj->Render(RenderContext(out, 2));
+        }
+
+        // Вывод концовки файла
+        out << "</svg>\n";
+    }
+
 }  // namespace svg
