@@ -4,8 +4,14 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace svg {
+
+    /*
+     * Вспомогательная структура, представляющая координаты точки на плоскости.
+     * Используется для определения позиций элементов в SVG-графике
+     */
 
     struct Point {
         Point() = default;
@@ -13,6 +19,7 @@ namespace svg {
             : x(x)
             , y(y) {
         }
+
         double x = 0;
         double y = 0;
     };
@@ -59,6 +66,8 @@ namespace svg {
         virtual ~Object() = default;
 
     private:
+        // Чисто виртуальный метод для предоставления унифицированного интерфейса
+        // для вывода SVG-тегов, реализуемого в производных классах
         virtual void RenderObject(const RenderContext& context) const = 0;
     };
 
@@ -68,12 +77,17 @@ namespace svg {
      */
     class Circle final : public Object {
     public:
+        // Установка центра круга (cx, cy)
         Circle& SetCenter(Point center);
+
+        // Установка радиуса круга (r)
         Circle& SetRadius(double radius);
 
     private:
+        // Вывод координат центра круга (cx, cy) и радиуса (r) в формате SVG
         void RenderObject(const RenderContext& context) const override;
 
+    private:
         Point center_;
         double radius_ = 1.0;
     };
@@ -82,21 +96,24 @@ namespace svg {
      * Класс Polyline моделирует элемент <polyline> для отображения ломаных линий
      * https://developer.mozilla.org/en-US/docs/Web/SVG/Element/polyline
      */
-    class Polyline {
+    class Polyline final : public Object {
     public:
         // Добавляет очередную вершину к ломаной линии
         Polyline& AddPoint(Point point);
 
-        /*
-         * Прочие методы и данные, необходимые для реализации элемента <polyline>
-         */
+    private:
+        // Вывод всех точек ломаной линии в формате SVG
+        void RenderObject(const RenderContext& context) const override;
+
+    private:
+        std::vector<Point> points_;
     };
 
     /*
      * Класс Text моделирует элемент <text> для отображения текста
      * https://developer.mozilla.org/en-US/docs/Web/SVG/Element/text
      */
-    class Text {
+    class Text final : public Object {
     public:
         // Задаёт координаты опорной точки (атрибуты x и y)
         Text& SetPosition(Point pos);
@@ -116,7 +133,16 @@ namespace svg {
         // Задаёт текстовое содержимое объекта (отображается внутри тега text)
         Text& SetData(std::string data);
 
-        // Прочие данные и методы, необходимые для реализации элемента <text>
+    private:
+        void RenderObject(const RenderContext& context) const override;
+
+    private:
+        Point position_{ 0,0 };     // Координаты опорной точки (атрибуты x и y)
+        Point offset_{ 0,0 };       // Cмещение относительно опорной точки (атрибуты dx, dy)
+        uint32_t size_ = 0;         // Размер шрифта (атрибут font-size)
+        std::string font_family_{}; // Название шрифта (атрибут font-family)
+        std::string font_weight_{}; // Толщина шрифта (атрибут font-weight)
+        std::string data_{};        // Содержимое объекта (отображается внутри тега <text>)
     };
 
     class Document {
