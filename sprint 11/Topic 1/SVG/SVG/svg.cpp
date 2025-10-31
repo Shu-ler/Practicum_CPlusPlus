@@ -21,6 +21,8 @@ namespace svg {
 
     using namespace std::literals;
 
+    // -------------------- Object --------------------
+
     void Object::Render(const RenderContext& context) const {
         context.RenderIndent();
 
@@ -30,7 +32,7 @@ namespace svg {
         context.out << std::endl;
     }
 
-    // ---------- Circle ------------------
+    // -------------------- Circle --------------------
 
     Circle& Circle::SetCenter(Point center) {
         center_ = center;
@@ -45,7 +47,8 @@ namespace svg {
     void Circle::RenderObject(const RenderContext& context) const {
         auto& out = context.out;
 
-        context.RenderIndent();
+        auto new_context = context.Indented();
+        new_context.RenderIndent();
 
         out << "<circle cx=\""sv
             << center_.x
@@ -58,7 +61,7 @@ namespace svg {
             << "/>"sv;
     }
 
-    // ---------- Polyline ------------------
+    // -------------------- Polyline --------------------
 
     Polyline& Polyline::AddPoint(Point point) {
         points_.push_back(point);
@@ -68,7 +71,8 @@ namespace svg {
     void Polyline::RenderObject(const RenderContext& context) const {
         auto& out = context.out;
 
-        context.RenderIndent();
+        auto new_context = context.Indented();
+        new_context.RenderIndent();
 
         out << "<polyline points=\""sv;
         bool first = true;
@@ -87,7 +91,7 @@ namespace svg {
             << "/>"sv;
     }
 
-    // ---------- Polyline ------------------
+    // -------------------- Text --------------------
 
     Text& Text::SetPosition(Point pos) {
         position_ = pos;
@@ -122,7 +126,8 @@ namespace svg {
     void Text::RenderObject(const RenderContext& context) const {
         auto& out = context.out;
 
-        context.RenderIndent();
+        auto new_context = context.Indented();
+        new_context.RenderIndent();
 
         // Вывод обязательных атрибутов
         out << "<text "
@@ -148,7 +153,7 @@ namespace svg {
             << std::endl;
     }
 
-    // ---------- Document ------------------
+    // -------------------- Document --------------------
 
     void Document::AddPtr(std::unique_ptr<Object>&& obj) {
         objects_.emplace_back(std::move(obj));

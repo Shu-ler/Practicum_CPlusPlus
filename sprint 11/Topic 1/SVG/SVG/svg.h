@@ -146,11 +146,20 @@ namespace svg {
     };
 
     /*
-     * Абстрактный базовый класс (интерфейс) ObjectContainer
+     * Абстрактный базовый класс (почти интерфейс) ObjectContainer
      * Представляет интерфейс контейнеров SVG-объектов
      */
     class ObjectContainer {
     public:
+        // Метод Add добавляет в svg-документ любой объект-наследник svg::Object.
+        // Пример использования:
+        //  Document doc;
+        //  doc.Add(Circle().SetCenter({20, 30}).SetRadius(15));
+        template <typename ObjectType>
+        void Add(ObjectType object) {
+            AddPtr(std::make_unique<ObjectType>(std::move(object)));
+        }
+
         // Добавляет в svg-документ объект-наследник svg::Object
         // Чисто виртуальный метод, должен быть реализован в производных классах
         virtual void AddPtr(std::unique_ptr<Object>&& obj) = 0;
@@ -181,16 +190,6 @@ namespace svg {
      */
     class Document : public ObjectContainer {
     public:
-        /*
-         Метод Add добавляет в svg-документ любой объект-наследник svg::Object.
-         Пример использования:
-         Document doc;
-         doc.Add(Circle().SetCenter({20, 30}).SetRadius(15));
-        */
-        template <typename ObjectType>
-        void Add(ObjectType object) {
-            AddPtr(std::make_unique<ObjectType>(std::move(object)));
-        }
 
         // Добавляет в svg-документ объект-наследник svg::Object
         void AddPtr(std::unique_ptr<Object>&& obj);
