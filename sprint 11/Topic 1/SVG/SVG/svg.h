@@ -145,7 +145,24 @@ namespace svg {
         std::string data_{};        // Содержимое объекта (отображается внутри тега <text>)
     };
 
-    class Document {
+    /*
+     * ObjectContainer - абстрактный базовый класс, представляющий контейнер SVG-объектов
+     */
+    class ObjectContainer {
+    public:
+        // Добавляет в svg-документ объект-наследник svg::Object
+        // Чисто виртуальный метод, должен быть реализован в производных классах
+        virtual void AddPtr(std::unique_ptr<Object>&& obj) = 0;
+
+    protected:
+        // Защищённый невиртуальный деструктор
+        ~ObjectContainer() = default; 
+    };
+
+    /*
+    * Document - наследник ObjectContainer, конкретная реализация класса ObjectContainer
+    */
+    class Document : public ObjectContainer {
     public:
         /*
          Метод Add добавляет в svg-документ любой объект-наследник svg::Object.
@@ -165,6 +182,7 @@ namespace svg {
         void Render(std::ostream& out) const;
 
     private:
+        // Вектор для хранения объектов документа
         std::vector<std::unique_ptr<Object>> objects_;
     };
 

@@ -4,7 +4,6 @@
 #include <cmath>
 
 // TODO Добавьте в SVG-библиотеку интерфейсы Drawable и ObjectContainer.
-// TODO Позаботьтесь, чтобы класс svg::Document являлся ObjectContainer - ом.
 
 // TODO В основном приложении — то есть в файле main.cpp — внутри пространства 
 // имён shapes создайте классы фигур // Triangle, Star и Snowman, 
