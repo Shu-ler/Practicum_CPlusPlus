@@ -3,6 +3,13 @@
 
 #include <cmath>
 
+// TODO Добавьте в SVG-библиотеку интерфейсы Drawable и ObjectContainer.
+// TODO Позаботьтесь, чтобы класс svg::Document являлся ObjectContainer - ом.
+
+// TODO В основном приложении — то есть в файле main.cpp — внутри пространства 
+// имён shapes создайте классы фигур // Triangle, Star и Snowman, 
+// реализующие интерфейс svg::Drawable.
+
 using namespace std::literals;
 using namespace svg;
 
@@ -55,6 +62,9 @@ int main() {
        doc.Add(Circle().SetCenter({20, 20}).SetRadius(10));
        doc.Render(std::cout);
     */
+
+    /*
+    * ------ Первый вариант main -------------------------------------------------------------
     std::cout << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"sv << std::endl;
     std::cout << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">"sv << std::endl;
 
@@ -64,4 +74,10 @@ int main() {
     c.Render(ctx);
 
     std::cout << "</svg>"sv;
+    * ------ Первый вариант main -------------------------------------------------------------
+    */
+
+    Document doc;
+    doc.Add(Circle().SetCenter({ 20, 20 }).SetRadius(10));
+    doc.Render(std::cout);
 }
