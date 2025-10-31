@@ -146,7 +146,8 @@ namespace svg {
     };
 
     /*
-     * ObjectContainer - абстрактный базовый класс, представляющий контейнер SVG-объектов
+     * Абстрактный базовый класс (интерфейс) ObjectContainer
+     * Представляет интерфейс контейнеров SVG-объектов
      */
     class ObjectContainer {
     public:
@@ -160,8 +161,24 @@ namespace svg {
     };
 
     /*
-    * Document - наследник ObjectContainer, конкретная реализация класса ObjectContainer
-    */
+     * Абстрактный базовый класс (интерфейс) Drawable.
+     * Представляет объекты, которые могут быть нарисованы на любом объекте,
+     * реализующем интерфейс ObjectContainer.
+     */
+    class Drawable {
+    public:
+        // Виртуальный деструктор.
+        // Объекты этого класса будут удаляться через указатель на базовый класс
+        virtual ~Drawable() = default;
+        
+        // Рисует объект на указанном контейнере ObjectContainer
+        // Чисто виртуальный метод, должен быть реализован в производных классах
+        virtual void Draw(ObjectContainer& container) const = 0;
+    };
+
+    /*
+     * Document - наследник ObjectContainer, конкретная реализация класса ObjectContainer
+     */
     class Document : public ObjectContainer {
     public:
         /*
