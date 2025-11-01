@@ -8,6 +8,40 @@
 
 namespace svg {
 
+    // Кастомный тип
+    using Color = std::string;
+
+    // Константа - цвет не задан
+    inline const Color NoneColor{ "none" };
+
+    /*
+     * Класс StrokeLineCap - перечисление типов формы конца линий.
+     * По умолчанию свойство не выводится (свойство 'stroke-linecap')
+     */
+    enum class StrokeLineCap {
+        BUTT,
+        ROUND,
+        SQUARE,
+    };
+
+    // Переопределение оператора вывода для StrokeLineCap
+    std::ostream& operator<<(std::ostream& out, StrokeLineCap value);
+
+    /*
+     * Класс StrokeLineJoin - перечисление типов формы соединения линий.
+     * По умолчанию свойство не выводится (свойство 'stroke-linejoin')
+     */
+    enum class StrokeLineJoin {
+        ARCS,
+        BEVEL,
+        MITER,
+        MITER_CLIP,
+        ROUND,
+    };
+
+    // Переопределение оператора вывода для StrokeLineJoin
+    std::ostream& operator<<(std::ostream& out, StrokeLineJoin value);
+
     /*
      * Вспомогательная структура, представляющая координаты точки на плоскости.
      * Используется для определения позиций элементов в SVG-графике
