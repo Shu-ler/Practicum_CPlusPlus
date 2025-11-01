@@ -1,27 +1,29 @@
 #include "svg.h"
 
-// Экранирует специальные символы SVG
-std::string EscapeSvgText(std::string_view text) {
-	std::string result;
-	for (char c : text) {
-		switch (c) {
-		case '"':  result += "&quot;";  break;
-		case '<':  result += "&lt;";    break;
-		case '>':  result += "&gt;";    break;
-		case '&':  result += "&amp;";   break;
-		case '\'':  result += "&apos;"; break;
-
-		default:   result += c; break;
-		}
-	}
-	return result;
-}
-
 namespace svg {
+
+	// === Реализация вспомогательных функций в namespace detail ===
+
+	std::string detail::EscapeSvgText(std::string_view text) {
+		std::string result;
+		result.reserve(text.size());
+
+		for (char c : text) {
+			switch (c) {
+			case '<':  result += "&lt;";	break;
+			case '>':  result += "&gt;";	break;
+			case '&':  result += "&amp;";	break;
+			case '"':  result += "&quot;";	break;
+			case '\'': result += "&apos;";	break;
+			default:   result += c;			break;
+			}
+		}
+		return result;
+	}
 
 	using namespace std::literals;
 
-	// -------------------- Object --------------------
+	// === Реализация Object ===
 
 	void Object::Render(const RenderContext& context) const {
 		context.RenderIndent();
@@ -32,7 +34,7 @@ namespace svg {
 		context.out << std::endl;
 	}
 
-	// -------------------- Circle --------------------
+	// === Реализация Circle ===
 
 	Circle& Circle::SetCenter(Point center) {
 		center_ = center;
@@ -46,22 +48,15 @@ namespace svg {
 
 	void Circle::RenderObject(const RenderContext& context) const {
 		auto& out = context.out;
-
-		auto new_context = context.Indented();
-		new_context.RenderIndent();
-
-		out << "<circle cx=\""sv
-			<< center_.x
-			<< "\" cy=\""sv
-			<< center_.y
-			<< "\" "sv
-			<< "r=\""sv
-			<< radius_
-			<< "\" "sv
-			<< "/>"sv;
+		out << "<circle";
+		detail::RenderAttr(out, "cx", center_.x);
+		detail::RenderAttr(out, "cy", center_.y);
+		detail::RenderAttr(out, "r", radius_);
+		PathProps<Circle>::RenderAttrs(out); 
+		out << "/>";
 	}
 
-	// -------------------- Polyline --------------------
+	// === Реализация Polyline ===
 
 	Polyline& Polyline::AddPoint(Point point) {
 		points_.push_back(point);
@@ -70,28 +65,19 @@ namespace svg {
 
 	void Polyline::RenderObject(const RenderContext& context) const {
 		auto& out = context.out;
-
-		auto new_context = context.Indented();
-		new_context.RenderIndent();
-
-		out << "<polyline points=\""sv;
+		out << "<polyline points=\"";
 		bool first = true;
-		for (const Point& point : points_) {
-			if (first) {
-				first = false;
-			}
-			else {
-				out << ' ';
-			}
-			out << point.x
-				<< ','
-				<< point.y;
+		for (const auto& point : points_) {
+			if (!first) out << " ";
+			first = false;
+			out << point.x << "," << point.y;
 		}
-		out << "\" "sv
-			<< "/>"sv;
+		out << "\"";
+		PathProps<Polyline>::RenderAttrs(out);
+		out << "/>";
 	}
 
-	// -------------------- Text --------------------
+	// === Реализация Text ===
 
 	Text& Text::SetPosition(Point pos) {
 		position_ = pos;
@@ -125,35 +111,24 @@ namespace svg {
 
 	void Text::RenderObject(const RenderContext& context) const {
 		auto& out = context.out;
+		out << "<text";
+		detail::RenderAttr(out, "x", position_.x);
+		detail::RenderAttr(out, "y", position_.y);
+		detail::RenderAttr(out, "dx", offset_.x);
+		detail::RenderAttr(out, "dy", offset_.y);
+		detail::RenderAttr(out, "font-size", size_);
 
-		auto new_context = context.Indented();
-		new_context.RenderIndent();
+		detail::RenderOptionalAttr(out, "font-family", font_family_);
+		detail::RenderOptionalAttr(out, "font-weight", font_weight_);
 
-		// Вывод обязательных атрибутов
-		out << "<text "
-			<< "x=\"" << position_.x << "\" "
-			<< "y=\"" << position_.y << "\" "
-			<< "dx=\"" << offset_.x << "\" "
-			<< "dy=\"" << offset_.y << "\" "
-			<< "font-size=\"" << size_ << "\"";
+		PathProps<Text>::RenderAttrs(out);
 
-		// Вывод атрибутов с контролем заполнения
-		if (!font_family_.empty()) {
-			out << " font-family=\"" << font_family_ << "\"";
-		}
-
-		if (!font_weight_.empty()) {
-			out << " font-weight=\"" << font_weight_ << "\"";
-		}
-
-		// Вывод собственно текста
-		out << ">"
-			<< EscapeSvgText(data_)
-			<< "</text>"
-			<< std::endl;
+		out << ">";
+		detail::RenderValue(out, data_);
+		out << "</text>";
 	}
 
-	// -------------------- Document --------------------
+	// === Реализация Document ===
 
 	void Document::AddPtr(std::unique_ptr<Object>&& obj) {
 		objects_.emplace_back(std::move(obj));
@@ -167,14 +142,15 @@ namespace svg {
 
 		// Вывод содержимого файла
 		for (const auto& obj : objects_) {
-			obj->Render(RenderContext(out, 2));
+			obj->Render(RenderContext(out, 2).Indented());
+			//out << "\n";
 		}
 
 		// Вывод концовки файла
 		out << "</svg>\n";
 	}
 
-	// -------------------- StrokeLineCap --------------------
+	// === Реализация StrokeLineCap ===
 
 	std::ostream& operator<<(std::ostream& out, StrokeLineCap value) {
 		std::string_view sv;
@@ -187,7 +163,7 @@ namespace svg {
 		return out << sv;
 	}
 
-	// -------------------- StrokeLineJoin --------------------
+	// === Реализация StrokeLineJoin ===
 
 	std::ostream& operator<<(std::ostream& out, StrokeLineJoin value) {
 		std::string_view sv;
@@ -203,3 +179,4 @@ namespace svg {
 	}
 
 }  // namespace svg
+

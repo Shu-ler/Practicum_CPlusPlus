@@ -45,6 +45,9 @@ namespace shapes {
             // Создаём полилинию для звезды
             svg::Polyline star_polyline = CreateStar(center_, outer_radius_, inner_radius_, num_rays_);
             
+            // Устанавливаем цвета
+            star_polyline.SetFillColor("red").SetStrokeColor("black");
+
             // Добавляем полилинию в контейнер
             container.Add(star_polyline);
         };
@@ -88,13 +91,16 @@ namespace shapes {
             svg::Point head_center = head_center_;
             double radius = radius_;
             svg::Circle head;
-            head.SetCenter(head_center).SetRadius(radius);
+            head.SetCenter(head_center).SetRadius(radius)
+                .SetFillColor("rgb(240,240,240)").SetStrokeColor("black");
 
             svg::Circle body;
-            body.SetCenter({ head_center.x, head_center.y + 2 * radius }).SetRadius(1.5 * radius);
+            body.SetCenter({ head_center.x, head_center.y + 2 * radius }).SetRadius(1.5 * radius)
+                .SetFillColor("rgb(240,240,240)").SetStrokeColor("black");
 
             svg::Circle base;
-            base.SetCenter({ head_center.x, head_center.y + 5 * radius }).SetRadius(2 * radius);
+            base.SetCenter({ head_center.x, head_center.y + 5 * radius }).SetRadius(2 * radius)
+                .SetFillColor("rgb(240,240,240)").SetStrokeColor("black");
 
             // Добавляем круги в контейнер
             container.Add(base);
@@ -153,21 +159,26 @@ int main() {
     using namespace std;
 
     vector<unique_ptr<svg::Drawable>> picture;
-
     picture.emplace_back(make_unique<Triangle>(Point{ 100, 20 }, Point{ 120, 50 }, Point{ 80, 40 }));
-    
-    // 5-лучевая звезда с центром {50, 20}, длиной лучей 10 и внутренним радиусом 4
     picture.emplace_back(make_unique<Star>(Point{ 50.0, 20.0 }, 10.0, 4.0, 5));
-    
-    // Снеговик с "головой" радиусом 10, имеющей центр в точке {30, 20}
     picture.emplace_back(make_unique<Snowman>(Point{ 30, 20 }, 10.0));
 
     svg::Document doc;
-    
-    // Так как документ реализует интерфейс ObjectContainer,
-    // его можно передать в DrawPicture в качестве цели для рисования
     DrawPicture(picture, doc);
 
-    // Выводим полученный документ в stdout
+    const Text base_text =  //
+        Text()
+        .SetFontFamily("Verdana"s)
+        .SetFontSize(12)
+        .SetPosition({ 10, 100 })
+        .SetData("Happy New Year!"s);
+    doc.Add(Text{ base_text }
+        .SetStrokeColor("yellow"s)
+        .SetFillColor("yellow"s)
+        .SetStrokeLineJoin(StrokeLineJoin::ROUND)
+        .SetStrokeLineCap(StrokeLineCap::ROUND)
+        .SetStrokeWidth(3));
+    doc.Add(Text{ base_text }.SetFillColor("red"s));
+
     doc.Render(cout);
 }
