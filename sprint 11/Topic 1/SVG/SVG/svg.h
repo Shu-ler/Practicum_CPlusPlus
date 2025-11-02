@@ -684,4 +684,15 @@ namespace svg {
 		std::vector<std::unique_ptr<Object>> objects_;	///< Список объектов документа
 	};
 
+	/**
+	 * @brief Выводит цвет в поток в формате SVG.
+	 *
+	 * Поддерживаемые форматы:
+	 * - std::monostate → "none"
+	 * - std::string   → "red", "#ff0000"
+	 * - Rgb           → "rgb(R,G,B)"
+	 * - Rgba          → "rgba(R,G,B,A)"
+	 */
+	std::ostream& operator<<(std::ostream& out, const Color& color);
+
 }  // namespace svg
