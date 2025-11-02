@@ -1,8 +1,8 @@
-#include "svg.h"
+﻿#include "svg.h"
 
 namespace svg {
 
-	// === ���������� ��������������� ������� � namespace detail ===
+	// === Реализация вспомогательных функций в namespace detail ===
 
 	std::string detail::EscapeSvgText(std::string_view text) {
 		std::string result;
@@ -23,18 +23,18 @@ namespace svg {
 
 	using namespace std::literals;
 
-	// === ���������� Object ===
+	// === Реализация Object ===
 
 	void Object::Render(const RenderContext& context) const {
 		context.RenderIndent();
 
-		// ���������� ����� ���� ����� ����������
+		// Делегируем вывод тега своим подклассам
 		RenderObject(context);
 
 		context.out << std::endl;
 	}
 
-	// === ���������� Circle ===
+	// === Реализация Circle ===
 
 	Circle& Circle::SetCenter(Point center) {
 		center_ = center;
@@ -56,7 +56,7 @@ namespace svg {
 		out << "/>";
 	}
 
-	// === ���������� Polyline ===
+	// === Реализация Polyline ===
 
 	Polyline& Polyline::AddPoint(Point point) {
 		points_.push_back(point);
@@ -77,7 +77,7 @@ namespace svg {
 		out << "/>";
 	}
 
-	// === ���������� Text ===
+	// === Реализация Text ===
 
 	Text& Text::SetPosition(Point pos) {
 		position_ = pos;
@@ -128,7 +128,7 @@ namespace svg {
 		out << "</text>";
 	}
 
-	// === ���������� Document ===
+	// === Реализация Document ===
 
 	void Document::AddPtr(std::unique_ptr<Object>&& obj) {
 		objects_.emplace_back(std::move(obj));
@@ -136,21 +136,21 @@ namespace svg {
 
 	void Document::Render(std::ostream& out) const {
 
-		// ����� ��������� �����
+		// Вывод заголовка файла
 		out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n";
 		out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n";
 
-		// ����� ����������� �����
+		// Вывод содержимого файла
 		for (const auto& obj : objects_) {
 			obj->Render(RenderContext(out, 2).Indented());
 			//out << "\n";
 		}
 
-		// ����� �������� �����
+		// Вывод концовки файла
 		out << "</svg>\n";
 	}
 
-	// === ���������� StrokeLineCap ===
+	// === Реализация StrokeLineCap ===
 
 	std::ostream& operator<<(std::ostream& out, StrokeLineCap value) {
 		std::string_view sv;
@@ -163,7 +163,7 @@ namespace svg {
 		return out << sv;
 	}
 
-	// === ���������� StrokeLineJoin ===
+	// === Реализация StrokeLineJoin ===
 
 	std::ostream& operator<<(std::ostream& out, StrokeLineJoin value) {
 		std::string_view sv;
@@ -178,10 +178,24 @@ namespace svg {
 		return out << sv;
 	}
 
-	// === ���������� Color ===
+	// === Реализация Color ===
 
+	/**
+	 * @brief Выводит цвет в поток в формате SVG.
+	 *
+	 * Использует std::visit и if constexpr для безопасного и эффективного
+	 * доступа к значению variant без исключений.
+	 * 
+	 * Обрабатывает все возможные типы, из которых может состоять svg::Color:
+	 * - std::monostate → выводит "none"
+	 * - std::string   → выводит как есть (например, "red", "#ff0000")
+	 * - svg::Rgb      → выводит в формате rgb(R,G,B)
+	 * - svg::Rgba     → выводит в формате rgba(R,G,B,A)
+	 */
 	std::ostream& operator<<(std::ostream& out, const Color& color) {
-		std::visit([&out](const auto& value) {
+		
+		// Лямбда для обработки каждого типа цвета
+		auto print_color = [&out](const auto& value) {
 			using T = std::decay_t<decltype(value)>;
 
 			if constexpr (std::is_same_v<T, std::monostate>) {
@@ -191,18 +205,26 @@ namespace svg {
 				out << value;
 			}
 			else if constexpr (std::is_same_v<T, Rgb>) {
-				out << "rgb(" << static_cast<int>(value.red) << ","
-					<< static_cast<int>(value.green) << ","
-					<< static_cast<int>(value.blue) << ")";
+				out << "rgb(" << static_cast<int>(value.red) 
+					<< ","
+					<< static_cast<int>(value.green) 
+					<< ","
+					<< static_cast<int>(value.blue) 
+					<< ")";
 			}
 			else if constexpr (std::is_same_v<T, Rgba>) {
-				out << "rgba(" << static_cast<int>(value.red) << ","
-					<< static_cast<int>(value.green) << ","
-					<< static_cast<int>(value.blue) << ","
-					<< value.opacity << ")";
+				out << "rgba(" << static_cast<int>(value.red) 
+					<< ","
+					<< static_cast<int>(value.green) 
+					<< ","
+					<< static_cast<int>(value.blue) 
+					<< ","
+					<< value.opacity 
+					<< ")";
 			}
-			}, color);
+			};
 
+		std::visit(print_color, color);
 		return out;
 	}
 
