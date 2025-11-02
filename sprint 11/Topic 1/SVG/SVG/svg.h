@@ -11,6 +11,22 @@ namespace svg {
 
 	using OptionalString = std::optional<std::string>;
 
+	/**
+	 * @brief Цвет в формате RGB.
+	 *
+	 * Компоненты: red, green, blue — значения от 0 до 255.
+	 */
+	struct Rgb {
+		uint8_t red = 0;
+		uint8_t green = 0;
+		uint8_t blue = 0;
+
+		Rgb() = default;
+		Rgb(uint8_t r, uint8_t g, uint8_t b)
+			: red(r), green(g), blue(b) {
+		}
+	};
+
 	// Кастомный тип
 	using Color = std::string;
 
