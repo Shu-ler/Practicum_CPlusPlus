@@ -489,11 +489,6 @@ namespace svg {
 		std::vector<Point> points_;
 	};
 
-	/*
-	 * Класс Text моделирует элемент <text> для отображения текста
-	 * https://developer.mozilla.org/en-US/docs/Web/SVG/Element/text
-	 */
-
 	 /**
 	  * @brief Представляет SVG-элемент <text> — текст.
 	  * 
