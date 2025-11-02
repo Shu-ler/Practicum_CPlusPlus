@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <variant>
 
 namespace svg {
 
@@ -44,11 +45,19 @@ namespace svg {
 		}
 	};
 
-	// Кастомный тип
-	using Color = std::string;
-
-	// Константа - цвет не задан
-	inline const Color NoneColor{ "none" };
+	/**
+	 * @brief Тип цвета, поддерживающий несколько форматов.
+	 *
+	 * Может быть:
+	 * - std::monostate  → "none"
+	 * - std::string     → "red", "#ff0000"
+	 * - Rgb             → rgb(255,0,0)
+	 * - Rgba            → rgba(255,0,0,0.5)
+	 */
+	using Color = std::variant<std::monostate, std::string, Rgb, Rgba>;
+	
+	// Константа — цвет не задан
+	inline const Color NoneColor{}; // std::monostate, первый из вариантов
 
 	/*
 	 * Вспомогательные функции для внутреннего использования при рендеринге SVG.
