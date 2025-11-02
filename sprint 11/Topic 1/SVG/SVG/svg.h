@@ -27,6 +27,23 @@ namespace svg {
 		}
 	};
 
+	/**
+	 * @brief Цвет в формате RGBA (с альфа-каналом).
+	 *
+	 * Компоненты: red, green, blue — от 0 до 255; opacity — от 0.0 до 1.0.
+	 */
+	struct Rgba {
+		uint8_t red = 0;
+		uint8_t green = 0;
+		uint8_t blue = 0;
+		double opacity = 1.0;
+
+		Rgba() = default;
+		Rgba(uint8_t r, uint8_t g, uint8_t b, double alpha)
+			: red(r), green(g), blue(b), opacity(alpha) {
+		}
+	};
+
 	// Кастомный тип
 	using Color = std::string;
 
