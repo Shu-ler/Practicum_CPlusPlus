@@ -199,28 +199,30 @@ namespace svg {
 			using T = std::decay_t<decltype(value)>;
 
 			if constexpr (std::is_same_v<T, std::monostate>) {
-				out << "none";
+				out << "none"s;
 			}
 			else if constexpr (std::is_same_v<T, std::string>) {
 				out << value;
 			}
 			else if constexpr (std::is_same_v<T, Rgb>) {
-				out << "rgb(" << static_cast<int>(value.red) 
-					<< ","
+				out << "rgb("s 
+					<< static_cast<int>(value.red) 
+					<< ","s
 					<< static_cast<int>(value.green) 
-					<< ","
+					<< ","s
 					<< static_cast<int>(value.blue) 
-					<< ")";
+					<< ")"s;
 			}
 			else if constexpr (std::is_same_v<T, Rgba>) {
-				out << "rgba(" << static_cast<int>(value.red) 
-					<< ","
+				out << "rgba("s 
+					<< static_cast<int>(value.red) 
+					<< ","s
 					<< static_cast<int>(value.green) 
-					<< ","
+					<< ","s
 					<< static_cast<int>(value.blue) 
-					<< ","
+					<< ","s
 					<< value.opacity 
-					<< ")";
+					<< ")"s;
 			}
 			};
 
