@@ -11,34 +11,11 @@ namespace json {
 
     class Node;
 
-    // Сохраните объявления Dict и Array без изменения
+    // Основные типы
     using Dict = std::map<std::string, Node>;
     using Array = std::vector<Node>;
-
     using Value = std::variant<std::nullptr_t, int, double, bool, std::string, Array, Dict>;
 
-
-    namespace detail {
-
-        struct PrintContext {
-            std::ostream& out;
-            int indent_step = 4;
-            int indent = 0;
-
-            void PrintIndent() const {
-                for (int i = 0; i < indent; ++i) {
-                    out.put(' ');
-                }
-            }
-
-            PrintContext Indented() const {
-                return { out, indent_step, indent + indent_step };
-            }
-        };
-
-        void PrintValue(const Value& value, const PrintContext& ctx);
-
-    } // namespace detail
 
     // Эта ошибка должна выбрасываться при ошибках парсинга JSON
     class ParsingError : public std::runtime_error {
@@ -46,49 +23,60 @@ namespace json {
         using runtime_error::runtime_error;
     };
 
+    /**
+     * @brief Узел JSON-документа
+     *
+     * Хранит одно значение любого типа из Value.
+     */
     class Node {
     public:
-        // Конструкторы
+        // Конструкторы (не explicit, чтобы работала инициализация вроде Array{1, 2.5, "str"})
         Node() = default;       // null
+        Node(int value);
+        Node(double value);
+        Node(bool value);
+        Node(const std::string& value);
+        Node(std::string&& value);
+        Node(std::nullptr_t);
 
-        explicit Node(Array array);
-        explicit Node(Dict map);
-        explicit Node(int value);
-        explicit Node(double value);
-        explicit Node(bool value);
-        explicit Node(std::string value);
-        explicit Node(std::nullptr_t);
+        Node(const Array& array);
+        Node(Array&& array);
 
-        // Методы проверки типа
+        Node(const Dict& map);
+        Node(Dict&& map);
+
+        // Проверки типа
         bool IsInt() const;
-        bool IsDouble() const;           // int или double
-        bool IsPureDouble() const;       // только double
+        bool IsPureDouble() const;  // только double
+        bool IsDouble() const;      // int или double
         bool IsBool() const;
         bool IsString() const;
         bool IsNull() const;
         bool IsArray() const;
-        bool IsMap() const;
+        bool IsMap() const;  // соответствует IsObject
 
-        // Методы получения значения
+        // Методы получения значения (бросает logic_error при несовпадении типов)
+        int AsInt() const;
+        bool AsBool() const;
+        double AsDouble() const;
+        const std::string& AsString() const;
         const Array& AsArray() const;
         const Dict& AsMap() const;
-        int AsInt() const;
-        double AsDouble() const;
-        bool AsBool() const;
-        const std::string& AsString() const;
 
         // Сравнение
         bool operator==(const Node& rhs) const;
         bool operator!=(const Node& rhs) const;
 
+        // Для внутреннего доступа к variant (используется в Print)
+        const Value& GetValue() const;
+
     private:
-//        Array as_array_;
-//        Dict as_map_;
-//        int as_int_ = 0;
-//        std::string as_string_;
         Value value_;
     };
 
+    /**
+     * @brief Представляет полный JSON-документ.
+     */
     class Document {
     public:
         explicit Document(Node root);
@@ -99,10 +87,19 @@ namespace json {
         Node root_;
     };
 
-    // Загрузка JSON из потока
+    /**
+     * @brief Загружает JSON-документ из потока.
+     * @param input Входной поток
+     * @return Document Объект документа
+     * @throw ParsingError При синтаксических ошибках
+     */
     Document Load(std::istream& input);
 
-    // Вывод JSON в поток
+    /**
+     * @brief Выводит документ в поток в формате JSON.
+     * @param doc Документ
+     * @param output Поток вывода
+     */
     void Print(const Document& doc, std::ostream& output);
 
 }  // namespace json
