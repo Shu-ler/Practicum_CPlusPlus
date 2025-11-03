@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iomanip>
 #include <string_view>
+#include <cmath>
 
 namespace json {
 
@@ -272,6 +273,15 @@ namespace json {
     Document::Document(Node root) : root_(std::move(root)) {}
     const Node& Document::GetRoot() const { return root_; }
 
+    bool Document::operator==(const Document& other) const {
+        return root_ == other.root_;
+    }
+
+    bool Document::operator!=(const Document& other) const {
+        // Используем перегруженный выше оператор равенства
+        return !(*this == other);
+    }
+
     // === Load и Print ===
 
     void Print(const Document& doc, std::ostream& output) {
@@ -405,6 +415,11 @@ namespace json {
             std::string result;
             char c;
 
+            //// Явно ожидаем открывающую кавычку
+            //if (!input.get(c) || c != '"') {
+            //    throw ParsingError("Expected '\"' at start of string");
+            //}
+
             while (input.get(c)) {
                 if (c == '"') {
                     return result;
@@ -459,46 +474,74 @@ namespace json {
             std::string num;
             char c;
 
-            input >> c;
+            // Считываем первый символ (пропуская пробелы)
+            if (!(input >> c)) {
+                throw ParsingError("Unexpected end of input");
+            }
+
             if (c == '-') {
                 num += c;
-                input >> c;
+                if (!(input >> c)) { 
+                    throw ParsingError("Unexpected end of input");
+                }
             }
 
             if (!IsDigit(c)) {
                 throw ParsingError("Invalid number format");
             }
 
+            // Целая часть
             do {
                 num += c;
-            } while (IsDigit(input.peek()));
+                if (!input.get(c)) { 
+                    break;           
+                }
+            } while (IsDigit(c)); // Проверяем уже следующий символ
 
+            // Возвращаем последний символ, если это не цифра
+            input.putback(c);
+
+            // Дробная часть
             if (input.peek() == '.') {
-                num += input.get();
+                if (!input.get(c)) {
+                    throw ParsingError("Unexpected end of input");
+                }
+                num += c;
+
                 if (!IsDigit(input.peek())) {
                     throw ParsingError("Invalid number format: missing digits after '.'");
                 }
-                do {
-                    num += input.get();
-                } while (IsDigit(input.peek()));
+
+                while (IsDigit(input.peek())) {
+                    input.get(c);
+                    num += c;
+                }
             }
 
-            if (std::tolower(input.peek()) == 'e') {
-                num += input.get();
-                c = input.peek();
-                if (c == '+' || c == '-') {
-                    num += input.get();
+            // Экспонента
+            if (input.peek() == 'e' || input.peek() == 'E') {
+                input.get(c);
+                num += c;
+
+                // Знак экспоненты
+                if (input.peek() == '+' || input.peek() == '-') {
+                    input.get(c);
+                    num += c;
                 }
+
                 if (!IsDigit(input.peek())) {
                     throw ParsingError("Invalid number format: missing digits after exponent");
                 }
-                do {
-                    num += input.get();
-                } while (IsDigit(input.peek()));
+
+                while (IsDigit(input.peek())) {
+                    input.get(c);
+                    num += c;
+                }
             }
 
+            // Парсинг
             try {
-                if (num.find('.') != std::string::npos || num.find('e') != std::string::npos || num.find('E') != std::string::npos) {
+                if (num.find_first_of(".eE") != std::string::npos) {
                     double value = std::stod(num);
                     if (!std::isfinite(value)) {
                         throw ParsingError("Invalid number: infinity or NaN");
@@ -521,6 +564,7 @@ namespace json {
                 throw ParsingError("Invalid number format");
             }
         }
+
 
         /**
          * @brief Парсит массив JSON, начиная с '['.
@@ -617,6 +661,7 @@ namespace json {
             case '{':
                 return ParseDict(input);
             case '"':
+                ExpectChar(input, '"');
                 return Node(ParseString(input));
             case 't':
                 CheckLiteral(input, "true");
@@ -632,6 +677,7 @@ namespace json {
             case '5': case '6': case '7': case '8': case '9':
                 return ParseNumber(input);
             default:
+                //return Node();
                 throw ParsingError("Unexpected character: " + std::string(1, c));
             }
         }
@@ -645,11 +691,24 @@ namespace json {
             if (input.peek() != EOF) {
                 throw ParsingError("Unexpected content after JSON");
             }
-            return Document(std::move(root));
+            
+            // В тренажере не проходит return Document(std::move(root))
+            return Document(root);
         }
         catch (const std::ios_base::failure&) {
             throw ParsingError("IO error");
         }
+    }
+
+    Document LoadJSON(const std::string& s) {
+        std::istringstream is(s);
+        return Load(is);
+    }
+
+    std::string Print(const Document& doc) {
+        std::ostringstream os;
+        json::Print(doc, os);
+        return os.str();
     }
 
 } // namespace json

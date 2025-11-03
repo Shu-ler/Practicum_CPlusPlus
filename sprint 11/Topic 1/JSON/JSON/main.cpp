@@ -15,15 +15,21 @@ namespace {
     // Раскомментируйте их по мере работы.
 
     
-    json::Document LoadJSON(const std::string& s) {
-        std::istringstream strm(s);
-        return json::Load(strm);
+    Document LoadJSON(const std::string& s) {
+        std::istringstream is(s);
+        return Load(is);
     }
 
     std::string Print(const Node& node) {
         std::ostringstream out;
         Print(Document{node}, out);
         return out.str();
+    }
+
+    std::string Print(const Document& doc) {
+        std::ostringstream os;
+        json::Print(doc, os);
+        return os.str();
     }
 
     void MustFailToLoad(const std::string& s) {
@@ -171,6 +177,11 @@ namespace {
         // Пробелы, табуляции и символы перевода строки между токенами JSON файла игнорируются
         assert(LoadJSON("[ 1 \r \n ,  \r\n\t 1.23, \n \n  \t\t  \"Hello\" \t \n  ] \n  "s).GetRoot()
                == arr_node);
+
+        // Пустой массив
+        Node empty_arr{ Array{} };
+        assert(LoadJSON("[]"s).GetRoot() == empty_arr);
+        assert(Print(empty_arr) == "[]");
     }
 
     void TestMap() {
@@ -251,17 +262,145 @@ namespace {
                   << std::endl;
     }
 
+    void TestDict() {
+        Dict dict;
+        dict["name"] = "Alice"s;
+        dict["age"] = 30;
+        dict["active"] = true;
+        Node dict_node{ dict };
+
+        assert(dict_node.IsMap());
+        const Dict& d = dict_node.AsMap();
+        assert(d.at("name").AsString() == "Alice");
+        assert(d.at("age").AsInt() == 30);
+        assert(d.at("active").AsBool() == true);
+
+        assert(LoadJSON(R"({"name":"Alice","age":30,"active":true})"s).GetRoot() == dict_node);
+        assert(LoadJSON(Print(dict_node)).GetRoot() == dict_node);
+
+        // Пустой объект
+        Node empty_dict{ Dict{} };
+        assert(LoadJSON("{}"s).GetRoot() == empty_dict);
+        assert(Print(empty_dict) == "{}");
+    }
+
+    void TestNumber() {
+        // Целые числа
+        assert(LoadJSON("42"s).GetRoot().AsInt() == 42);
+        assert(LoadJSON("-100"s).GetRoot().AsInt() == -100);
+
+        // Дробные
+        assert(LoadJSON("3.14"s).GetRoot().AsDouble() == 3.14);
+        assert(LoadJSON("-0.5"s).GetRoot().AsDouble() == -0.5);
+
+        // Экспоненциальная запись
+        assert(LoadJSON("1e10"s).GetRoot().AsDouble() == 1e10);
+        assert(LoadJSON("-2.5E-4"s).GetRoot().AsDouble() == -2.5e-4);
+
+        // Преобразование double → int при выводе
+        Node d{ 1.0 };
+        std::string printed = Print(d);
+        assert(printed == "1");
+
+        Node d2{ 3.140000 };
+        assert(Print(d2) == "3.14");
+    }
+
+    void TestString() {
+        Node str{ "Hello"s };
+        assert(str.IsString());
+        assert(str.AsString() == "Hello");
+
+        assert(LoadJSON(R"("Hello")"s).GetRoot().AsString() == "Hello");
+        assert(LoadJSON(Print(str)).GetRoot().AsString() == "Hello");
+
+        // Escape-последовательности
+        std::string escaped = R"("He said: \"Hello\", then left.\n\t")";
+        std::string expected_value = "He said: \"Hello\", then left.\n\t";
+        Node parsed = LoadJSON(escaped).GetRoot();
+        assert(parsed.AsString() == expected_value);
+        assert(Print(parsed) == escaped); // обратно в JSON
+    }
+
+    void TestBooleanNull() {
+        assert(LoadJSON("true"s).GetRoot().AsBool() == true);
+        assert(LoadJSON("false"s).GetRoot().AsBool() == false);
+        assert(LoadJSON("null"s).GetRoot().IsNull() == true);
+
+        Node t{ true }, f{ false }, n{ nullptr };
+        assert(LoadJSON(Print(t)).GetRoot() == t);
+        assert(LoadJSON(Print(f)).GetRoot() == f);
+        assert(LoadJSON(Print(n)).GetRoot() == n);
+    }
+
+    void TestWhitespace() {
+        // Пробелы, табуляции, переводы строк — должны игнорироваться
+        auto doc1 = LoadJSON("  42  "s);
+        auto doc2 = LoadJSON("\t\n  [ 1 , 2 ] \r\n\t"s);
+        auto doc3 = LoadJSON("  { \"key\" : null }  "s);
+
+        assert(doc1.GetRoot().AsInt() == 42);
+        assert(doc2.GetRoot().AsArray().size() == 2);
+        assert(doc3.GetRoot().AsMap().at("key").IsNull());
+    }
+
+    //void TestPrint() {
+    //    Node arr{ Array{1, true, "str"s, nullptr} };
+    //    std::string expected = R"([1,true,"str",null])";
+    //    assert(Print(arr) == expected);
+
+    //    Dict dict;
+    //    dict["a"] = 42;
+    //    dict["b"] = arr;
+    //    Node root{ dict };
+
+    //    // Печать красиво (с отступами) — не тестируем здесь, но можно проверить вручную
+    //    std::ostringstream os;
+    //    Print(root, os);
+    //    assert(os.str().find("42") != std::string::npos);
+    //}
+
 }  // namespace
 
 int main() {
-    
+    try {
         TestNull();
+        std::cout << "TestNull" << std::endl;
         TestNumbers();
+        std::cout << "TestNumbers" << std::endl;
         TestStrings();
+        std::cout << "TestStrings" << std::endl;
         TestBool();
+        std::cout << "TestBool" << std::endl;
         TestArray();
+        std::cout << "TestArray" << std::endl;
         TestMap();
+        std::cout << "TestMap" << std::endl;
         TestErrorHandling();
+        std::cout << "TestErrorHandling" << std::endl;
         Benchmark();
-    
+        std::cout << "Benchmark" << std::endl;
+        TestDict();
+        std::cout << "TestDict" << std::endl;
+        TestNumber();
+        std::cout << "TestNumber" << std::endl;
+        TestString();
+        std::cout << "TestString" << std::endl;
+        TestBooleanNull();
+        std::cout << "TestBooleanNull" << std::endl;
+        TestWhitespace();
+        std::cout << "TestWhitespace" << std::endl;
+//        TestPrint();
+
+        std::cout << "All tests passed!" << std::endl;
+        return 0;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Test failed: " << e.what() << std::endl;
+        return 1;
+    }
+    catch (...) {
+        std::cerr << "Test failed: unknown exception" << std::endl;
+        return 1;
+    }
 }
