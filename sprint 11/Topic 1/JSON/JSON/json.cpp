@@ -481,7 +481,7 @@ namespace json {
 
             if (c == '-') {
                 num += c;
-                if (!(input >> c)) { 
+                if (!(input >> c)) {
                     throw ParsingError("Unexpected end of input");
                 }
             }
@@ -493,8 +493,8 @@ namespace json {
             // Целая часть
             do {
                 num += c;
-                if (!input.get(c)) { 
-                    break;           
+                if (!input.get(c)) {
+                    break;
                 }
             } while (IsDigit(c)); // Проверяем уже следующий символ
 
@@ -691,7 +691,7 @@ namespace json {
             if (input.peek() != EOF) {
                 throw ParsingError("Unexpected content after JSON");
             }
-            
+
             // В тренажере не проходит return Document(std::move(root))
             return Document(root);
         }
