@@ -22,7 +22,9 @@ namespace json {
     using Array = std::vector<Node>;
 
     /**
-     * @brief Псевдоним для словаря JSON — карта "ключ-строка" → узел
+     * @brief Тип для представления JSON-объекта (словаря).
+     *
+     * В JSON называется "object", в C++ реализован как словарь строк в Node.
      */
     using Dict = std::map<std::string, Node>;
 
@@ -80,13 +82,13 @@ namespace json {
 
         // Проверки типа
         bool IsInt() const;
-        bool IsPureDouble() const;  // только double
-        bool IsDouble() const;      // int или double
+        bool IsPureDouble() const;  ///< Возвращает true для double
+        bool IsDouble() const;      ///< Возвращает true для int и double
         bool IsBool() const;
         bool IsString() const;
         bool IsNull() const;
         bool IsArray() const;
-        bool IsMap() const;  // соответствует IsObject
+        bool IsMap() const;         ///< Аналог IsObject
 
         // Методы получения значения (бросает logic_error при несовпадении типов)
         int AsInt() const;
@@ -100,7 +102,10 @@ namespace json {
         bool operator==(const Node& rhs) const;
         bool operator!=(const Node& rhs) const;
 
-        // Для внутреннего доступа к variant (используется в Print)
+        /**
+         * @brief Возвращает ссылку на хранимое значение.
+         * @return Константная ссылка на variant
+         */
         const Value& GetValue() const;
 
     private:
@@ -109,6 +114,8 @@ namespace json {
 
     /**
      * @brief Представляет полный JSON-документ.
+     *
+     * Состоит из одного корневого узла (Node).
      */
     class Document {
     public:
@@ -158,4 +165,100 @@ namespace json {
      */
     void Print(const Document& doc, std::ostream& output);
 
+    /**
+     * @class Builder
+     * @brief Строитель JSON-структуры.
+     *
+     * Позволяет постепенно конструировать сложные JSON-объекты.
+     *
+     * Пример:
+     * @code
+     * Node root = Builder{}
+     *     .StartDict()
+     *         .Key("name").Value("Alice")
+     *         .Key("age").Value(30)
+     *     .EndDict()
+     *     .Build();
+     * @endcode
+     *
+     */
+    class Builder {
+    public:
+        /**
+         * @brief Добавляет произвольное значение в текущий контейнер.
+         * @param value Значение для добавления
+         * @return Ссылка на *this для цепочки вызовов
+         */
+        Builder& Value(Value value);
+
+        // Добавляет null
+        Builder& Null();
+
+        // Добавляет логическое значение
+        Builder& Bool(bool value);
+
+        // Добавляет целое число
+        Builder& Number(int value);
+
+        // Добавляет вещественное число
+        Builder& Number(double value);
+
+        // Добавляет строку
+        Builder& String(std::string value);
+
+        /**
+         * @brief Начинает создание массива.
+         * @return Ссылка на *this
+         * @pre Не может быть вызван внутри массива без завершения предыдущего
+         */
+        Builder& StartArray();
+
+        /**
+         * @brief Завершает текущий массив.
+         * @return Ссылка на *this
+         * @pre Должен быть вызван после StartArray()
+         */
+        Builder& EndArray();
+
+        /**
+         * @brief Начинает создание словаря (объекта).
+         * @return Ссылка на *this
+         */
+        Builder& StartDict();
+
+        /**
+         * @brief Завершает текущий словарь.
+         * @return Ссылка на *this
+         * @pre Должен быть вызван после StartDict()
+         */
+        Builder& EndDict();
+
+        /**
+         * @brief Добавляет ключ в словарь.
+         * @param key Имя ключа
+         * @return Ссылка на *this
+         * @pre Должен вызываться только внутри словаря
+         * @note После Key() нужно вызвать Value(), String() и т.д.
+         */
+        Builder& Key(std::string key);
+
+        /**
+         * @brief Завершает построение и возвращает результат.
+         * @return Узел с построенной JSON-структурой
+         * @throw std::logic_error если контейнеры не закрыты
+         */
+        Node Build();
+
+    private:
+        // Проверяет, что нет активных контейнеров
+        void CheckClosed() const;
+
+        // Добавляет узел в текущий контекст
+        void AddNode(Node node);
+
+    private:
+        Node root_;                         //< Корневой узел
+        std::vector<Node*> nodes_stack_;    //< Стек для отслеживания вложенных контейнеров
+
+    };
 }  // namespace json
