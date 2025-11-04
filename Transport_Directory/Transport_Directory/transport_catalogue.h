@@ -1,135 +1,144 @@
-#pragma once
+п»ї#pragma once
 
-#include "geo.h"
-#include <string>
-#include <vector>
-#include <deque>
+#include "domain.h"
 #include <unordered_map>
 #include <unordered_set>
 #include <set>
+#include <optional>
+#include <deque>
 
 namespace trans_cat {
 
-	/*
-	 * Структура Stop - хранение данных остановки общественного транспорта
-	 */
-	struct Stop {
-		std::string name_{};					// Название остановки
-		Coordinates coordinates_{ 0.0, 0.0 };	// Географические координаты остановки
-	};
-
-	using StopPtr = const Stop*;
-	using StopsList = std::vector<StopPtr>;
-	using StopsNames = std::vector<std::string_view>;
-	using StopsStorage = std::deque<Stop>;
-	using StopsIndex = std::unordered_map<std::string_view, Stop*>;
-
-	/*
-	 * Структура Route - хранение данных маршрута общественного транспорта
-	 */
-	struct Route {
-		std::string name_;	// Название маршрута
-		StopsList stops_;	// Список остановок (вектор указателей на остановки)
-	};
-
-	/*
-	 * Структура RouteStatistics - хранение статистики маршрута общественного транспорта
-	 */
-	struct RouteStatistics {
-		size_t total_stops = 0;				// Общее количество остановок в маршруте
-		size_t unique_stops = 0;			// Количество уникальных остановок
-		double route_length = 0.0;			// Длина маршрута в метрах
-		double route_length_direct = 0.0;	// Длина маршрута по прямой (географическое расстояние) в метрах;
-		double curvature = 0.0;				// Извилистость маршрута
-	};
-
-	/*
-	 * Хэшер для пар остановок.
-	 */
-	struct StopsPairHasher {
-		template <typename First, typename Second>
-		size_t operator()(const std::pair<First, Second>& obj) const {
-			return std::hash<First>()(obj.first) + 37 * std::hash<Second>()(obj.second);
-		}
-	};
-
-	using RoutePtr = const Route*;
-	using RouteStorage = std::deque<Route>;
-	using RouteIndex = std::unordered_map<std::string_view, Route*>;
-	using RouteSet = std::unordered_set<RoutePtr>;
-	using StopRouteIndex = std::unordered_map<StopPtr, RouteSet>;
-	using StopsDistancesStorage = std::unordered_map<std::pair<StopPtr, StopPtr>, int, StopsPairHasher>;
-
-	/*
-	 * Справочник транспортного каталога, содержащий информацию о остановках и маршрутах общественного транспорта.
-	 * Этот класс отвечает за хранение данных, таких как названия остановок, их географические координаты, а также
-	 * маршруты и связанные с ними остановки.
+	/**
+	 * @brief РҐСЂР°РЅРёР»РёС‰Рµ С‚СЂР°РЅСЃРїРѕСЂС‚РЅС‹С… РґР°РЅРЅС‹С…: РѕСЃС‚Р°РЅРѕРІРєРё, РјР°СЂС€СЂСѓС‚С‹, СЂР°СЃСЃС‚РѕСЏРЅРёСЏ.
+	 *
+	 * РљР»Р°СЃСЃ РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚ РјРµС‚РѕРґС‹ РґР»СЏ:
+	 * - Р”РѕР±Р°РІР»РµРЅРёСЏ РѕСЃС‚Р°РЅРѕРІРѕРє Рё РјР°СЂС€СЂСѓС‚РѕРІ
+	 * - РЈСЃС‚Р°РЅРѕРІРєРё РґРѕСЂРѕР¶РЅС‹С… СЂР°СЃСЃС‚РѕСЏРЅРёР№ РјРµР¶РґСѓ РѕСЃС‚Р°РЅРѕРІРєР°РјРё
+	 * - РџРѕР»СѓС‡РµРЅРёСЏ СЃС‚Р°С‚РёСЃС‚РёРєРё РїРѕ РјР°СЂС€СЂСѓС‚Р°Рј
+	 * - РџРѕРёСЃРєР° РѕСЃС‚Р°РЅРѕРІРѕРє Рё РјР°СЂС€СЂСѓС‚РѕРІ
+	 * - РћРїСЂРµРґРµР»РµРЅРёСЏ РјР°СЂС€СЂСѓС‚РѕРІ, РїСЂРѕС…РѕРґСЏС‰РёС… С‡РµСЂРµР· РѕСЃС‚Р°РЅРѕРІРєСѓ
+	 *
+	 * Р’СЃРµ РјРµС‚РѕРґС‹ РїРѕС‚РѕРєРѕРЅРµР±РµР·РѕРїР°СЃРЅС‹.
 	 */
 	class TransportCatalogue {
 	public:
+		// РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+		TransportCatalogue() = default;
 
-		// Метод добавления остановки в справочник
-		// Возвращает указатель на добавленную остановку
-		StopPtr AddStop(std::string name, Coordinates pos);
+		// Р—Р°РїСЂРµС‰Р°РµРј РєРѕРїРёСЂРѕРІР°РЅРёРµ
+		TransportCatalogue(const TransportCatalogue&) = delete;
+		TransportCatalogue& operator=(const TransportCatalogue&) = delete;
 
-		// Метод добавления маршрута в справочник
-		void AddRoute(std::string name, StopsNames stops_names);
+		// Р Р°Р·СЂРµС€Р°РµРј РїРµСЂРµРјРµС‰РµРЅРёРµ
+		TransportCatalogue(TransportCatalogue&&) = default;
+		TransportCatalogue& operator=(TransportCatalogue&&) = default;
 
-		// Метод поиска остановки по имени
-		StopPtr FindStop(std::string_view stop_name) const;
+		/**
+		 * @brief Р”РѕР±Р°РІР»СЏРµС‚ РЅРѕРІСѓСЋ РѕСЃС‚Р°РЅРѕРІРєСѓ РІ РєР°С‚Р°Р»РѕРі.
+		 *
+		 * Р•СЃР»Рё РѕСЃС‚Р°РЅРѕРІРєР° СЃ С‚Р°РєРёРј РёРјРµРЅРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚, РѕР±РЅРѕРІР»СЏРµС‚ РµС‘ РєРѕРѕСЂРґРёРЅР°С‚С‹.
+		 * @param name РќР°Р·РІР°РЅРёРµ РѕСЃС‚Р°РЅРѕРІРєРё
+		 * @param coords Р“РµРѕРіСЂР°С„РёС‡РµСЃРєРёРµ РєРѕРѕСЂРґРёРЅР°С‚С‹ РѕСЃС‚Р°РЅРѕРІРєРё
+		 */
+		void AddStop(std::string name, geo::Coordinates coords);
 
-		// Метод поиска маршрута по имени
-		RoutePtr FindRoute(std::string_view route_name) const;
+		/**
+		 * @brief Р”РѕР±Р°РІР»СЏРµС‚ РЅРѕРІС‹Р№ РјР°СЂС€СЂСѓС‚ РІ РєР°С‚Р°Р»РѕРі.
+		 *
+		 * РњР°СЂС€СЂСѓС‚ Р·Р°РґР°С‘С‚СЃСЏ СЃРїРёСЃРєРѕРј РЅР°Р·РІР°РЅРёР№ РѕСЃС‚Р°РЅРѕРІРѕРє.
+		 * Р•СЃР»Рё РѕСЃС‚Р°РЅРѕРІРєРё РµС‰С‘ РЅРµ РґРѕР±Р°РІР»РµРЅС‹ вЂ” РѕРЅРё РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ РґРѕР±Р°РІР»РµРЅС‹ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё (Р±РµР· РєРѕРѕСЂРґРёРЅР°С‚).
+		 * @param name РќР°Р·РІР°РЅРёРµ РјР°СЂС€СЂСѓС‚Р°
+		 * @param stops РЎРїРёСЃРѕРє РЅР°Р·РІР°РЅРёР№ РѕСЃС‚Р°РЅРѕРІРѕРє РІ РїРѕСЂСЏРґРєРµ СЃР»РµРґРѕРІР°РЅРёСЏ
+		 * @param is_roundtrip true, РµСЃР»Рё РјР°СЂС€СЂСѓС‚ РєРѕР»СЊС†РµРІРѕР№ (Р±РµР· РѕР±СЂР°С‚РЅРѕРіРѕ РїСѓС‚Рё)
+		 */
+		void AddRoute(std::string name, std::vector<std::string> stops, bool is_roundtrip);
 
-		// Метод для получения статистики по маршруту (количество остановок, 
-		// уникальные остановки, длина маршрута).
-		RouteStatistics GetStat(RoutePtr route) const;
+		/**
+		 * @brief РС‰РµС‚ РѕСЃС‚Р°РЅРѕРІРєСѓ РїРѕ РёРјРµРЅРё.
+		 * @param name РРјСЏ РѕСЃС‚Р°РЅРѕРІРєРё
+		 * @return РЈРєР°Р·Р°С‚РµР»СЊ РЅР° РѕСЃС‚Р°РЅРѕРІРєСѓ РёР»Рё nullptr, РµСЃР»Рё РЅРµ РЅР°Р№РґРµРЅР°
+		 */
+		const Stop* FindStop(std::string_view name) const;
 
-		// Метод получения набора названий маршрутов, проходящих через указанную остановку.
-		// Принимает указатель на остановку(StopPtr) и возвращает множество(std::set) 
-		// названий маршрутов(std::string_view), которые включают данную остановку в своём маршруте.
-		const std::set<std::string_view> GetRoutesNamesByStop(StopPtr stop) const;
+		/**
+		 * @brief РС‰РµС‚ РјР°СЂС€СЂСѓС‚ РїРѕ РёРјРµРЅРё.
+		 * @param name РРјСЏ РјР°СЂС€СЂСѓС‚Р°
+		 * @return РЈРєР°Р·Р°С‚РµР»СЊ РЅР° РјР°СЂС€СЂСѓС‚ РёР»Рё nullptr, РµСЃР»Рё РЅРµ РЅР°Р№РґРµРЅ
+		 */
+		const Route* FindRoute(std::string_view name) const;
 
-		// Метод получения расстояния между двумя остановками
-		// Возвращает:
-		//	- если есть в distances_ от 'from' до 'to' - это значение;
-		//	- иначе если есть в distances_ от 'to' до 'from' - это значение;
-		//	- иначе - расстояние, вычесленное по 'прямой' между географическими координатами остановок
-		int GetDistance(StopPtr from, StopPtr to) const;
+		/**
+		 * @brief РЎС‚СЂСѓРєС‚СѓСЂР° СЃ РјРµС‚СЂРёРєР°РјРё РјР°СЂС€СЂСѓС‚Р°.
+		 */
+		struct RouteStat {
+			size_t stop_count = 0;           ///< РћР±С‰РµРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РѕСЃС‚Р°РЅРѕРІРѕРє (СЃ СѓС‡С‘С‚РѕРј РїРѕРІС‚РѕСЂРµРЅРёР№)
+			size_t unique_stop_count = 0;    ///< РљРѕР»РёС‡РµСЃС‚РІРѕ СѓРЅРёРєР°Р»СЊРЅС‹С… РѕСЃС‚Р°РЅРѕРІРѕРє
+			double route_length = 0.0;       ///< Р”Р»РёРЅР° РјР°СЂС€СЂСѓС‚Р° РїРѕ РґРѕСЂРѕРіР°Рј (РІ РјРµС‚СЂР°С…)
+			double curvature = 0.0;          ///< РљРѕСЌС„С„РёС†РёРµРЅС‚ РёР·РІРёР»РёСЃС‚РѕСЃС‚Рё (route_length / direct_length)
+		};
 
-		// Метод установки расстояния между двумя остановками
-		void SetDistance(StopPtr from, StopPtr to, int distance);
+		/**
+		 * @brief Р Р°СЃСЃС‡РёС‚С‹РІР°РµС‚ СЃС‚Р°С‚РёСЃС‚РёРєСѓ РґР»СЏ СѓРєР°Р·Р°РЅРЅРѕРіРѕ РјР°СЂС€СЂСѓС‚Р°.
+		 * @param route_name РРјСЏ РјР°СЂС€СЂСѓС‚Р°
+		 * @return RouteStat, РµСЃР»Рё РјР°СЂС€СЂСѓС‚ РЅР°Р№РґРµРЅ; std::nullopt вЂ” РµСЃР»Рё РЅРµС‚
+		 *
+		 * @note Р”Р»РёРЅР° РјР°СЂС€СЂСѓС‚Р° вЂ” СЃСѓРјРјР° РґРѕСЂРѕР¶РЅС‹С… СЂР°СЃСЃС‚РѕСЏРЅРёР№ РјРµР¶РґСѓ СЃРѕСЃРµРґРЅРёРјРё РѕСЃС‚Р°РЅРѕРІРєР°РјРё.
+		 *       РџСЂСЏРјРѕРµ СЂР°СЃСЃС‚РѕСЏРЅРёРµ вЂ” СЃСѓРјРјР° РіРµРѕРіСЂР°С„РёС‡РµСЃРєРёС… СЂР°СЃСЃС‚РѕСЏРЅРёР№ РјРµР¶РґСѓ СЃРѕСЃРµРґРЅРёРјРё РѕСЃС‚Р°РЅРѕРІРєР°РјРё.
+		 */
+		std::optional<RouteStat> GetRouteStat(std::string_view route_name) const;
+
+		/**
+		 * @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ РјРЅРѕР¶РµСЃС‚РІРѕ РЅР°Р·РІР°РЅРёР№ РјР°СЂС€СЂСѓС‚РѕРІ, РїСЂРѕС…РѕРґСЏС‰РёС… С‡РµСЂРµР· РѕСЃС‚Р°РЅРѕРІРєСѓ.
+		 * @param stop_name РРјСЏ РѕСЃС‚Р°РЅРѕРІРєРё
+		 * @return РћС‚СЃРѕСЂС‚РёСЂРѕРІР°РЅРЅС‹Р№ РЅР°Р±РѕСЂ РЅР°Р·РІР°РЅРёР№ РјР°СЂС€СЂСѓС‚РѕРІ (Р»РµРєСЃРёРєРѕРіСЂР°С„РёС‡РµСЃРєРё)
+		 *
+		 * @note Р•СЃР»Рё РѕСЃС‚Р°РЅРѕРІРєР° РЅРµ РЅР°Р№РґРµРЅР°, РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ РїСѓСЃС‚РѕР№ РЅР°Р±РѕСЂ.
+		 */
+		std::set<std::string> GetBusesByStop(std::string_view stop_name) const;
+
+		/**
+		 * @brief РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РґРѕСЂРѕР¶РЅРѕРµ СЂР°СЃСЃС‚РѕСЏРЅРёРµ РјРµР¶РґСѓ РґРІСѓРјСЏ РѕСЃС‚Р°РЅРѕРІРєР°РјРё.
+		 *
+		 * Р Р°СЃСЃС‚РѕСЏРЅРёРµ РѕРґРЅРѕСЃС‚РѕСЂРѕРЅРЅРµРµ: РѕС‚ from РґРѕ to.
+		 * @param from РРјСЏ РЅР°С‡Р°Р»СЊРЅРѕР№ РѕСЃС‚Р°РЅРѕРІРєРё
+		 * @param to РРјСЏ РєРѕРЅРµС‡РЅРѕР№ РѕСЃС‚Р°РЅРѕРІРєРё
+		 * @param distance Р Р°СЃСЃС‚РѕСЏРЅРёРµ РІ РјРµС‚СЂР°С…
+		 */
+		void SetDistance(std::string_view from, std::string_view to, int distance);
+
+		/**
+		 * @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ РґРѕСЂРѕР¶РЅРѕРµ СЂР°СЃСЃС‚РѕСЏРЅРёРµ РјРµР¶РґСѓ РґРІСѓРјСЏ РѕСЃС‚Р°РЅРѕРІРєР°РјРё.
+		 * @param from РЈРєР°Р·Р°С‚РµР»СЊ РЅР° РЅР°С‡Р°Р»СЊРЅСѓСЋ РѕСЃС‚Р°РЅРѕРІРєСѓ
+		 * @param to РЈРєР°Р·Р°С‚РµР»СЊ РЅР° РєРѕРЅРµС‡РЅСѓСЋ РѕСЃС‚Р°РЅРѕРІРєСѓ
+		 * @return Р Р°СЃСЃС‚РѕСЏРЅРёРµ РІ РјРµС‚СЂР°С…
+		 */
+		int GetDistance(const Stop* from, const Stop* to) const;
 
 	private:
+		// РҐСЂР°РЅРёР»РёС‰Р° (РІР»Р°РґРµСЋС‚ РѕР±СЉРµРєС‚Р°РјРё)
+		std::deque<Stop> stops_;
+		std::deque<Route> routes_;
 
-		// Создаёт новую остановку и добавляет её в транспортный справочник.
-		Stop* CreateStop(std::string& name, Coordinates pos);
+		// РРЅРґРµРєСЃС‹: РёРјСЏ в†’ СѓРєР°Р·Р°С‚РµР»СЊ
+		std::unordered_map<std::string_view, const Stop*> stopname_to_stop_;
+		std::unordered_map<std::string_view, const Route*> routename_to_route_;
 
-		// Метод установки координат остановки
-		void SetCoordinates(Stop* stop, Coordinates pos);
+		// РћСЃС‚Р°РЅРѕРІРєР° в†’ РјРЅРѕР¶РµСЃС‚РІРѕ РјР°СЂС€СЂСѓС‚РѕРІ, РїСЂРѕС…РѕРґСЏС‰РёС… С‡РµСЂРµР· РЅРµС‘
+		std::unordered_map<const Stop*, std::unordered_set<const Route*>> stop_to_routes_;
 
-		// Метод добавления маршрута в справочник
-		void AddRoute(std::string name, StopsList stops);
+		// РҐСЌС€РµСЂ РґР»СЏ РїР°СЂ СѓРєР°Р·Р°С‚РµР»РµР№
+		struct PairHash {
+			size_t operator()(const std::pair<const Stop*, const Stop*>& p) const;
+		};
 
-		// Возвращает множество маршрутов, проходящих через заданную остановку.
-		// Если остановка не найдена или через неё не проходит ни один маршрут,
-		// возвращается пустое множеств
-		const RouteSet& GetRoutesByStop(StopPtr stop) const;
-
-	private:
-		// Контейнер и 'индекс' остановок
-		StopsStorage stops_{};
-		StopsIndex stop_by_name_{};
-
-		// Контейнер и 'индекс' маршрутов
-		RouteStorage routes_{};
-		RouteIndex route_by_name_{};
-
-		// 'Индекс' остановок и маршрутов
-		StopRouteIndex stop_to_routes_;
-
-		// Контейнер хранения расстояний между остановками
-		StopsDistancesStorage distances_;
+		// Р“СЂР°С„ РґРѕСЂРѕР¶РЅС‹С… СЂР°СЃСЃС‚РѕСЏРЅРёР№: (from, to) в†’ meters
+		std::unordered_map<std::pair<const Stop*, const Stop*>, int, PairHash> distances_;
 	};
 
-}	// namespace trans_cat
+	// Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅР°СЏ С„СѓРЅРєС†РёСЏ РґР»СЏ РєРѕРјР±РёРЅРёСЂРѕРІР°РЅРёСЏ С…СЌС€РµР№ (C++17/20)
+	template<typename T>
+	void hash_combine(size_t& seed, const T& value) {
+		seed ^= std::hash<T>{}(value)+2654435761U + (seed << 6) + (seed >> 2);
+	}
+} // namespace trans_cat

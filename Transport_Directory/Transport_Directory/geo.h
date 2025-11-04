@@ -1,4 +1,4 @@
-#pragma oncea
+#pragma once
 
 namespace geo {
 
