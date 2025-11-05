@@ -205,6 +205,7 @@ namespace json {
 
     // === Реализация Node ===
 
+    Node::Node(Value value) : value_(std::move(value)) {}
     Node::Node(int value) : value_(value) {}
     Node::Node(double value) : value_(value) {}
     Node::Node(bool value) : value_(value) {}
@@ -265,6 +266,10 @@ namespace json {
     }
 
     const Value& Node::GetValue() const {
+        return value_;
+    }
+
+    Value& Node::GetValueRef() {
         return value_;
     }
 
@@ -709,6 +714,104 @@ namespace json {
         std::ostringstream os;
         json::Print(doc, os);
         return os.str();
+    }
+
+    // === Реализация Builder ===
+
+    Builder& Builder::AddValue(Value value) {
+        AddNode(Node(std::move(value)));
+        return *this;
+    }
+
+    Builder& Builder::AddNull() {
+        return AddValue(nullptr);
+    }
+
+    Builder& Builder::AddBool(bool value) {
+        return AddValue(value);
+    }
+
+    Builder& Builder::AddNumber(int value) {
+        return AddValue(value);
+    }
+
+    Builder& Builder::AddNumber(double value) {
+        return AddValue(value);
+    }
+
+    Builder& Builder::AddString(std::string value) {
+        return AddValue(std::move(value));
+    }
+
+    Builder& Builder::StartArray() {
+        CheckClosed();
+        AddNode(Array{});
+        return *this;
+    }
+
+    Builder& Builder::EndArray() {
+
+        // Первая проверка - в стеке вложенных контейнеров есть хоть что-то
+        // Предупреждает вызов back() на пустом векторе
+        if (nodes_stack_.empty()) {
+            throw BuildError("No array to end: builder is empty");
+        }
+
+        // Вторая проверка - закрываем именно Array
+        const Node& top = *nodes_stack_.back();
+        if (!top.IsArray()) {
+            throw BuildError("EndArray() called on non-array context");
+        }
+
+        // При пройденных проверках - удаляем Array из стека
+        nodes_stack_.pop_back();
+        return *this;
+    }
+
+    Builder& Builder::StartDict() {
+        CheckClosed();
+        AddNode(Dict{});
+        return *this;
+    }
+
+    Builder& Builder::EndDict() {
+
+        // Первая проверка - в стеке вложенных контейнеров есть хоть что-то
+        // Предупреждает вызов back() на пустом векторе
+        if (nodes_stack_.empty()) {
+            throw BuildError("No dict to end: builder is empty");
+        }
+
+        // Вторая проверка - закрываем именно Dict
+        const Node& top = *nodes_stack_.back();
+        if (!top.IsMap()) {
+            throw BuildError("EndDict() called on non-dict context");
+        }
+
+        // При пройденных проверках - удаляем Dict из стека
+        nodes_stack_.pop_back();
+        return *this;
+    }
+
+    Builder& Builder::Key(std::string key) {
+
+        // Первая проверка - в стеке вложенных контейнеров есть хоть что-то
+        // Предупреждает вызов back() на пустом векторе
+        if (nodes_stack_.empty()) {
+            throw BuildError("Key() called outside of dict: builder is empty");
+        }
+
+        // Вторая проверка - добавляем Key именно в Dict
+        Node& parent = *nodes_stack_.back();
+        if (!parent.IsMap()) {
+            throw BuildError("Key() called on non-dict context");
+        }
+
+        Dict& map = std::get<Dict>(parent.GetValueRef());
+        map[key] = nullptr;  // временное значение
+        nodes_stack_.pop_back();
+        nodes_stack_.push_back(&map[key]);
+        return *this;
     }
 
 } // namespace json

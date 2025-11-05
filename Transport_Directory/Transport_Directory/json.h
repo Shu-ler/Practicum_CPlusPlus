@@ -59,6 +59,14 @@ namespace json {
     };
 
     /**
+     * @brief Исключение, выбрасываемое при ошибках построения (для Builder)
+     */
+    class BuildError : public std::logic_error {
+    public:
+        using logic_error::logic_error;
+    };
+
+    /**
      * @brief Узел JSON-документа
      *
      * Хранит одно значение любого типа из Value.
@@ -67,6 +75,7 @@ namespace json {
     public:
         // Конструкторы (не explicit, чтобы работала инициализация вроде Array{1, 2.5, "str"})
         Node() = default;
+        Node(Value value);
         Node(int value);
         Node(double value);
         Node(bool value);
@@ -107,6 +116,12 @@ namespace json {
          * @return Константная ссылка на variant
          */
         const Value& GetValue() const;
+
+        /**
+         * @brief Возвращает ссылку на хранимое значение (для внутреннего использования).
+         * @return Неконстантная ссылка на variant
+         */
+        Value& GetValueRef();
 
     private:
         Value value_{};
@@ -175,8 +190,8 @@ namespace json {
      * @code
      * Node root = Builder{}
      *     .StartDict()
-     *         .Key("name").Value("Alice")
-     *         .Key("age").Value(30)
+     *         .Key("name").AddValue("Alice")
+     *         .Key("age").AddValue(30)
      *     .EndDict()
      *     .Build();
      * @endcode
@@ -189,22 +204,22 @@ namespace json {
          * @param value Значение для добавления
          * @return Ссылка на *this для цепочки вызовов
          */
-        Builder& Value(Value value);
+        Builder& AddValue(Value value);
 
         // Добавляет null
-        Builder& Null();
+        Builder& AddNull();
 
         // Добавляет логическое значение
-        Builder& Bool(bool value);
+        Builder& AddBool(bool value);
 
         // Добавляет целое число
-        Builder& Number(int value);
+        Builder& AddNumber(int value);
 
         // Добавляет вещественное число
-        Builder& Number(double value);
+        Builder& AddNumber(double value);
 
         // Добавляет строку
-        Builder& String(std::string value);
+        Builder& AddString(std::string value);
 
         /**
          * @brief Начинает создание массива.
@@ -238,7 +253,7 @@ namespace json {
          * @param key Имя ключа
          * @return Ссылка на *this
          * @pre Должен вызываться только внутри словаря
-         * @note После Key() нужно вызвать Value(), String() и т.д.
+         * @note После Key() нужно вызвать AddValue(), AddString() и т.д.
          */
         Builder& Key(std::string key);
 

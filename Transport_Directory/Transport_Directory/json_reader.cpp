@@ -18,20 +18,20 @@ namespace {
         builder.StartDict();
 
         int id = request.at("id").AsInt();
-        builder.Key("request_id").Value(id);
+        builder.Key("request_id").AddValue(id);
 
         std::string bus_name = request.at("name").AsString();
         auto stat = tc.GetRouteStat(bus_name);
 
         if (stat) {
             builder
-                .Key("stop_count").Value(static_cast<int>(stat->stop_count))
-                .Key("unique_stop_count").Value(static_cast<int>(stat->unique_stop_count))
-                .Key("route_length").Value(static_cast<int>(stat->route_length))
-                .Key("curvature").Value(stat->curvature);
+                .Key("stop_count").AddValue(static_cast<int>(stat->stop_count))
+                .Key("unique_stop_count").AddValue(static_cast<int>(stat->unique_stop_count))
+                .Key("route_length").AddValue(static_cast<int>(stat->route_length))
+                .Key("curvature").AddValue(stat->curvature);
         }
         else {
-            builder.Key("error_message").Value("not found");
+            builder.Key("error_message").AddValue("not found");
         }
 
         return builder.EndDict().Build();
@@ -48,14 +48,14 @@ namespace {
         builder.StartDict();
 
         int id = request.at("id").AsInt();
-        builder.Key("request_id").Value(id);
+        builder.Key("request_id").AddValue(id);
 
         std::string stop_name = request.at("name").AsString();
         auto buses = tc.GetBusesByStop(stop_name);
 
         builder.Key("buses").StartArray();
         for (const auto& bus : buses) {
-            builder.Value(bus);
+            builder.AddValue(bus);
         }
         builder.EndArray();
 
@@ -158,8 +158,8 @@ namespace json_reader {
                     // Неизвестный тип запроса
                     json::Builder builder;
                     builder.StartDict()
-                        .Key("request_id").Value(SafeGet<int>(req, "id"))
-                        .Key("error_message").Value("unknown request type");
+                        .Key("request_id").AddValue(SafeGet<int>(req, "id"))
+                        .Key("error_message").AddValue("unknown request type");
                     responses.push_back(builder.EndDict().Build());
                 }
             }
@@ -167,8 +167,8 @@ namespace json_reader {
                 // Защита от падений при некорректных запросах
                 json::Builder builder;
                 builder.StartDict()
-                    .Key("request_id").Value(SafeGet<int>(req, "id"))
-                    .Key("error_message").Value("invalid request");
+                    .Key("request_id").AddValue(SafeGet<int>(req, "id"))
+                    .Key("error_message").AddValue("invalid request");
                 responses.push_back(builder.EndDict().Build());
             }
         }
