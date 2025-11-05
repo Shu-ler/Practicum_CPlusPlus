@@ -107,6 +107,21 @@ namespace json {
         const Array& AsArray() const;
         const Dict& AsMap() const;
 
+        /**
+         * @brief Извлекает значение заданного типа из узла.
+         * @tparam T Тип, который ожидается (int, bool, std::string и т.д.)
+         * @return Константная ссылка на значение типа T
+         * @throws std::logic_error если тип не совпадает
+         *
+         * Пример:
+         * @code
+         * node.As<int>();     // проверит, что это int
+         * node.As<std::string>(); // проверит, что это строка
+         * @endcode
+         */
+        template<typename T>
+        T As() const;
+
         // Сравнение
         bool operator==(const Node& rhs) const;
         bool operator!=(const Node& rhs) const;

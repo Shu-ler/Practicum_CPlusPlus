@@ -273,6 +273,37 @@ namespace json {
         return value_;
     }
 
+    template<typename T>
+    T Node::As() const {
+        if constexpr (std::is_same_v<T, int>) {
+            if (!IsInt()) throw std::logic_error("Not an int");
+            return std::get<int>(value_);
+        }
+        else if constexpr (std::is_same_v<T, bool>) {
+            if (!IsBool()) throw std::logic_error("Not a bool");
+            return std::get<bool>(value_);
+        }
+        else if constexpr (std::is_same_v<T, double>) {
+            if (!IsDouble()) throw std::logic_error("Not a number");
+            return AsDouble(); // уже есть логика для int → double
+        }
+        else if constexpr (std::is_same_v<T, std::string>) {
+            if (!IsString()) throw std::logic_error("Not a string");
+            return std::get<std::string>(value_);
+        }
+        else if constexpr (std::is_same_v<T, Array>) {
+            if (!IsArray()) throw std::logic_error("Not an array");
+            return std::get<Array>(value_);
+        }
+        else if constexpr (std::is_same_v<T, Dict>) {
+            if (!IsMap()) throw std::logic_error("Not a map");
+            return std::get<Dict>(value_);
+        }
+        else {
+            static_assert(sizeof(T) == 0, "Node::As<T> not specialized for this type");
+        }
+    }
+
     // === Реализация Document ===
 
     Document::Document(Node root) : root_(std::move(root)) {}
