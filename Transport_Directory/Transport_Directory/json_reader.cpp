@@ -1,5 +1,6 @@
 #include "json_reader.h"
 #include <stdexcept>
+#include <string>
 
 namespace {
 
@@ -64,24 +65,25 @@ namespace {
 
     // Вспомогательная функция: проверяет, есть ли ключ и правильного ли он типа
     template<typename T>
-    const T& SafeGet(const json::Dict& dict, std::string_view key) {
+    const T& GetJsonValue(const json::Dict& dict, std::string_view key) {
         auto it = dict.find(key);
         if (it == dict.end()) {
-            throw std::out_of_range(std::string{ "Key not found: " } + key.data());
+            throw json::ParsingError{ std::string("Key not found: ") + std::string(key) };
         }
         try {
             return it->second.As<T>();
         }
         catch (const std::bad_variant_access&) {
-            throw std::runtime_error(std::string{ "Key " } + key.data() + " has wrong type");
+            throw json::ParsingError{ std::string("Key '") 
+                + std::string(key) + "' has wrong type" };
         }
     }
 
     // Обработка остановки из base_requests
     void AddStopFromJson(trans_cat::TransportCatalogue& tc, const json::Dict& stop_node) {
-        std::string name = SafeGet<std::string>(stop_node, "name");
-        double lat = SafeGet<double>(stop_node, "latitude");
-        double lng = SafeGet<double>(stop_node, "longitude");
+        std::string name = GetJsonValue<std::string>(stop_node, "name");
+        double lat = GetJsonValue<double>(stop_node, "latitude");
+        double lng = GetJsonValue<double>(stop_node, "longitude");
 
         tc.AddStop(name, { lat, lng });
 
@@ -97,10 +99,10 @@ namespace {
 
     // Обработка маршрута из base_requests
     void AddRouteFromJson(trans_cat::TransportCatalogue& tc, const json::Dict& route_node) {
-        std::string name = SafeGet<std::string>(route_node, "name");
-        bool is_roundtrip = SafeGet<bool>(route_node, "is_roundtrip");
+        std::string name = GetJsonValue<std::string>(route_node, "name");
+        bool is_roundtrip = GetJsonValue<bool>(route_node, "is_roundtrip");
 
-        const json::Array& stops_array = SafeGet<json::Array>(route_node, "stops");
+        const json::Array& stops_array = GetJsonValue<json::Array>(route_node, "stops");
         std::vector<std::string> stops;
         stops.reserve(stops_array.size());
         for (const auto& stop_node : stops_array) {
@@ -125,7 +127,7 @@ namespace json_reader {
 
         for (const auto& req_node : base_requests) {
             const json::Dict& req = req_node.AsMap();
-            std::string type = SafeGet<std::string>(req, "type");
+            std::string type = GetJsonValue<std::string>(req, "type");
 
             if (type == "Stop") {
                 AddStopFromJson(tc, req);
@@ -145,7 +147,7 @@ namespace json_reader {
 
         for (const auto& req_node : stat_requests) {
             const json::Dict& req = req_node.AsMap();
-            std::string type = SafeGet<std::string>(req, "type");
+            std::string type = GetJsonValue<std::string>(req, "type");
 
             try {
                 if (type == "Bus") {
@@ -158,7 +160,7 @@ namespace json_reader {
                     // Неизвестный тип запроса
                     json::Builder builder;
                     builder.StartDict()
-                        .Key("request_id").AddValue(SafeGet<int>(req, "id"))
+                        .Key("request_id").AddValue(GetJsonValue<int>(req, "id"))
                         .Key("error_message").AddValue("unknown request type");
                     responses.push_back(builder.EndDict().Build());
                 }
@@ -167,7 +169,7 @@ namespace json_reader {
                 // Защита от падений при некорректных запросах
                 json::Builder builder;
                 builder.StartDict()
-                    .Key("request_id").AddValue(SafeGet<int>(req, "id"))
+                    .Key("request_id").AddValue(GetJsonValue<int>(req, "id"))
                     .Key("error_message").AddValue("invalid request");
                 responses.push_back(builder.EndDict().Build());
             }
