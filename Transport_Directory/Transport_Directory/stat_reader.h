@@ -7,15 +7,15 @@
 
 namespace stat_r {
 
-	// Обрабатывает запрос для автобуса и выводит информацию о нём
+	// РћР±СЂР°Р±Р°С‚С‹РІР°РµС‚ Р·Р°РїСЂРѕСЃ РґР»СЏ Р°РІС‚РѕР±СѓСЃР° Рё РІС‹РІРѕРґРёС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РЅС‘Рј
 	void ProcessBusRequest(const trans_cat::TransportCatalogue& transport_catalogue,
 		const std::string_view& obj_name, std::ostream& output);
 
-	// Обрабатывает запрос для остановки и выводит информацию о ней
+	// РћР±СЂР°Р±Р°С‚С‹РІР°РµС‚ Р·Р°РїСЂРѕСЃ РґР»СЏ РѕСЃС‚Р°РЅРѕРІРєРё Рё РІС‹РІРѕРґРёС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РЅРµР№
 	void ProcessStopRequest(const trans_cat::TransportCatalogue& transport_catalogue,
 		const std::string_view& obj_name, std::ostream& output);
 
-	// Парсит запрос и выводит статистику на основе транспортного справочника
+	// РџР°СЂСЃРёС‚ Р·Р°РїСЂРѕСЃ Рё РІС‹РІРѕРґРёС‚ СЃС‚Р°С‚РёСЃС‚РёРєСѓ РЅР° РѕСЃРЅРѕРІРµ С‚СЂР°РЅСЃРїРѕСЂС‚РЅРѕРіРѕ СЃРїСЂР°РІРѕС‡РЅРёРєР°
 	void ParseAndPrintStat(const trans_cat::TransportCatalogue& transport_catalogue,
 		std::string_view request, std::ostream& output);
 

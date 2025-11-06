@@ -4,15 +4,15 @@
 
 namespace {
 
-    // Вспомогательные функции для обработки отдельных типов запросов
+    // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ С„СѓРЅРєС†РёРё РґР»СЏ РѕР±СЂР°Р±РѕС‚РєРё РѕС‚РґРµР»СЊРЅС‹С… С‚РёРїРѕРІ Р·Р°РїСЂРѕСЃРѕРІ
     json::Node MakeBusResponse(const trans_cat::TransportCatalogue&, const json::Dict&);
     json::Node MakeStopResponse(const trans_cat::TransportCatalogue&, const json::Dict&);
 
     /**
-     * @brief Создаёт ответ на запрос "Bus"
-     * @param tc Транспортный каталог
-     * @param request JSON-объект запроса (содержит "id", "name")
-     * @return JSON-объект с результатом
+     * @brief РЎРѕР·РґР°С‘С‚ РѕС‚РІРµС‚ РЅР° Р·Р°РїСЂРѕСЃ "Bus"
+     * @param tc РўСЂР°РЅСЃРїРѕСЂС‚РЅС‹Р№ РєР°С‚Р°Р»РѕРі
+     * @param request JSON-РѕР±СЉРµРєС‚ Р·Р°РїСЂРѕСЃР° (СЃРѕРґРµСЂР¶РёС‚ "id", "name")
+     * @return JSON-РѕР±СЉРµРєС‚ СЃ СЂРµР·СѓР»СЊС‚Р°С‚РѕРј
      */
     json::Node MakeBusResponse(const trans_cat::TransportCatalogue& tc, const json::Dict& request) {
         json::Builder builder;
@@ -39,10 +39,10 @@ namespace {
     }
 
     /**
-     * @brief Создаёт ответ на запрос "Stop"
-     * @param tc Транспортный каталог
-     * @param request JSON-объект запроса
-     * @return JSON-объект с результатом
+     * @brief РЎРѕР·РґР°С‘С‚ РѕС‚РІРµС‚ РЅР° Р·Р°РїСЂРѕСЃ "Stop"
+     * @param tc РўСЂР°РЅСЃРїРѕСЂС‚РЅС‹Р№ РєР°С‚Р°Р»РѕРі
+     * @param request JSON-РѕР±СЉРµРєС‚ Р·Р°РїСЂРѕСЃР°
+     * @return JSON-РѕР±СЉРµРєС‚ СЃ СЂРµР·СѓР»СЊС‚Р°С‚РѕРј
      */
     json::Node MakeStopResponse(const trans_cat::TransportCatalogue& tc, const json::Dict& request) {
         json::Builder builder;
@@ -63,7 +63,7 @@ namespace {
         return builder.EndDict().Build();
     }
 
-    // Вспомогательная функция: проверяет, есть ли ключ и правильного ли он типа
+    // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅР°СЏ С„СѓРЅРєС†РёСЏ: РїСЂРѕРІРµСЂСЏРµС‚, РµСЃС‚СЊ Р»Рё РєР»СЋС‡ Рё РїСЂР°РІРёР»СЊРЅРѕРіРѕ Р»Рё РѕРЅ С‚РёРїР°
     template<typename T>
     const T& GetJsonValue(const json::Dict& dict, std::string_view key) {
         auto it = dict.find(key);
@@ -79,7 +79,7 @@ namespace {
         }
     }
 
-    // Обработка остановки из base_requests
+    // РћР±СЂР°Р±РѕС‚РєР° РѕСЃС‚Р°РЅРѕРІРєРё РёР· base_requests
     void AddStopFromJson(trans_cat::TransportCatalogue& tc, const json::Dict& stop_node) {
         std::string name = GetJsonValue<std::string>(stop_node, "name");
         double lat = GetJsonValue<double>(stop_node, "latitude");
@@ -97,7 +97,7 @@ namespace {
         }
     }
 
-    // Обработка маршрута из base_requests
+    // РћР±СЂР°Р±РѕС‚РєР° РјР°СЂС€СЂСѓС‚Р° РёР· base_requests
     void AddRouteFromJson(trans_cat::TransportCatalogue& tc, const json::Dict& route_node) {
         std::string name = GetJsonValue<std::string>(route_node, "name");
         bool is_roundtrip = GetJsonValue<bool>(route_node, "is_roundtrip");
@@ -166,7 +166,7 @@ namespace json_reader {
                     responses.push_back(MakeStopResponse(tc, req));
                 }
                 else {
-                    // Неизвестный тип запроса
+                    // РќРµРёР·РІРµСЃС‚РЅС‹Р№ С‚РёРї Р·Р°РїСЂРѕСЃР°
                     json::Builder builder;
                     builder.StartDict()
                         .Key("request_id").AddValue(GetJsonValue<int>(req, "id"))
@@ -175,7 +175,7 @@ namespace json_reader {
                 }
             }
             catch (const std::exception&) {
-                // Защита от падений при некорректных запросах
+                // Р—Р°С‰РёС‚Р° РѕС‚ РїР°РґРµРЅРёР№ РїСЂРё РЅРµРєРѕСЂСЂРµРєС‚РЅС‹С… Р·Р°РїСЂРѕСЃР°С…
                 json::Builder builder;
                 builder.StartDict()
                     .Key("request_id").AddValue(GetJsonValue<int>(req, "id"))

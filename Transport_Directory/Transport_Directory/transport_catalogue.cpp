@@ -1,4 +1,4 @@
-﻿#include "transport_catalogue.h"
+#include "transport_catalogue.h"
 #include <cmath>
 
 namespace trans_cat {

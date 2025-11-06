@@ -7,26 +7,26 @@
 #include "stat_reader.h"
 
 /*
- * Разбирает строку `str` на составляющие части, используя регулярные выражения.
- * Извлекает географические координаты и информацию о расстояниях до соседних остановок.
- * Возвращает структуру `StopData`, содержащую:
- * - координаты (`coordinates`);
- * - контейнер с названиями соседних остановок и расстояниями до них (`nearby_stops`).
+ * Р Р°Р·Р±РёСЂР°РµС‚ СЃС‚СЂРѕРєСѓ `str` РЅР° СЃРѕСЃС‚Р°РІР»СЏСЋС‰РёРµ С‡Р°СЃС‚Рё, РёСЃРїРѕР»СЊР·СѓСЏ СЂРµРіСѓР»СЏСЂРЅС‹Рµ РІС‹СЂР°Р¶РµРЅРёСЏ.
+ * РР·РІР»РµРєР°РµС‚ РіРµРѕРіСЂР°С„РёС‡РµСЃРєРёРµ РєРѕРѕСЂРґРёРЅР°С‚С‹ Рё РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ СЂР°СЃСЃС‚РѕСЏРЅРёСЏС… РґРѕ СЃРѕСЃРµРґРЅРёС… РѕСЃС‚Р°РЅРѕРІРѕРє.
+ * Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃС‚СЂСѓРєС‚СѓСЂСѓ `StopData`, СЃРѕРґРµСЂР¶Р°С‰СѓСЋ:
+ * - РєРѕРѕСЂРґРёРЅР°С‚С‹ (`coordinates`);
+ * - РєРѕРЅС‚РµР№РЅРµСЂ СЃ РЅР°Р·РІР°РЅРёСЏРјРё СЃРѕСЃРµРґРЅРёС… РѕСЃС‚Р°РЅРѕРІРѕРє Рё СЂР°СЃСЃС‚РѕСЏРЅРёСЏРјРё РґРѕ РЅРёС… (`nearby_stops`).
  *
- * @param str Строка с данными об остановке
- * @return Структура `StopData` с разложенными данными
- * @throws std::invalid_argument Если формат данных некорректен или координаты не могут быть преобразованы
+ * @param str РЎС‚СЂРѕРєР° СЃ РґР°РЅРЅС‹РјРё РѕР± РѕСЃС‚Р°РЅРѕРІРєРµ
+ * @return РЎС‚СЂСѓРєС‚СѓСЂР° `StopData` СЃ СЂР°Р·Р»РѕР¶РµРЅРЅС‹РјРё РґР°РЅРЅС‹РјРё
+ * @throws std::invalid_argument Р•СЃР»Рё С„РѕСЂРјР°С‚ РґР°РЅРЅС‹С… РЅРµРєРѕСЂСЂРµРєС‚РµРЅ РёР»Рё РєРѕРѕСЂРґРёРЅР°С‚С‹ РЅРµ РјРѕРіСѓС‚ Р±С‹С‚СЊ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅС‹
  */
 StopData ParseStopData(std::string str) {
 	StopData stop_data;
 	std::smatch coords_match;
 
-	// Выделение географических координат
+	// Р’С‹РґРµР»РµРЅРёРµ РіРµРѕРіСЂР°С„РёС‡РµСЃРєРёС… РєРѕРѕСЂРґРёРЅР°С‚
 	if (!std::regex_match(str, coords_match, InputReader::coords_regex)) {
 		throw std::invalid_argument("Invalid stop data format");
 	}
 
-	// Попытка получения географических координат
+	// РџРѕРїС‹С‚РєР° РїРѕР»СѓС‡РµРЅРёСЏ РіРµРѕРіСЂР°С„РёС‡РµСЃРєРёС… РєРѕРѕСЂРґРёРЅР°С‚
 	try {
 		stop_data.coordinates.lat = std::stod(std::string(coords_match[1].str()));
 		stop_data.coordinates.lng = std::stod(std::string(coords_match[2].str()));
@@ -35,14 +35,14 @@ StopData ParseStopData(std::string str) {
 		throw std::invalid_argument("Invalid coordinates in stop data");
 	}
 
-	// Остаток строки - набор расстояний и наименований соседних остановок
+	// РћСЃС‚Р°С‚РѕРє СЃС‚СЂРѕРєРё - РЅР°Р±РѕСЂ СЂР°СЃСЃС‚РѕСЏРЅРёР№ Рё РЅР°РёРјРµРЅРѕРІР°РЅРёР№ СЃРѕСЃРµРґРЅРёС… РѕСЃС‚Р°РЅРѕРІРѕРє
 	std::string remaining_string(coords_match[3].str());
 
-	// Итераторы - бегунок и конец строки
+	// РС‚РµСЂР°С‚РѕСЂС‹ - Р±РµРіСѓРЅРѕРє Рё РєРѕРЅРµС† СЃС‚СЂРѕРєРё
 	std::sregex_iterator it(remaining_string.begin(), remaining_string.end(), InputReader::distance_regex);
 	std::sregex_iterator end;
 
-	// Парсинг соседних остановок
+	// РџР°СЂСЃРёРЅРі СЃРѕСЃРµРґРЅРёС… РѕСЃС‚Р°РЅРѕРІРѕРє
 	for (; it != end; ++it) {
 		std::smatch match = *it;
 		int distance = std::stoi(match[1].str());
@@ -54,7 +54,7 @@ StopData ParseStopData(std::string str) {
 }
 
 /*
- * Удаляет пробелы в начале и конце строки
+ * РЈРґР°Р»СЏРµС‚ РїСЂРѕР±РµР»С‹ РІ РЅР°С‡Р°Р»Рµ Рё РєРѕРЅС†Рµ СЃС‚СЂРѕРєРё
  */
 std::string_view Trim(std::string_view string) {
 	const auto start = string.find_first_not_of(' ');
@@ -65,7 +65,7 @@ std::string_view Trim(std::string_view string) {
 }
 
 /*
- * Разбивает строку string на n строк, с помощью указанного символа-разделителя delim
+ * Р Р°Р·Р±РёРІР°РµС‚ СЃС‚СЂРѕРєСѓ string РЅР° n СЃС‚СЂРѕРє, СЃ РїРѕРјРѕС‰СЊСЋ СѓРєР°Р·Р°РЅРЅРѕРіРѕ СЃРёРјРІРѕР»Р°-СЂР°Р·РґРµР»РёС‚РµР»СЏ delim
  */
 std::vector<std::string_view> Split(std::string_view string, char delim) {
 	std::vector<std::string_view> result;
@@ -86,9 +86,9 @@ std::vector<std::string_view> Split(std::string_view string, char delim) {
 }
 
 /*
- * Парсит маршрут.
- * Для кольцевого маршрута (A>B>C>A) возвращает массив названий остановок [A,B,C,A]
- * Для некольцевого маршрута (A-B-C-D) возвращает массив названий остановок [A,B,C,D,C,B,A]
+ * РџР°СЂСЃРёС‚ РјР°СЂС€СЂСѓС‚.
+ * Р”Р»СЏ РєРѕР»СЊС†РµРІРѕРіРѕ РјР°СЂС€СЂСѓС‚Р° (A>B>C>A) РІРѕР·РІСЂР°С‰Р°РµС‚ РјР°СЃСЃРёРІ РЅР°Р·РІР°РЅРёР№ РѕСЃС‚Р°РЅРѕРІРѕРє [A,B,C,A]
+ * Р”Р»СЏ РЅРµРєРѕР»СЊС†РµРІРѕРіРѕ РјР°СЂС€СЂСѓС‚Р° (A-B-C-D) РІРѕР·РІСЂР°С‰Р°РµС‚ РјР°СЃСЃРёРІ РЅР°Р·РІР°РЅРёР№ РѕСЃС‚Р°РЅРѕРІРѕРє [A,B,C,D,C,B,A]
  */
 std::vector<std::string_view> ParseRoute(std::string_view route) {
 	if (route.find('>') != route.npos) {
@@ -103,21 +103,21 @@ std::vector<std::string_view> ParseRoute(std::string_view route) {
 }
 
 /*
- * Разбирает строку `line` на составляющие части, используя регулярные выражения.
- * Находит соответствие между строкой и заранее определёнными шаблонами команд.
- * Возвращает структуру `CommandDescription`, содержащую:
- * - название команды (`command`);
- * - идентификатор (`id`);
- * - описание параметров (`description`).
+ * Р Р°Р·Р±РёСЂР°РµС‚ СЃС‚СЂРѕРєСѓ `line` РЅР° СЃРѕСЃС‚Р°РІР»СЏСЋС‰РёРµ С‡Р°СЃС‚Рё, РёСЃРїРѕР»СЊР·СѓСЏ СЂРµРіСѓР»СЏСЂРЅС‹Рµ РІС‹СЂР°Р¶РµРЅРёСЏ.
+ * РќР°С…РѕРґРёС‚ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ РјРµР¶РґСѓ СЃС‚СЂРѕРєРѕР№ Рё Р·Р°СЂР°РЅРµРµ РѕРїСЂРµРґРµР»С‘РЅРЅС‹РјРё С€Р°Р±Р»РѕРЅР°РјРё РєРѕРјР°РЅРґ.
+ * Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃС‚СЂСѓРєС‚СѓСЂСѓ `CommandDescription`, СЃРѕРґРµСЂР¶Р°С‰СѓСЋ:
+ * - РЅР°Р·РІР°РЅРёРµ РєРѕРјР°РЅРґС‹ (`command`);
+ * - РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ (`id`);
+ * - РѕРїРёСЃР°РЅРёРµ РїР°СЂР°РјРµС‚СЂРѕРІ (`description`).
  *
- * @param line Строка с описанием команды
- * @return Структура `CommandDescription` с разложенными данными
+ * @param line РЎС‚СЂРѕРєР° СЃ РѕРїРёСЃР°РЅРёРµРј РєРѕРјР°РЅРґС‹
+ * @return РЎС‚СЂСѓРєС‚СѓСЂР° `CommandDescription` СЃ СЂР°Р·Р»РѕР¶РµРЅРЅС‹РјРё РґР°РЅРЅС‹РјРё
  */
 CommandDescription ParseCommandDescription(std::string_view line) {
 	CommandDescription result{};
 	std::smatch match;
 
-	// Преобразуем string_view в string
+	// РџСЂРµРѕР±СЂР°Р·СѓРµРј string_view РІ string
 	std::string line_str(line);
 
 	for (const auto& cmd_reg : InputReader::cmd_regs) {
@@ -144,7 +144,7 @@ void InputReader::ApplyCommands([[maybe_unused]] trans_cat::TransportCatalogue& 
 
 	for (auto const& cur : commands_) {
 
-		// Обрабатываем команды типа "Stop"
+		// РћР±СЂР°Р±Р°С‚С‹РІР°РµРј РєРѕРјР°РЅРґС‹ С‚РёРїР° "Stop"
 		if (cur.command == stop_cmd) {
 			auto stop_data = ParseStopData(cur.description);
 			auto added_stop = catalogue.AddStop(cur.id, stop_data.coordinates);
@@ -158,7 +158,7 @@ void InputReader::ApplyCommands([[maybe_unused]] trans_cat::TransportCatalogue& 
 			}
 		}
 		
-		// Обрабатываем команды типа "Bus"
+		// РћР±СЂР°Р±Р°С‚С‹РІР°РµРј РєРѕРјР°РЅРґС‹ С‚РёРїР° "Bus"
 		else if (cur.command != stop_cmd) {
 			catalogue.AddRoute(cur.id, ParseRoute(cur.description));
 		}
