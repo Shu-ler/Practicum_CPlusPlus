@@ -8,8 +8,8 @@ namespace geo {
     double ComputeDistance(Coordinates from, Coordinates to) {
         using namespace std;
 
-        static const double dr = M_PI / 180.0;      // Коэффициент перевода градусов в радианы
-        static const size_t earth_radius = 6371000; // Радиус Земли в метрах
+        static const double dr = M_PI / 180.0;      // РљРѕСЌС„С„РёС†РёРµРЅС‚ РїРµСЂРµРІРѕРґР° РіСЂР°РґСѓСЃРѕРІ РІ СЂР°РґРёР°РЅС‹
+        static const size_t earth_radius = 6371000; // Р Р°РґРёСѓСЃ Р—РµРјР»Рё РІ РјРµС‚СЂР°С…
 
         return acos(sin(from.lat * dr) * sin(to.lat * dr)
             + cos(from.lat * dr) * cos(to.lat * dr) * cos(abs(from.lng - to.lng) * dr))

@@ -1,6 +1,6 @@
 #include "svg.h"
 
-// Экранирует специальные символы SVG
+// Р­РєСЂР°РЅРёСЂСѓРµС‚ СЃРїРµС†РёР°Р»СЊРЅС‹Рµ СЃРёРјРІРѕР»С‹ SVG
 std::string EscapeSvgText(std::string_view text) {
     std::string result;
     for (char c : text) {
@@ -24,7 +24,7 @@ namespace svg {
     void Object::Render(const RenderContext& context) const {
         context.RenderIndent();
 
-        // Делегируем вывод тега своим подклассам
+        // Р”РµР»РµРіРёСЂСѓРµРј РІС‹РІРѕРґ С‚РµРіР° СЃРІРѕРёРј РїРѕРґРєР»Р°СЃСЃР°Рј
         RenderObject(context);
 
         context.out << std::endl;
@@ -124,7 +124,7 @@ namespace svg {
 
         context.RenderIndent();
 
-        // Вывод обязательных атрибутов
+        // Р’С‹РІРѕРґ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹С… Р°С‚СЂРёР±СѓС‚РѕРІ
         out << "<text "
             << "x=\"" << position_.x << "\" "
             << "y=\"" << position_.y << "\" "
@@ -132,7 +132,7 @@ namespace svg {
             << "dy=\"" << offset_.y << "\" "
             << "font-size=\"" << size_ << "\"";
 
-        // Вывод атрибутов с контролем заполнения
+        // Р’С‹РІРѕРґ Р°С‚СЂРёР±СѓС‚РѕРІ СЃ РєРѕРЅС‚СЂРѕР»РµРј Р·Р°РїРѕР»РЅРµРЅРёСЏ
         if (!font_family_.empty()) {
             out << " font-family=\"" << font_family_ << "\"";
         }
@@ -141,7 +141,7 @@ namespace svg {
             out << " font-weight=\"" << font_weight_ << "\"";
         }
 
-        // Вывод собственно текста
+        // Р’С‹РІРѕРґ СЃРѕР±СЃС‚РІРµРЅРЅРѕ С‚РµРєСЃС‚Р°
         out << ">"
             << EscapeSvgText(data_)
             << "</text>"
@@ -156,16 +156,16 @@ namespace svg {
 
     void Document::Render(std::ostream& out) const {
 
-        // Вывод заголовка файла
+        // Р’С‹РІРѕРґ Р·Р°РіРѕР»РѕРІРєР° С„Р°Р№Р»Р°
         out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n";
         out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n";
 
-        // Вывод содержимого файла
+        // Р’С‹РІРѕРґ СЃРѕРґРµСЂР¶РёРјРѕРіРѕ С„Р°Р№Р»Р°
         for (const auto& obj : objects_) {
             obj->Render(RenderContext(out, 2));
         }
 
-        // Вывод концовки файла
+        // Р’С‹РІРѕРґ РєРѕРЅС†РѕРІРєРё С„Р°Р№Р»Р°
         out << "</svg>\n";
     }
 

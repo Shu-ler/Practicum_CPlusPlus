@@ -7,7 +7,7 @@ namespace stat_r {
 	void ParseAndPrintStat(const trans_cat::TransportCatalogue& transport_catalogue, std::string_view request,
 		std::ostream& output) {
 
-		// Разбиваем запрос на название маршрута и команду
+		// Р Р°Р·Р±РёРІР°РµРј Р·Р°РїСЂРѕСЃ РЅР° РЅР°Р·РІР°РЅРёРµ РјР°СЂС€СЂСѓС‚Р° Рё РєРѕРјР°РЅРґСѓ
 		size_t pos = request.find(' ');
 		std::string_view command = request.substr(0, pos);
 		std::string_view obj_name = request.substr(pos + 1);
@@ -26,14 +26,14 @@ namespace stat_r {
 	void ProcessBusRequest(const trans_cat::TransportCatalogue& transport_catalogue,
 		const std::string_view& route_name, std::ostream& output) {
 
-		// Ищем маршрут в транспортном справочнике
+		// РС‰РµРј РјР°СЂС€СЂСѓС‚ РІ С‚СЂР°РЅСЃРїРѕСЂС‚РЅРѕРј СЃРїСЂР°РІРѕС‡РЅРёРєРµ
 		auto route = transport_catalogue.FindRoute(route_name);
 		if (route) {
 
-			// Получаем статистику по маршруту
+			// РџРѕР»СѓС‡Р°РµРј СЃС‚Р°С‚РёСЃС‚РёРєСѓ РїРѕ РјР°СЂС€СЂСѓС‚Сѓ
 			trans_cat::RouteStatistics stat = transport_catalogue.GetStat(route);
 
-			// Выводим статистику в нужном формате
+			// Р’С‹РІРѕРґРёРј СЃС‚Р°С‚РёСЃС‚РёРєСѓ РІ РЅСѓР¶РЅРѕРј С„РѕСЂРјР°С‚Рµ
 			output << "Bus " << route_name << ": "
 				<< stat.total_stops << " stops on route, "
 				<< stat.unique_stops << " unique stops, "
@@ -43,7 +43,7 @@ namespace stat_r {
 		}
 		else {
 
-			// Если маршрут не найден
+			// Р•СЃР»Рё РјР°СЂС€СЂСѓС‚ РЅРµ РЅР°Р№РґРµРЅ
 			output << "Bus " << route_name << ": not found" << std::endl;
 		}
 	}
@@ -53,7 +53,7 @@ namespace stat_r {
 		auto stop = transport_catalogue.FindStop(stop_name);
 		if (stop) {
 		
-			// Остановка найдена
+			// РћСЃС‚Р°РЅРѕРІРєР° РЅР°Р№РґРµРЅР°
 			auto& routes_names = transport_catalogue.GetRoutesNamesByStop(stop);
 
 			if (routes_names.empty()) {
@@ -61,7 +61,7 @@ namespace stat_r {
 			}
 			else {
 
-				// Выводим отсортированные названия маршрутов
+				// Р’С‹РІРѕРґРёРј РѕС‚СЃРѕСЂС‚РёСЂРѕРІР°РЅРЅС‹Рµ РЅР°Р·РІР°РЅРёСЏ РјР°СЂС€СЂСѓС‚РѕРІ
 				output << "Stop " << stop_name << ": buses ";
 
 				auto it = routes_names.begin();
@@ -76,7 +76,7 @@ namespace stat_r {
 		}
 		else {
 			
-			// Остановка не найдена
+			// РћСЃС‚Р°РЅРѕРІРєР° РЅРµ РЅР°Р№РґРµРЅР°
 			output << "Stop " << stop_name << ": not found" << std::endl;
 		}
 	}
