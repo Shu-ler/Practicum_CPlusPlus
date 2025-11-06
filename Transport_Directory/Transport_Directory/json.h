@@ -15,9 +15,10 @@ namespace json {
     // Предварительное объявление
     class Node;
     class Document;
+    class Builder;
 
     /**
-     * @brief Псевдоним для массива JSON — вектор узлов
+     * @brief Тип для представления массива JSON — вектор узлов
      */
     using Array = std::vector<Node>;
 
