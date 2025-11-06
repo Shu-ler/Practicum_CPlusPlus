@@ -149,6 +149,13 @@ namespace json {
      */
     class Document {
     public:
+
+        /**
+         * @brief Конструктор по умолчанию.
+         * Создаёт документ с пустым корнем (null).
+         */
+        Document();
+
         /**
          * @brief Конструктор документа с заданным корневым узлом.
          * @param root Корневой узел JSON-документа.
@@ -194,6 +201,33 @@ namespace json {
      * @param output Поток вывода
      */
     void Print(const Document& doc, std::ostream& output);
+
+    /**
+     * @brief Оператор ввода JSON-документа из потока.
+     * @param is Входной поток
+     * @param doc Приёмник документа
+     * @return Ссылка на is
+     *
+     * Пример:
+     * @code
+     * json::Document doc;
+     * std::cin >> doc;
+     * @endcode
+     */
+    std::istream& operator>>(std::istream& is, json::Document& doc);
+
+    /**
+     * @brief Оператор вывода JSON-документа.
+     * @param os Поток вывода
+     * @param doc Документ
+     * @return Ссылка на os
+     *
+     * Пример:
+     * @code
+     * std::cout << doc;
+     * @endcode
+     */
+    std::ostream& operator<<(std::ostream& os, const json::Document& doc);
 
     /**
      * @class Builder

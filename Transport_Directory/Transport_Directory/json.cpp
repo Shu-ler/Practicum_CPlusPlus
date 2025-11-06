@@ -306,7 +306,10 @@ namespace json {
 
     // === Реализация Document ===
 
+    Document::Document() : root_(Node()) {}
+
     Document::Document(Node root) : root_(std::move(root)) {}
+
     const Node& Document::GetRoot() const { return root_; }
 
     bool Document::operator==(const Document& other) const {
@@ -322,6 +325,24 @@ namespace json {
 
     void Print(const Document& doc, std::ostream& output) {
         detail::PrintValue(doc.GetRoot().GetValue(), detail::PrintContext{ output });
+    }
+
+    std::istream& operator>>(std::istream& is, json::Document& doc) {
+        try {
+            doc = json::Load(is);
+        }
+        catch (const json::ParsingError& e) {
+            is.setstate(std::ios::failbit);  // Устанавливаем флаг ошибки
+        }
+        catch (const std::exception&) {
+            is.setstate(std::ios::failbit);
+        }
+        return is;
+    }
+
+    std::ostream& operator<<(std::ostream& os, const json::Document& doc) {
+        json::Print(doc, os);
+        return os;
     }
 
     // === Парсинг ===
@@ -713,7 +734,6 @@ namespace json {
             case '5': case '6': case '7': case '8': case '9':
                 return ParseNumber(input);
             default:
-                //return Node();
                 throw ParsingError("Unexpected character: " + std::string(1, c));
             }
         }

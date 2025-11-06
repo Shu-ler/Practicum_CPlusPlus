@@ -141,6 +141,15 @@ namespace json_reader {
         }
     }
 
+    const json::Array& GetStatRequests(const json::Document& input) {
+        const auto& root = input.GetRoot().AsMap();
+        auto it = root.find("stat_requests");
+        if (it == root.end()) {
+            throw json::ParsingError("Missing 'stat_requests' in input JSON");
+        }
+        return it->second.AsArray();
+    }
+
     json::Document MakeResponse(const trans_cat::TransportCatalogue& tc, const json::Array& stat_requests) {
         json::Array responses;
         responses.reserve(stat_requests.size());
