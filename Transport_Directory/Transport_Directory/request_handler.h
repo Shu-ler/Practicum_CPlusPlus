@@ -1,16 +1,114 @@
 #pragma once
 
-/*
- * Здесь можно было бы разместить код обработчика запросов к базе, содержащего логику, которую не
- * хотелось бы помещать ни в transport_catalogue, ни в json reader.
+#include "transport_catalogue.h"
+#include "json.h"
+
+#include <optional>
+#include <string>
+
+/**
+ * @file request_handler.h
+ * @brief Модуль обработки запросов к транспортному справочнику.
  *
- * В качестве источника для идей предлагаем взглянуть на нашу версию обработчика запросов.
- * Вы можете реализовать обработку запросов способом, который удобнее вам.
+ * Содержит класс RequestHandler — фасад, упрощающий взаимодействие между
+ * JSON-парсером и подсистемами приложения (каталог, визуализация, маршрутизация).
  *
- * Если вы затрудняетесь выбрать, что можно было бы поместить в этот файл,
- * можете оставить его пустым.
+ * Позволяет:
+ * - Получать статистику по автобусным маршрутам
+ * - Получать список маршрутов, проходящих через остановку
+ * - (В будущем) генерировать карту маршрутов
+ *
+ * Поддерживает расширение функциональности без изменения интерфейса парсинга.
  */
 
+namespace request_handler {
+
+    /**
+     * @brief Структура с метриками маршрута.
+     */
+    struct RouteStat {
+        std::string name;               //< Название маршрута
+        size_t stop_count = 0;          //< Общее количество остановок (с повторениями)
+        size_t unique_stop_count = 0;   //< Количество уникальных остановок
+        double route_length = 0.0;      //< Длина маршрута в метрах
+        double curvature = 0.0;         //< Коэффициент извилистости (отношение route_length к геодезическому расстоянию)
+    };
+
+    /**
+     * @brief Статистика по остановке.
+     */
+    struct StopStat {
+        std::string name;                           ///< Название остановки
+        std::vector<std::string> bus_names;         ///< Список маршрутов, проходящих через остановку
+    };
+
+    /**
+     * @class RequestHandler
+     * @brief Фасад для обработки запросов к транспортному справочнику.
+     * 
+     * См. паттерн проектирования Фасад: https://ru.wikipedia.org/wiki/Фасад_(шаблон_проектирования)
+     *
+     * Этот класс скрывает сложность взаимодействия с TransportCatalogue
+     * и предоставляет простой интерфейс для получения данных.
+     *
+     * Является частью паттерна «Фасад»:
+     * - Изолирует логику запросов от формата ввода/вывода (JSON, CLI, HTTP)
+     * - Упрощает тестирование
+     * - Поддерживает расширение (например, добавление визуализации карты)
+     *
+     * @note В текущей версии работает только с TransportCatalogue.
+     *       В следующих частях проекта будет расширен для поддержки MapRenderer и Router.
+     */
+    class RequestHandler {
+    public:
+        /**
+         * @brief Конструктор.
+         * @param catalogue Ссылка на транспортный каталог — источник данных
+         */
+        explicit RequestHandler(const trans_cat::TransportCatalogue& catalogue);
+
+        /**
+         * @brief Получает статистику по автобусному маршруту.
+         * @param bus_name Название маршрута
+         * @return Объект RouteStat, если маршрут найден; std::nullopt — если не найден
+         */
+        std::optional<RouteStat> GetBusStat(const std::string& bus_name) const;
+
+        /**
+         * @brief Получает статистику по остановке.
+         * @param stop_name Название остановки
+         * @return Объект StopStat, если остановка найдена; std::nullopt — если не найдена
+         */
+        std::optional<StopStat> GetStopStat(const std::string& stop_name) const;
+
+        // ////////////////////////////////////////////////////////////////////////
+        // Следующие методы будут добавлены в следующих частях проекта
+        // ////////////////////////////////////////////////////////////////////////
+
+        /**
+         * @brief Генерирует SVG-документ с картой маршрутов.
+         * @return Объект svg::Document
+         * @note Реализуется в части "Визуализация маршрутов"
+         */
+         // svg::Document RenderMap() const;
+
+         /**
+          * @brief Рассчитывает маршрут от одной остановки до другой.
+          * @param from Начальная остановка
+          * @param to Конечная остановка
+          * @return Описание маршрута или std::nullopt, если маршрут недостижим
+          * @note Реализуется в части "Маршрутизация"
+          */
+          // std::optional<Router::RouteInfo> BuildRoute(const std::string& from, const std::string& to) const;
+
+    private:
+        const trans_cat::TransportCatalogue& catalogue_;
+    };
+
+} // namespace request_handler
+
+
+// TODO удалить из релиза исходное описание
  // Класс RequestHandler играет роль Фасада, упрощающего взаимодействие JSON reader-а
  // с другими подсистемами приложения.
  // См. паттерн проектирования Фасад: https://ru.wikipedia.org/wiki/Фасад_(шаблон_проектирования)
@@ -21,7 +119,7 @@
      RequestHandler(const TransportCatalogue& db, const renderer::MapRenderer& renderer);
 
      // Возвращает информацию о маршруте (запрос Bus)
-     std::optional<BusStat> GetBusStat(const std::string_view& bus_name) const;
+     std::optional<RouteStat> GetBusStat(const std::string_view& bus_name) const;
 
      // Возвращает маршруты, проходящие через
      const std::unordered_set<BusPtr>* GetBusesByStop(const std::string_view& stop_name) const;
