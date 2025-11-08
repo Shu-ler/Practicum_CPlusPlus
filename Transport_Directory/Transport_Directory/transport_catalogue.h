@@ -40,6 +40,7 @@ namespace trans_cat {
 		 * Если остановка с таким именем уже существует, обновляет её координаты.
 		 * @param name Название остановки
 		 * @param coords Географические координаты остановки
+		 * @return Указатель на добавленную остановку
 		 */
 		const Stop* AddStop(std::string_view name, geo::Coordinates coords);
 

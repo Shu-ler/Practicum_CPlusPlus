@@ -4,9 +4,55 @@
 
 namespace {
 
-    // Вспомогательные функции для обработки отдельных типов запросов
-    json::Node MakeBusResponse(const trans_cat::TransportCatalogue&, const json::Dict&);
-    json::Node MakeStopResponse(const trans_cat::TransportCatalogue&, const json::Dict&);
+    /**
+     * @brief Извлекает значение по ключу из JSON-словаря с проверкой типа.
+     *
+     * Шаблонная функция, которая ищет ключ в словаре и пытается извлечь значение
+     * заданного типа T с помощью Node::As<T>(). Если ключ не найден или тип не совпадает —
+     * выбрасывает исключение ParsingError.
+     *
+     * @tparam T Тип ожидаемого значения (например, std::string, int, bool и т.д.)
+     * @param dict JSON-словарь (Dict), в котором выполняется поиск
+     * @param key  Имя ключа (std::string_view)
+     * @return     Константная ссылка на значение типа T
+     * @throws     json::ParsingError, если ключ отсутствует или тип не совпадает
+     *
+     * @note Используется внутри json_reader для безопасного извлечения полей
+     *       из входных JSON-объектов. Предназначена только для внутреннего использования.
+     */
+    template<typename T>
+    const T& GetJsonValue(const json::Dict& dict, std::string_view key) {
+        auto it = dict.find(std::string(key));
+        if (it == dict.end()) {
+            throw json::ParsingError{ std::string("Key not found: ") + std::string(key) };
+        }
+        try {
+            return it->second.As<T>();
+        }
+        catch (const std::bad_variant_access&) {
+            throw json::ParsingError{ std::string("Key '")
+                + std::string(key) + "' has wrong type" };
+        }
+    }
+
+    /**
+     * @brief Начинает построение JSON-ответа, добавляя ключ "request_id".
+     *
+     * Эта вспомогательная функция используется для единообразного формирования
+     * ответов на запросы: она начинает словарь и сразу добавляет поле "request_id",
+     * взятое из входного запроса.
+     *
+     * @param builder Ссылка на Builder, который используется для построения ответа
+     * @param req     Исходный JSON-объект запроса, содержащий ключ "id"
+     * @return        Ссылка на тот же builder (для цепочки вызовов)
+     *
+     * @note Функция предполагает, что ключ "id" существует и имеет тип int.
+     *       Используется внутри MakeResponse для устранения дублирования кода.
+     */
+    json::Builder& StartResponse(json::Builder& builder, const json::Dict& req) {
+        int id = req.at("id").AsInt();
+        return builder.StartDict().Key("request_id").AddValue(id);
+    }
 
     /**
      * @brief Создаёт ответ на запрос "Bus"
@@ -16,10 +62,7 @@ namespace {
      */
     json::Node MakeBusResponse(const trans_cat::TransportCatalogue& tc, const json::Dict& request) {
         json::Builder builder;
-        builder.StartDict();
-
-        int id = request.at("id").AsInt();
-        builder.Key("request_id").AddValue(id);
+        StartResponse(builder, request);
 
         std::string bus_name = request.at("name").AsString();
         auto stat = tc.GetRouteStat(bus_name);
@@ -46,10 +89,7 @@ namespace {
      */
     json::Node MakeStopResponse(const trans_cat::TransportCatalogue& tc, const json::Dict& request) {
         json::Builder builder;
-        builder.StartDict();
-
-        int id = request.at("id").AsInt();
-        builder.Key("request_id").AddValue(id);
+        StartResponse(builder, request);
 
         std::string stop_name = request.at("name").AsString();
         auto buses = tc.GetBusesByStop(stop_name);
@@ -61,22 +101,6 @@ namespace {
         builder.EndArray();
 
         return builder.EndDict().Build();
-    }
-
-    // Вспомогательная функция: проверяет, есть ли ключ и правильного ли он типа
-    template<typename T>
-    const T& GetJsonValue(const json::Dict& dict, std::string_view key) {
-        auto it = dict.find(key);
-        if (it == dict.end()) {
-            throw json::ParsingError{ std::string("Key not found: ") + std::string(key) };
-        }
-        try {
-            return it->second.As<T>();
-        }
-        catch (const std::bad_variant_access&) {
-            throw json::ParsingError{ std::string("Key '") 
-                + std::string(key) + "' has wrong type" };
-        }
     }
 
     // Обработка остановки из base_requests
@@ -166,20 +190,29 @@ namespace json_reader {
                     responses.push_back(MakeStopResponse(tc, req));
                 }
                 else {
-                    // Неизвестный тип запроса
                     json::Builder builder;
-                    builder.StartDict()
-                        .Key("request_id").AddValue(GetJsonValue<int>(req, "id"))
-                        .Key("error_message").AddValue("unknown request type");
+                    StartResponse(builder, req);
+
+                    builder.Key("error_message").AddValue("unknown request type");
                     responses.push_back(builder.EndDict().Build());
                 }
             }
-            catch (const std::exception&) {
-                // Защита от падений при некорректных запросах
+            catch (const json::ParsingError& e) {
                 json::Builder builder;
-                builder.StartDict()
-                    .Key("request_id").AddValue(GetJsonValue<int>(req, "id"))
-                    .Key("error_message").AddValue("invalid request");
+                StartResponse(builder, req);
+                builder.Key("error_message").AddValue(std::string("parse error: ") + e.what());
+                responses.push_back(builder.EndDict().Build());
+            }
+            catch (const std::exception& e) {
+                json::Builder builder;
+                StartResponse(builder, req);
+                builder.Key("error_message").AddValue(std::string("request error: ") + e.what());
+                responses.push_back(builder.EndDict().Build());
+            }
+            catch (...) {
+                json::Builder builder;
+                StartResponse(builder, req);
+                builder.Key("error_message").AddValue("internal error");
                 responses.push_back(builder.EndDict().Build());
             }
         }

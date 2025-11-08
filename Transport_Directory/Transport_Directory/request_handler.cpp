@@ -10,19 +10,17 @@ namespace request_handler {
     }
 
     std::optional<RouteStat> RequestHandler::GetBusStat(const std::string& bus_name) const {
-        const auto* bus = catalogue_.FindRoute(bus_name);
-        if (!bus) {
+        auto stat = catalogue_.GetRouteStat(bus_name);
+        if (!stat) {
             return std::nullopt;
         }
 
         RouteStat result;
         result.name = bus_name;
-        result.stop_count = bus->stops.size();
-        result.unique_stop_count = catalogue_.GetUniqueStopsCount(*bus);
-
-        auto [geo_length, route_length] = catalogue_.GetRouteLength(*bus);
-        result.route_length = route_length;
-        result.curvature = (geo_length > 1e-6) ? route_length / geo_length : 1.0;
+        result.stop_count = stat->stop_count;
+        result.unique_stop_count = stat->unique_stop_count;
+        result.route_length = stat->route_length;
+        result.curvature = stat->curvature;
 
         return result;
     }
