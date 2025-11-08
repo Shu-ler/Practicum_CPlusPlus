@@ -1,4 +1,5 @@
 #include "transport_catalogue.h"
+#include "geo.h"
 #include <cmath>
 
 namespace trans_cat {
@@ -12,18 +13,19 @@ namespace trans_cat {
         return seed;
     }
 
-    void TransportCatalogue::AddStop(std::string name, geo::Coordinates coords) {
+    const Stop* TransportCatalogue::AddStop(std::string_view name, geo::Coordinates coords) {
         if (auto* stop = FindStop(name)) {
             const_cast<Stop*>(stop)->coordinates = coords;
-            return;
+            return stop;
         }
 
-        stops_.push_back(Stop{ std::move(name), coords });
+        stops_.push_back(Stop{ std::string(name), coords });
         const Stop* stop_ptr = &stops_.back();
         stopname_to_stop_[stop_ptr->name] = stop_ptr;
+        return stop_ptr;
     }
 
-    void TransportCatalogue::AddRoute(std::string name, std::vector<std::string> stops,
+    void TransportCatalogue::AddRoute(std::string name, const std::vector<std::string>& stops,
         bool is_roundtrip) {
         if (stops.empty()) {
             return;
@@ -35,9 +37,17 @@ namespace trans_cat {
 
         for (const auto& stop_name : stops) {
             if (const Stop* stop = FindStop(stop_name)) {
+
+                // Добавляем существующую остановку
                 stop_ptrs.push_back(stop);
             }
-            // Если остановки нет — можно создать заглушку, но в вашем случае она уже есть
+            else {
+                // Создаём заглушку через единый интерфейс
+                const Stop* new_stop = AddStop(stop_name, {});
+
+                // И добавляем её
+                stop_ptrs.push_back(new_stop);
+            }
         }
 
         // Если маршрут не кольцевой, делаем двусторонний маршрут
@@ -137,19 +147,12 @@ namespace trans_cat {
             return 0;
         }
 
-        // Прямой поиск
         auto it = distances_.find({ from, to });
         if (it != distances_.end()) {
             return it->second;
         }
 
-        // Обратный поиск
-        auto rev = distances_.find({ to, from });
-        if (rev != distances_.end()) {
-            return rev->second;
-        }
-
-        // По умолчанию - расстояние по прямой
+        // По умолчанию - расстояние по прямой (fallback)
         return static_cast<int>(std::round(ComputeDistance(from->coordinates, to->coordinates)));
     }
 

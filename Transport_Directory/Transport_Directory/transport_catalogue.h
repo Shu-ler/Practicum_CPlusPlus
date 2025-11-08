@@ -41,7 +41,7 @@ namespace trans_cat {
 		 * @param name Название остановки
 		 * @param coords Географические координаты остановки
 		 */
-		void AddStop(std::string name, geo::Coordinates coords);
+		const Stop* AddStop(std::string_view name, geo::Coordinates coords);
 
 		/**
 		 * @brief Добавляет новый маршрут в каталог.
@@ -52,17 +52,17 @@ namespace trans_cat {
 		 * @param stops Список названий остановок в порядке следования
 		 * @param is_roundtrip true, если маршрут кольцевой (без обратного пути)
 		 */
-		void AddRoute(std::string name, std::vector<std::string> stops, bool is_roundtrip);
+		void AddRoute(std::string name, const std::vector<std::string>& stops, bool is_roundtrip);
 
 		/**
-		 * @brief Ищет остановку по имени.
+		 * @brief Ищет остановку по имени (O(1)).
 		 * @param name Имя остановки
 		 * @return Указатель на остановку или nullptr, если не найдена
 		 */
 		const Stop* FindStop(std::string_view name) const;
 
 		/**
-		 * @brief Ищет маршрут по имени.
+		 * @brief Ищет маршрут по имени (O(1)).
 		 * @param name Имя маршрута
 		 * @return Указатель на маршрут или nullptr, если не найден
 		 */
@@ -139,6 +139,6 @@ namespace trans_cat {
 	// Вспомогательная функция для комбинирования хэшей (C++17/20)
 	template<typename T>
 	void hash_combine(size_t& seed, const T& value) {
-		seed ^= std::hash<T>{}(value)+2654435761U + (seed << 6) + (seed >> 2);
+		seed ^= std::hash<T>{}(value)+0x9e3779b9 + (seed << 6) + (seed >> 2);
 	}
 } // namespace trans_cat
