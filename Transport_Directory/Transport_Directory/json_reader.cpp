@@ -126,7 +126,8 @@ namespace {
         std::string name = GetJsonValue<std::string>(route_node, "name");
         bool is_roundtrip = GetJsonValue<bool>(route_node, "is_roundtrip");
 
-        json::Array stops_array = GetJsonValue<json::Array>(route_node, "stops");
+       // json::Array stops_array = GetJsonValue<json::Array>(route_node, "stops");
+        const json::Array& stops_array = route_node.at("stops").AsArray();
         std::vector<std::string> stops;
         stops.reserve(stops_array.size());
         for (const auto& stop_node : stops_array) {
@@ -151,7 +152,8 @@ namespace json_reader {
 
         for (const auto& req_node : base_requests) {
             const json::Dict& req = req_node.AsMap();
-            std::string type = GetJsonValue<std::string>(req, "type");
+            // std::string type = GetJsonValue<std::string>(req, "type");
+            std::string type = req.at("type").AsString();
 
             if (type == "Stop") {
                 AddStopFromJson(tc, req);

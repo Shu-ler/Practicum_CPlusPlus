@@ -36,9 +36,17 @@ int main() {
         // 1. Считываем и парсим входной JSON
         // Ожидается полный JSON-объект, содержащий все данные
         json::Document input;
-        if (!(std::cin >> input)) {
-            throw json::ParsingError("Failed to parse JSON from input");
+        try {
+            input = json::Load(std::cin);
         }
+        catch (const json::ParsingError& e) {
+            throw json::ParsingError("Failed to parse JSON: " + std::string(e.what()));
+        }
+
+//        json::Document input;
+//        if (!(std::cin >> input)) {
+//            throw json::ParsingError("Failed to parse JSON from input");
+//        }
 
         // 2. Создаём и заполняем транспортный каталог
         // Используем данные из "base_requests" (остановки, маршруты, расстояния)
