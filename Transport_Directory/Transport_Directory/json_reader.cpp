@@ -51,7 +51,7 @@ namespace {
      */
     json::Builder& StartResponse(json::Builder& builder, const json::Dict& req) {
         int id = req.at("id").AsInt();
-        return builder.StartDict().Key("request_id").AddValue(id);
+        return builder.StartDict().Key("request_id").AddNumber(id);
     }
 
     /**
@@ -69,13 +69,13 @@ namespace {
 
         if (stat) {
             builder
-                .Key("stop_count").AddValue(static_cast<int>(stat->stop_count))
-                .Key("unique_stop_count").AddValue(static_cast<int>(stat->unique_stop_count))
-                .Key("route_length").AddValue(static_cast<int>(stat->route_length))
-                .Key("curvature").AddValue(stat->curvature);
+                .Key("stop_count").AddNumber(static_cast<int>(stat->stop_count))
+                .Key("unique_stop_count").AddNumber(static_cast<int>(stat->unique_stop_count))
+                .Key("route_length").AddNumber(static_cast<int>(stat->route_length))
+                .Key("curvature").AddNumber(stat->curvature);
         }
         else {
-            builder.Key("error_message").AddValue("not found");
+            builder.Key("error_message").AddString("not found");
         }
 
         return builder.EndDict().Build();
@@ -96,7 +96,7 @@ namespace {
 
         builder.Key("buses").StartArray();
         for (const auto& bus : buses) {
-            builder.AddValue(bus);
+            builder.AddString(bus);
         }
         builder.EndArray();
 
@@ -193,26 +193,26 @@ namespace json_reader {
                     json::Builder builder;
                     StartResponse(builder, req);
 
-                    builder.Key("error_message").AddValue("unknown request type");
+                    builder.Key("error_message").AddString("unknown request type");
                     responses.push_back(builder.EndDict().Build());
                 }
             }
             catch (const json::ParsingError& e) {
                 json::Builder builder;
                 StartResponse(builder, req);
-                builder.Key("error_message").AddValue(std::string("parse error: ") + e.what());
+                builder.Key("error_message").AddString(std::string("parse error: ") + e.what());
                 responses.push_back(builder.EndDict().Build());
             }
             catch (const std::exception& e) {
                 json::Builder builder;
                 StartResponse(builder, req);
-                builder.Key("error_message").AddValue(std::string("request error: ") + e.what());
+                builder.Key("error_message").AddString(std::string("request error: ") + e.what());
                 responses.push_back(builder.EndDict().Build());
             }
             catch (...) {
                 json::Builder builder;
                 StartResponse(builder, req);
-                builder.Key("error_message").AddValue("internal error");
+                builder.Key("error_message").AddString("internal error");
                 responses.push_back(builder.EndDict().Build());
             }
         }

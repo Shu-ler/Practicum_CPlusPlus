@@ -76,7 +76,6 @@ namespace json {
     public:
         // Конструкторы (не explicit, чтобы работала инициализация вроде Array{1, 2.5, "str"})
         Node() = default;
-        Node(Value value);
         Node(int value);
         Node(double value);
         Node(bool value);
@@ -265,8 +264,8 @@ namespace json {
      * @code
      * Node root = Builder{}
      *     .StartDict()
-     *         .Key("name").AddValue("Alice")
-     *         .Key("age").AddValue(30)
+     *         .Key("name").AddString("Alice")
+     *         .Key("age").AddNumber(30)
      *     .EndDict()
      *     .Build();
      * @endcode
@@ -274,13 +273,6 @@ namespace json {
      */
     class Builder {
     public:
-        /**
-         * @brief Добавляет произвольное значение в текущий контейнер.
-         * @param value Значение для добавления
-         * @return Ссылка на *this для цепочки вызовов
-         */
-        Builder& AddValue(Value value);
-
         // Добавляет null
         Builder& AddNull();
 

@@ -208,7 +208,6 @@ namespace json {
     // Реализация Node
     // =============================================================================
 
-    Node::Node(Value value) : value_(std::move(value)) {}
     Node::Node(int value) : value_(value) {}
     Node::Node(double value) : value_(value) {}
     Node::Node(bool value) : value_(value) {}
@@ -729,48 +728,37 @@ namespace json {
         }
     }
 
-    // TODO закоментированный код
-    //Document LoadJSON(const std::string& s) {
-    //    std::istringstream is(s);
-    //    return Load(is);
-    //}
-
-    //std::string Print(const Document& doc) {
-    //    std::ostringstream os;
-    //    json::Print(doc, os);
-    //    return os.str();
-    //}
-
     // =============================================================================
     // Реализация Builder
     // =============================================================================
 
-    Builder& Builder::AddValue(Value value) {
-        Node node(std::move(value));
-        AddNode(std::move(node));
-        return *this;
-    }
-
     Builder& Builder::AddNull() {
-        Node node();
-        AddNode(node);
+        AddNode(nullptr);
         return *this;
     }
 
     Builder& Builder::AddBool(bool value) {
-        return AddValue(value);
+        Node node(value);
+        AddNode(node);
+        return *this;
     }
 
     Builder& Builder::AddNumber(int value) {
-        return AddValue(value);
+        Node node(value);
+        AddNode(node);
+        return *this;
     }
 
     Builder& Builder::AddNumber(double value) {
-        return AddValue(value);
+        Node node(value);
+        AddNode(node);
+        return *this;
     }
 
     Builder& Builder::AddString(std::string value) {
-        return AddValue(std::move(value));
+        Node node(std::move(value));
+        AddNode(node);
+        return *this;
     }
 
     Builder& Builder::StartArray() {
