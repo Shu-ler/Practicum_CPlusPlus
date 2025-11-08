@@ -339,8 +339,8 @@ namespace json {
         Node* AddNode(Node node);
 
     private:
-        Node root_;                         //< Корневой узел
-        std::vector<Node*> nodes_stack_;    //< Стек для отслеживания вложенных контейнеров
+        Node root_{};                         //< Корневой узел
+        std::vector<Node*> nodes_stack_{};    //< Стек для отслеживания вложенных контейнеров
 
     };
 }  // namespace json

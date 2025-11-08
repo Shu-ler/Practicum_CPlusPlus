@@ -446,7 +446,7 @@ namespace json {
          * @note Не добавляет в строку символ закрывающей кавычки — он просто завершает чтение.
          */
         std::string ParseString(std::istream& input) {
-            std::string result;
+            std::string result{};
             char c;
 
             while (input.get(c)) {
@@ -470,7 +470,8 @@ namespace json {
                         throw ParsingError("Invalid escape sequence: \\" + std::string(1, c));
                     }
                 }
-                else if (c >= 32 && c < 127) {
+                // Было else if (c >= 32 && c < 127) - падало на кириллице
+                else if (static_cast<unsigned char>(c) >= 32) {
                     result += c;
                 }
                 else {
@@ -844,9 +845,11 @@ namespace json {
         }
 
         Dict& map = std::get<Dict>(parent.GetValueRef());
-        map[key] = nullptr;  // map["name"] = null
+
+        auto [it, inserted] = map.emplace(std::move(key), nullptr);
         nodes_stack_.pop_back();
-        nodes_stack_.push_back(&map[key]);
+        nodes_stack_.push_back(&it->second);
+
         return *this;
     }
 
