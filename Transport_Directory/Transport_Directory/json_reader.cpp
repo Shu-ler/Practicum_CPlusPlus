@@ -21,7 +21,7 @@ namespace {
      *       из входных JSON-объектов. Предназначена только для внутреннего использования.
      */
     template<typename T>
-    const T& GetJsonValue(const json::Dict& dict, std::string_view key) {
+    T GetJsonValue(const json::Dict& dict, std::string_view key) {
         auto it = dict.find(std::string(key));
         if (it == dict.end()) {
             throw json::ParsingError{ std::string("Key not found: ") + std::string(key) };
@@ -126,7 +126,7 @@ namespace {
         std::string name = GetJsonValue<std::string>(route_node, "name");
         bool is_roundtrip = GetJsonValue<bool>(route_node, "is_roundtrip");
 
-        const json::Array& stops_array = GetJsonValue<json::Array>(route_node, "stops");
+        json::Array stops_array = GetJsonValue<json::Array>(route_node, "stops");
         std::vector<std::string> stops;
         stops.reserve(stops_array.size());
         for (const auto& stop_node : stops_array) {
