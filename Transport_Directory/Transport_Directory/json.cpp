@@ -450,11 +450,6 @@ namespace json {
             std::string result;
             char c;
 
-            //// Явно ожидаем открывающую кавычку
-            //if (!input.get(c) || c != '"') {
-            //    throw ParsingError("Expected '\"' at start of string");
-            //}
-
             while (input.get(c)) {
                 if (c == '"') {
                     return result;
@@ -757,7 +752,9 @@ namespace json {
     }
 
     Builder& Builder::AddNull() {
-        return AddValue(nullptr);
+        Node node();
+        AddNode(node);
+        return *this;
     }
 
     Builder& Builder::AddBool(bool value) {
