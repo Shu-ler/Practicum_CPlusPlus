@@ -115,6 +115,7 @@ namespace json {
                 }
                 else if constexpr (std::is_same_v<T, double>) {
                     std::ostringstream tmp;
+                    // tmp << std::setprecision(std::numeric_limits<double>::max_digits10) << v;
                     tmp << std::fixed << std::setprecision(6) << v;
                     std::string str = tmp.str();
                     if (str.find('.') != std::string::npos) {
@@ -203,7 +204,9 @@ namespace json {
 
     } // namespace detail
 
-    // === Реализация Node ===
+    // =============================================================================
+    // Реализация Node
+    // =============================================================================
 
     Node::Node(Value value) : value_(std::move(value)) {}
     Node::Node(int value) : value_(value) {}
@@ -273,40 +276,11 @@ namespace json {
         return value_;
     }
 
-    template<typename T>
-    T Node::As() const {
-        if constexpr (std::is_same_v<T, int>) {
-            if (!IsInt()) throw std::logic_error("Not an int");
-            return std::get<int>(value_);
-        }
-        else if constexpr (std::is_same_v<T, bool>) {
-            if (!IsBool()) throw std::logic_error("Not a bool");
-            return std::get<bool>(value_);
-        }
-        else if constexpr (std::is_same_v<T, double>) {
-            if (!IsDouble()) throw std::logic_error("Not a number");
-            return AsDouble(); // уже есть логика для int → double
-        }
-        else if constexpr (std::is_same_v<T, std::string>) {
-            if (!IsString()) throw std::logic_error("Not a string");
-            return std::get<std::string>(value_);
-        }
-        else if constexpr (std::is_same_v<T, Array>) {
-            if (!IsArray()) throw std::logic_error("Not an array");
-            return std::get<Array>(value_);
-        }
-        else if constexpr (std::is_same_v<T, Dict>) {
-            if (!IsMap()) throw std::logic_error("Not a map");
-            return std::get<Dict>(value_);
-        }
-        else {
-            static_assert(sizeof(T) == 0, "Node::As<T> not specialized for this type");
-        }
-    }
+    // =============================================================================
+    // Реализация Document
+    // =============================================================================
 
-    // === Реализация Document ===
-
-    Document::Document() : root_(Node()) {}
+    Document::Document() : root_(nullptr) {}
 
     Document::Document(Node root) : root_(std::move(root)) {}
 
@@ -321,7 +295,9 @@ namespace json {
         return !(*this == other);
     }
 
-    // === Load и Print ===
+    // =============================================================================
+    // Ввод / вывод
+    // =============================================================================
 
     void Print(const Document& doc, std::ostream& output) {
         detail::PrintValue(doc.GetRoot().GetValue(), detail::PrintContext{ output });
@@ -345,7 +321,9 @@ namespace json {
         return os;
     }
 
-    // === Парсинг ===
+    // =============================================================================
+    // Парсинг
+    // =============================================================================
     namespace {
 
         bool IsDigit(char c);
@@ -756,21 +734,25 @@ namespace json {
         }
     }
 
-    Document LoadJSON(const std::string& s) {
-        std::istringstream is(s);
-        return Load(is);
-    }
+    // TODO закоментированный код
+    //Document LoadJSON(const std::string& s) {
+    //    std::istringstream is(s);
+    //    return Load(is);
+    //}
 
-    std::string Print(const Document& doc) {
-        std::ostringstream os;
-        json::Print(doc, os);
-        return os.str();
-    }
+    //std::string Print(const Document& doc) {
+    //    std::ostringstream os;
+    //    json::Print(doc, os);
+    //    return os.str();
+    //}
 
-    // === Реализация Builder ===
+    // =============================================================================
+    // Реализация Builder
+    // =============================================================================
 
     Builder& Builder::AddValue(Value value) {
-        AddNode(Node(std::move(value)));
+        Node node(std::move(value));
+        AddNode(std::move(node));
         return *this;
     }
 
@@ -796,7 +778,16 @@ namespace json {
 
     Builder& Builder::StartArray() {
         CheckClosed();
-        AddNode(Array{});
+
+        // Создаём Array, перемещаем его в node
+        Array arr;
+        Node node(std::move(arr));
+
+        // Добавляем ноду, получаем адрес созданного массива
+        Node* array_node = AddNode(std::move(node));
+
+        // и заносим в стек - теперь это текущий контекст для вставки элементов
+        nodes_stack_.push_back(array_node);
         return *this;
     }
 
@@ -821,7 +812,16 @@ namespace json {
 
     Builder& Builder::StartDict() {
         CheckClosed();
-        AddNode(Dict{});
+
+        // Создаём Dict, перемещаем его в node
+        Dict dict;
+        Node node(std::move(dict));
+
+        // Добавляем ноду, получаем адрес созданного словаря
+        Node* dict_node = AddNode(std::move(node));
+
+        // и заносим в стек - теперь это текущий контекст для вставки элементов
+        nodes_stack_.push_back(dict_node);
         return *this;
     }
 
@@ -859,10 +859,38 @@ namespace json {
         }
 
         Dict& map = std::get<Dict>(parent.GetValueRef());
-        map[key] = nullptr;  // временное значение
+        map[key] = nullptr;  // map["name"] = null
         nodes_stack_.pop_back();
         nodes_stack_.push_back(&map[key]);
         return *this;
+    }
+
+    Node Builder::Build() {
+        CheckClosed();
+        return std::move(root_);
+    }
+
+    void Builder::CheckClosed() const {
+        if (!nodes_stack_.empty()) {
+            throw BuildError("Container is not closed");
+        }
+    }
+
+    Node* Builder::AddNode(Node node) {
+        if (nodes_stack_.empty()) {
+
+            // Стек пуст - заносим в root_
+            root_ = std::move(node);
+            return &root_;
+        }
+        else {
+
+            // Стек не пуст
+            // Заменяем значение, на которое указывает вершина стека
+            Node& target = *nodes_stack_.back();
+            target = std::move(node);
+            return &target;
+        }
     }
 
 } // namespace json

@@ -143,6 +143,31 @@ namespace json {
         Value value_{};
     };
 
+    template<typename T>
+    T Node::As() const {
+        if constexpr (std::is_same_v<T, int>) {
+            return AsInt();
+        }
+        else if constexpr (std::is_same_v<T, bool>) {
+            return AsBool();
+        }
+        else if constexpr (std::is_same_v<T, double>) {
+            return AsDouble();
+        }
+        else if constexpr (std::is_same_v<T, std::string>) {
+            return AsString();
+        }
+        else if constexpr (std::is_same_v<T, Array>) {
+            return AsArray();
+        }
+        else if constexpr (std::is_same_v<T, Dict>) {
+            return AsMap();
+        }
+        else {
+            static_assert(sizeof(T) == 0, "Node::As<T> not specialized for this type");
+        }
+    }
+
     /**
      * @brief Представляет полный JSON-документ.
      *
@@ -319,7 +344,7 @@ namespace json {
         void CheckClosed() const;
 
         // Добавляет узел в текущий контекст
-        void AddNode(Node node);
+        Node* AddNode(Node node);
 
     private:
         Node root_;                         //< Корневой узел
