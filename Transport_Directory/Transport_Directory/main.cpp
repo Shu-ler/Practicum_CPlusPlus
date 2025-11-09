@@ -21,17 +21,6 @@
  */
 int main() {
 
-//#ifdef _DEBUG
-//    if (freopen_s(nullptr, "input.json", "r", stdin) != 0) {
-//        fprintf(stderr, "Cannot open input.json\n");
-//        return 1;
-//    }
-//    if (freopen_s(nullptr, "output.json", "w", stdout) != 0) {
-//        fprintf(stderr, "Cannot open output.json\n");
-//        return 1;
-//    }
-//#endif
-
     try {
         // 1. Считываем и парсим входной JSON
         // Ожидается полный JSON-объект, содержащий все данные
