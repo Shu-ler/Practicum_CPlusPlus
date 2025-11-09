@@ -141,6 +141,12 @@ namespace trans_cat {
         int distance) {
         const Stop* from = FindStop(from_name);
         const Stop* to = FindStop(to_name);
+
+        if (to == nullptr) {
+            // Создаём заглушку через единый интерфейс
+            to = AddStop(std::string(to_name), {});
+        }
+
         if (from && to) {
             distances_[{from, to}] = distance;
         }
