@@ -77,6 +77,10 @@ namespace trans_cat {
         return (it != routename_to_route_.end()) ? it->second : nullptr;
     }
 
+    bool TransportCatalogue::StopExists(std::string_view name) const {
+        return stopname_to_stop_.contains(name);
+    }
+
     std::optional<TransportCatalogue::RouteStat> TransportCatalogue::GetRouteStat(
         std::string_view route_name) const {
 
@@ -150,6 +154,11 @@ namespace trans_cat {
         auto it = distances_.find({ from, to });
         if (it != distances_.end()) {
             return it->second;
+        }
+
+        auto r_it = distances_.find({ to, from });
+        if (r_it != distances_.end()) {
+            return r_it->second;
         }
 
         // По умолчанию - расстояние по прямой (fallback)

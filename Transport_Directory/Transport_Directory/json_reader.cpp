@@ -96,6 +96,17 @@ namespace {
 
         int id = request.at("id").AsInt();
         std::string stop_name = request.at("name").AsString();
+
+        // Проверяем, существует ли остановка
+        if (!tc.StopExists(stop_name)) {
+            return builder
+                .StartDict()
+                    .Key("request_id").AddNumber(id)
+                    .Key("error_message").AddString("not found")
+                .EndDict()
+                .Build();
+        }
+
         auto buses = tc.GetBusesByStop(stop_name);
 
         json::Builder buses_builder;
@@ -108,8 +119,8 @@ namespace {
 
         builder
             .StartDict()
-            .Key("request_id").AddNumber(id)
-            .Key("buses").AddNode(buses_node)
+                .Key("request_id").AddNumber(id)
+                .Key("buses").AddNode(buses_node)
             .EndDict();
 
         return builder.Build();

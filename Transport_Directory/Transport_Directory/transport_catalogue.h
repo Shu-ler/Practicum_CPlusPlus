@@ -69,6 +69,8 @@ namespace trans_cat {
 		 */
 		const Route* FindRoute(std::string_view name) const;
 
+		bool StopExists(std::string_view name) const;
+
 		/**
 		 * @brief Структура с метриками маршрута.
 		 */
