@@ -263,11 +263,16 @@ namespace json {
      * Пример:
      * @code
      * Node root = Builder{}
-     *     .StartDict()
-     *         .Key("name").AddString("Alice")
-     *         .Key("age").AddNumber(30)
-     *     .EndDict()
-     *     .Build();
+     *  .StartDict()            // stack: [&root_] (Dict)
+     *      .Key("name")        // stack: [&root_["name"]] (null)
+     *      .AddString("Bob")   // stack: [&root_] (Dict)
+     *      .Key("nums")        // stack: [&root_["nums"]] (null)
+     *      .StartArray()       // stack: [&root_["nums"]] (Array)
+     *          .AddNumber(1)
+     *          .AddNumber(2)
+     *      .EndArray()         // stack: [&root_] (Dict)
+     *  .EndDict()              // stack: empty
+     *  .Build();
      * @endcode
      *
      */
@@ -316,11 +321,13 @@ namespace json {
         Builder& EndDict();
 
         /**
-         * @brief Добавляет ключ в словарь.
+         * @brief Начинает установку значения для ключа в JSON-объекте
          * @param key Имя ключа
-         * @return Ссылка на *this
-         * @pre Должен вызываться только внутри словаря
-         * @note После Key() нужно вызвать AddValue(), AddString() и т.д.
+         * @return Builder& для цепочки вызовов
+         * @throws BuildError если вызван вне словаря
+         *
+         * После вызова Key() ожидается вызов Add...(),
+         * который заполнит значение по ключу.
          */
         Builder& Key(std::string key);
 
@@ -332,6 +339,20 @@ namespace json {
         Node Build();
 
     private:
+        /**
+         * @brief Безопасно возвращает ссылку на текущий активный узел
+         * @param err_msg Сообщение об ошибке, если стек пуст
+         * @return Node& Ссылка на узел, в который можно записывать значение
+         * @throws BuildError если стек пуст
+         *
+         * Используется в Add...() методах, чтобы:
+         * - Убедиться, что есть активный контекст
+         * - Получить ссылку на узел для присваивания
+         *
+         * Не удаляет узел из стека — это делает вызывающий.
+         */
+        Node& GetNodeSafely(const std::string& err_msg);
+
         // Проверяет, что нет активных контейнеров
         void CheckClosed() const;
 

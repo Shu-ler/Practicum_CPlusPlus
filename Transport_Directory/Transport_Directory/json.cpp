@@ -734,61 +734,85 @@ namespace json {
     // =============================================================================
 
     Builder& Builder::AddNull() {
-        AddNode(nullptr);
+        Node& node = GetNodeSafely("AddNull() called on empty builder");
+        node = nullptr;
+        nodes_stack_.pop_back();
         return *this;
     }
 
     Builder& Builder::AddBool(bool value) {
-        Node node(value);
-        AddNode(node);
+        Node& node = GetNodeSafely("AddBool() called on empty builder");
+        node = value;
+        nodes_stack_.pop_back();
         return *this;
     }
 
     Builder& Builder::AddNumber(int value) {
-        Node node(value);
-        AddNode(node);
+        Node& node = GetNodeSafely("AddNumber(int) called on empty builder");
+        node = value;
+        nodes_stack_.pop_back();
         return *this;
     }
 
     Builder& Builder::AddNumber(double value) {
-        Node node(value);
-        AddNode(node);
+
+        // Получаем активный узел (например, после Key() или в массиве)
+        Node& node = GetNodeSafely("AddNumber(double) called on empty builder");
+        node = value;
+
+        // Завершаем контекст: удаляем узел из стека
+        // Теперь вершина стека указывает на родительский контейнер (Dict или Array)
+        nodes_stack_.pop_back();
         return *this;
     }
 
     Builder& Builder::AddString(std::string value) {
-        Node node(std::move(value));
-        AddNode(node);
+        Node& node = GetNodeSafely("AddString() called on empty builder");
+        node = std::move(value);
+        nodes_stack_.pop_back();
         return *this;
     }
 
     Builder& Builder::StartArray() {
         CheckClosed();
 
-        // Создаём Array, перемещаем его в node
-        Array arr;
-        Node node(std::move(arr));
+        // Если стек пуст → значит, это корневой узел
+        if (nodes_stack_.empty()) {
+            root_ = Array{};
+            nodes_stack_.push_back(&root_);
+        }
 
-        // Добавляем ноду, получаем адрес созданного массива
-        Node* array_node = AddNode(std::move(node));
+        // Если стек не пуст → значит, мы внутри массива
+        else {
 
-        // и заносим в стек - теперь это текущий контекст для вставки элементов
-        nodes_stack_.push_back(array_node);
+            // Берем в parent массив из вершины стека
+            Node& parent = *nodes_stack_.back();
+            if (parent.IsArray()) {
+
+                // Получаем ссылку массива и добавлеем в него Dict
+                Array& arr = std::get<Array>(parent.GetValueRef());
+                arr.emplace_back(Dict{});
+
+                // На вершину стека помещаем указатель на новый Dict.
+                // Теперь новый Dict является контекстом
+                nodes_stack_.push_back(&arr.back());
+            }
+
+            // Если не внутри массива - обрабатываем ошибку
+            else {
+                throw BuildError("StartArray() called inside a dict (after Key())");
+            }
+        }
         return *this;
     }
 
     Builder& Builder::EndArray() {
 
         // Первая проверка - в стеке вложенных контейнеров есть хоть что-то
-        // Предупреждает вызов back() на пустом векторе
-        if (nodes_stack_.empty()) {
-            throw BuildError("No array to end: builder is empty");
-        }
-
         // Вторая проверка - закрываем именно Array
-        const Node& top = *nodes_stack_.back();
-        if (!top.IsArray()) {
-            throw BuildError("EndArray() called on non-array context");
+        // Предупреждает вызов back() на пустом векторе
+        if (nodes_stack_.empty() || !nodes_stack_.back()->IsArray()) {
+            throw BuildError("EndArray() called outside of array");
         }
 
         // При пройденных проверках - удаляем Array из стека
@@ -799,15 +823,33 @@ namespace json {
     Builder& Builder::StartDict() {
         CheckClosed();
 
-        // Создаём Dict, перемещаем его в node
-        Dict dict;
-        Node node(std::move(dict));
+        // Если стек пуст → значит, это корневой узел
+        if (nodes_stack_.empty()) {
+            root_ = Dict{};
+            nodes_stack_.push_back(&root_);
+        }
 
-        // Добавляем ноду, получаем адрес созданного словаря
-        Node* dict_node = AddNode(std::move(node));
+        // Если стек не пуст → значит, мы внутри массива
+        else {
 
-        // и заносим в стек - теперь это текущий контекст для вставки элементов
-        nodes_stack_.push_back(dict_node);
+            // Берем в parent массив из вершины стека
+            Node& parent = *nodes_stack_.back();
+            if (parent.IsArray()) {
+
+                // Получаем ссылку массива и добавлеем в него Dict
+                Array& arr = std::get<Array>(parent.GetValueRef());
+                arr.emplace_back(Dict{});  
+
+                // На вершину стека помещаем указатель на новый Dict.
+                // Теперь новый Dict является контекстом
+                nodes_stack_.push_back(&arr.back());  
+            }
+
+            // Если не внутри массива - обрабатываем ошибку
+            else {
+                throw BuildError("StartDict() called inside a dict (after Key())");
+            }
+        }
         return *this;
     }
 
@@ -815,13 +857,8 @@ namespace json {
 
         // Первая проверка - в стеке вложенных контейнеров есть хоть что-то
         // Предупреждает вызов back() на пустом векторе
-        if (nodes_stack_.empty()) {
-            throw BuildError("No dict to end: builder is empty");
-        }
-
         // Вторая проверка - закрываем именно Dict
-        const Node& top = *nodes_stack_.back();
-        if (!top.IsMap()) {
+        if (nodes_stack_.empty() || !nodes_stack_.back()->IsMap()) {
             throw BuildError("EndDict() called on non-dict context");
         }
 
@@ -838,15 +875,23 @@ namespace json {
             throw BuildError("Key() called outside of dict: builder is empty");
         }
 
-        // Вторая проверка - добавляем Key именно в Dict
+        // Вторая проверка - убеждаемся, что родитель — словарь (а не массив)
         Node& parent = *nodes_stack_.back();
         if (!parent.IsMap()) {
             throw BuildError("Key() called on non-dict context");
         }
 
+        // Получаем ссылку Dict-контекста
         Dict& map = std::get<Dict>(parent.GetValueRef());
 
+        // Добавляем пару (key, null) в словарь
+        // it — итератор на вставленную пару (ключ, Node):
+        //      it->first — ключ(например, "name")
+        //      it->second — значение, тип Node, сейчас содержит nullptr
         auto [it, inserted] = map.emplace(std::move(key), nullptr);
+
+        // На стеке - указатель на валидный Node
+        // который будет заполнен следующим Add...
         nodes_stack_.pop_back();
         nodes_stack_.push_back(&it->second);
 
@@ -858,27 +903,33 @@ namespace json {
         return std::move(root_);
     }
 
+    Node& Builder::GetNodeSafely(const std::string& err_msg) {
+        if (nodes_stack_.empty()) {
+            throw BuildError(err_msg);
+        }
+        return *nodes_stack_.back();
+    }
+
     void Builder::CheckClosed() const {
         if (!nodes_stack_.empty()) {
             throw BuildError("Container is not closed");
         }
     }
 
-    Node* Builder::AddNode(Node node) {
+	Node* Builder::AddNode(Node node) {
+
+        // Если стек пуст - заносим node в root_
         if (nodes_stack_.empty()) {
+			root_ = std::move(node);
+			return &root_;
+		}
 
-            // Стек пуст - заносим в root_
-            root_ = std::move(node);
-            return &root_;
-        }
-        else {
-
-            // Стек не пуст
-            // Заменяем значение, на которое указывает вершина стека
-            Node& target = *nodes_stack_.back();
-            target = std::move(node);
-            return &target;
-        }
-    }
+		// Стек не пуст
+		// Заменяем значение, на которое указывает вершина стека,
+        // на node
+		Node& target = *nodes_stack_.back();
+		target = std::move(node);
+		return &target;
+	}
 
 } // namespace json
