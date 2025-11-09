@@ -62,11 +62,15 @@ namespace {
      */
     json::Node MakeBusResponse(const trans_cat::TransportCatalogue& tc, const json::Dict& request) {
         json::Builder builder;
-        StartResponse(builder, request);
 
+        int id = request.at("id").AsInt();
         std::string bus_name = request.at("name").AsString();
         auto stat = tc.GetRouteStat(bus_name);
 
+        builder
+            .StartDict()
+            .Key("request_id").AddNumber(id);
+            
         if (stat) {
             builder
                 .Key("stop_count").AddNumber(static_cast<int>(stat->stop_count))
@@ -88,19 +92,27 @@ namespace {
      * @return JSON-объект с результатом
      */
     json::Node MakeStopResponse(const trans_cat::TransportCatalogue& tc, const json::Dict& request) {
-        json::Builder builder;
-        StartResponse(builder, request);
+        json::Builder builder; 
 
+        int id = request.at("id").AsInt();
         std::string stop_name = request.at("name").AsString();
         auto buses = tc.GetBusesByStop(stop_name);
 
-        builder.Key("buses").StartArray();
+        json::Builder buses_builder;
+        buses_builder.StartArray();
         for (const auto& bus : buses) {
-            builder.AddString(bus);
+            buses_builder.AddString(bus);
         }
-        builder.EndArray();
+        buses_builder.EndArray();
+        auto buses_node = buses_builder.Build();
 
-        return builder.EndDict().Build();
+        builder
+            .StartDict()
+            .Key("request_id").AddNumber(id)
+            .Key("buses").AddNode(buses_node)
+            .EndDict();
+
+        return builder.Build();
     }
 
     // Обработка остановки из base_requests
@@ -126,7 +138,6 @@ namespace {
         std::string name = GetJsonValue<std::string>(route_node, "name");
         bool is_roundtrip = GetJsonValue<bool>(route_node, "is_roundtrip");
 
-       // json::Array stops_array = GetJsonValue<json::Array>(route_node, "stops");
         const json::Array& stops_array = route_node.at("stops").AsArray();
         std::vector<std::string> stops;
         stops.reserve(stops_array.size());
@@ -152,7 +163,6 @@ namespace json_reader {
 
         for (const auto& req_node : base_requests) {
             const json::Dict& req = req_node.AsMap();
-            // std::string type = GetJsonValue<std::string>(req, "type");
             std::string type = req.at("type").AsString();
 
             if (type == "Stop") {

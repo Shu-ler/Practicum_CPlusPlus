@@ -734,47 +734,96 @@ namespace json {
     // =============================================================================
 
     Builder& Builder::AddNull() {
-        Node& node = GetNodeSafely("AddNull() called on empty builder");
-        node = nullptr;
-        nodes_stack_.pop_back();
+        auto [node, is_value_slot] = GetNodeSafe("AddNull() called on empty builder");
+
+        if (is_value_slot) {
+            node = nullptr;
+            nodes_stack_.pop_back();
+        }
+        else if (node.IsArray()) {
+            std::get<Array>(node.GetValueRef()).emplace_back(nullptr);
+        }
+        else {
+            throw BuildError("AddNull() called in invalid context");
+        }
+
         return *this;
     }
 
     Builder& Builder::AddBool(bool value) {
-        Node& node = GetNodeSafely("AddBool() called on empty builder");
-        node = value;
-        nodes_stack_.pop_back();
+        auto [node, is_value_slot] = GetNodeSafe("AddBool() called on empty builder");
+        
+        if (is_value_slot) {
+            node = value;
+            nodes_stack_.pop_back();
+        }
+        else if (node.IsArray()) {
+            std::get<Array>(node.GetValueRef()).emplace_back(value);
+        }
+        else {
+            throw BuildError("AddBool() called in invalid context");
+        }
+
         return *this;
     }
 
     Builder& Builder::AddNumber(int value) {
-        Node& node = GetNodeSafely("AddNumber(int) called on empty builder");
-        node = value;
-        nodes_stack_.pop_back();
+        auto [node, is_value_slot] = GetNodeSafe("AddNumber(int) called on empty builder");
+
+        if (is_value_slot) {
+            node = value;
+            nodes_stack_.pop_back();
+        }
+        else if (node.IsArray()) {
+            std::get<Array>(node.GetValueRef()).emplace_back(value);
+        }
+        else {
+            throw BuildError("AddNumber(int) called in invalid context");
+        }
+
         return *this;
     }
 
     Builder& Builder::AddNumber(double value) {
+        auto [node, is_value_slot] = GetNodeSafe("AddNumber(double) called on empty builder");
 
-        // Получаем активный узел (например, после Key() или в массиве)
-        Node& node = GetNodeSafely("AddNumber(double) called on empty builder");
-        node = value;
+        if (is_value_slot) {
+            node = value;
+            nodes_stack_.pop_back();
+        }
+        else if (node.IsArray()) {
+            std::get<Array>(node.GetValueRef()).emplace_back(value);
+        }
+        else {
+            throw BuildError("AddNumber(double) called in invalid context");
+        }
 
-        // Завершаем контекст: удаляем узел из стека
-        // Теперь вершина стека указывает на родительский контейнер (Dict или Array)
-        nodes_stack_.pop_back();
         return *this;
     }
 
     Builder& Builder::AddString(std::string value) {
-        Node& node = GetNodeSafely("AddString() called on empty builder");
-        node = std::move(value);
-        nodes_stack_.pop_back();
+        auto [node, is_value_slot] = GetNodeSafe("AddString() called on empty builder");
+
+        if (is_value_slot) {
+            // Контекст: после Key("...") — присваиваем значение и
+            // сбрасываем контекст
+            node = std::move(value);
+            nodes_stack_.pop_back();
+        }
+        else if (node.IsArray()) {
+            // Контекст: внутри массива — добавляем элемент
+            // Стек не меняется — остаёмся в массиве
+            Array& arr = std::get<Array>(node.GetValueRef());
+            arr.emplace_back(std::move(value));
+        }
+        else {
+            throw BuildError("AddString() called in invalid context");
+        }
+
         return *this;
     }
 
     Builder& Builder::StartArray() {
-        CheckClosed();
 
         // Если стек пуст → значит, это корневой узел
         if (nodes_stack_.empty()) {
@@ -785,22 +834,23 @@ namespace json {
         // Если стек не пуст → значит, мы внутри массива
         else {
 
-            // Берем в parent массив из вершины стека
+            // Берем в parent вершину стека
             Node& parent = *nodes_stack_.back();
+                        
             if (parent.IsArray()) {
 
-                // Получаем ссылку массива и добавлеем в него Dict
+                // Получаем ссылку массива и добавлеем в него пустой Array
                 Array& arr = std::get<Array>(parent.GetValueRef());
-                arr.emplace_back(Dict{});
+                arr.emplace_back(Array{});
 
-                // На вершину стека помещаем указатель на новый Dict.
-                // Теперь новый Dict является контекстом
+                // На вершину стека помещаем указатель на новый Array.
+                // Теперь новый Array является контекстом
                 nodes_stack_.push_back(&arr.back());
             }
 
             // Если не внутри массива - обрабатываем ошибку
             else {
-                throw BuildError("StartArray() called inside a dict (after Key())");
+                throw BuildError("StartArray() can only be called inside an array or at the root");
             }
         }
         return *this;
@@ -821,7 +871,6 @@ namespace json {
     }
 
     Builder& Builder::StartDict() {
-        CheckClosed();
 
         // Если стек пуст → значит, это корневой узел
         if (nodes_stack_.empty()) {
@@ -892,7 +941,6 @@ namespace json {
 
         // На стеке - указатель на валидный Node
         // который будет заполнен следующим Add...
-        nodes_stack_.pop_back();
         nodes_stack_.push_back(&it->second);
 
         return *this;
@@ -910,26 +958,53 @@ namespace json {
         return *nodes_stack_.back();
     }
 
+    std::pair<Node&, bool> Builder::GetNodeSafe(const std::string& err_msg) {
+        if (nodes_stack_.empty()) {
+            throw BuildError(err_msg);
+        }
+
+        Node& ctx = *nodes_stack_.back();
+
+        return { ctx, ctx.IsNull() };
+    }
+
     void Builder::CheckClosed() const {
         if (!nodes_stack_.empty()) {
             throw BuildError("Container is not closed");
         }
     }
 
-	Node* Builder::AddNode(Node node) {
-
-        // Если стек пуст - заносим node в root_
+    Builder& Builder::AddNode(Node node) {
+        
+        // Проверка на пустой стек.
+        // Без активного контекста втавлять некуда
         if (nodes_stack_.empty()) {
-			root_ = std::move(node);
-			return &root_;
-		}
+            throw BuildError("AddNode() called on empty builder");
+        }
 
-		// Стек не пуст
-		// Заменяем значение, на которое указывает вершина стека,
-        // на node
-		Node& target = *nodes_stack_.back();
-		target = std::move(node);
-		return &target;
+        // Получение активного контекста
+        Node& parent = *nodes_stack_.back();
+
+        if (parent.IsArray()) {
+            
+            // Родитель — Array
+            // Стек не изменяем - для Array это делает только EndArray
+            Array& arr = std::get<Array>(parent.GetValueRef());
+            arr.push_back(std::move(node));
+        }
+        else if (parent.IsNull()) {
+
+            // Это значение после Key(...) — заменяем null на value
+            parent = std::move(node);
+
+            // Выходим из контекста значения
+            nodes_stack_.pop_back();  
+        }
+        else {
+            throw BuildError("AddNode() called in invalid context");
+        }
+
+		return *this;
 	}
 
 } // namespace json
