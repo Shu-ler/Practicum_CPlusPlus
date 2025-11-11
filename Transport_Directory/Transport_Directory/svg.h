@@ -269,11 +269,11 @@ namespace svg {
 		}
 
 		/**
-		 * @brief Выводит текущий отступ в поток.
+		 * @brief Выводит текущее количество пробелов в поток.
 		 */
 		void RenderIndent() const {
-			for (int i = 0; i < indent; ++i) {
-				out.put(' ');
+			if (indent > 0) {
+				out << std::string(indent, ' ');
 			}
 		}
 
