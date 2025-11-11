@@ -1,172 +1,233 @@
-#include "svg.h"
-
-// Экранирует специальные символы SVG
-std::string EscapeSvgText(std::string_view text) {
-    std::string result;
-    for (char c : text) {
-        switch (c) {
-        case '"':  result += "&quot;";  break;
-        case '<':  result += "&lt;";    break;
-        case '>':  result += "&gt;";    break;
-        case '&':  result += "&amp;";   break;
-        case '\'':  result += "&apos;"; break;
-
-        default:   result += c; break;
-        }
-    }
-    return result;
-}
+﻿#include "svg.h"
 
 namespace svg {
 
-    using namespace std::literals;
+	// === Реализация вспомогательных функций в namespace detail ===
 
-    void Object::Render(const RenderContext& context) const {
-        context.RenderIndent();
+	std::string detail::EscapeSvgText(std::string_view text) {
+		std::string result;
+		result.reserve(text.size());
 
-        // Делегируем вывод тега своим подклассам
-        RenderObject(context);
+		for (char c : text) {
+			switch (c) {
+			case '<':  result += "&lt;";	break;
+			case '>':  result += "&gt;";	break;
+			case '&':  result += "&amp;";	break;
+			case '"':  result += "&quot;";	break;
+			case '\'': result += "&apos;";	break;
+			default:   result += c;			break;
+			}
+		}
+		return result;
+	}
 
-        context.out << std::endl;
-    }
+	using namespace std::literals;
 
-    // ---------- Circle ------------------
+	// === Реализация Object ===
 
-    Circle& Circle::SetCenter(Point center) {
-        center_ = center;
-        return *this;
-    }
+	void Object::Render(const RenderContext& context) const {
+		context.RenderIndent();
 
-    Circle& Circle::SetRadius(double radius) {
-        radius_ = radius;
-        return *this;
-    }
+		// Делегируем вывод тега своим подклассам
+		RenderObject(context);
 
-    void Circle::RenderObject(const RenderContext& context) const {
-        auto& out = context.out;
+		context.out << std::endl;
+	}
 
-        context.RenderIndent();
+	// === Реализация Circle ===
 
-        out << "<circle cx=\""sv
-            << center_.x
-            << "\" cy=\""sv
-            << center_.y
-            << "\" "sv
-            << "r=\""sv
-            << radius_
-            << "\" "sv
-            << "/>"sv;
-    }
+	Circle& Circle::SetCenter(Point center) {
+		center_ = center;
+		return *this;
+	}
 
-    // ---------- Polyline ------------------
+	Circle& Circle::SetRadius(double radius) {
+		radius_ = radius;
+		return *this;
+	}
 
-    Polyline& Polyline::AddPoint(Point point) {
-        points_.push_back(point);
-        return *this;
-    }
+	void Circle::RenderObject(const RenderContext& context) const {
+		auto& out = context.out;
+		out << "<circle";
+		detail::RenderAttr(out, "cx", center_.x);
+		detail::RenderAttr(out, "cy", center_.y);
+		detail::RenderAttr(out, "r", radius_);
+		PathProps<Circle>::RenderAttrs(out);
+		out << "/>";
+	}
 
-    void Polyline::RenderObject(const RenderContext& context) const {
-        auto& out = context.out;
+	// === Реализация Polyline ===
 
-        context.RenderIndent();
+	Polyline& Polyline::AddPoint(Point point) {
+		points_.push_back(point);
+		return *this;
+	}
 
-        out << "<polyline points=\""sv;
-        bool first = true;
-        for (const Point& point : points_) {
-            if (first) {
-                first = false;
-            }
-            else {
-                out << ' ';
-            }
-            out << point.x
-                << ','
-                << point.y;
-        }
-        out << "\" "sv
-            << "/>"sv;
-    }
+	void Polyline::RenderObject(const RenderContext& context) const {
+		auto& out = context.out;
+		out << "<polyline points=\"";
+		bool first = true;
+		for (const auto& point : points_) {
+			if (!first) out << " ";
+			first = false;
+			out << point.x << "," << point.y;
+		}
+		out << "\"";
+		PathProps<Polyline>::RenderAttrs(out);
+		out << "/>";
+	}
 
-    // ---------- Polyline ------------------
+	// === Реализация Text ===
 
-    Text& Text::SetPosition(Point pos) {
-        position_ = pos;
-        return *this;
-    }
+	Text& Text::SetPosition(Point pos) {
+		position_ = pos;
+		return *this;
+	}
 
-    Text& Text::SetOffset(Point offset) {
-        offset_ = offset;
-        return *this;
-    }
+	Text& Text::SetOffset(Point offset) {
+		offset_ = offset;
+		return *this;
+	}
 
-    Text& Text::SetFontSize(uint32_t size) {
-        size_ = size;
-        return *this;
-    }
+	Text& Text::SetFontSize(uint32_t size) {
+		size_ = size;
+		return *this;
+	}
 
-    Text& Text::SetFontFamily(std::string font_family) {
-        font_family_ = std::move(font_family);
-        return *this;
-    }
+	Text& Text::SetFontFamily(std::string font_family) {
+		font_family_ = std::move(font_family);
+		return *this;
+	}
 
-    Text& Text::SetFontWeight(std::string font_weight) {
-        font_weight_ = std::move(font_weight);
-        return *this;
-    }
+	Text& Text::SetFontWeight(std::string font_weight) {
+		font_weight_ = std::move(font_weight);
+		return *this;
+	}
 
-    Text& Text::SetData(std::string data) {
-        data_ = std::move(data);
-        return *this;
-    }
+	Text& Text::SetData(std::string data) {
+		data_ = std::move(data);
+		return *this;
+	}
 
-    void Text::RenderObject(const RenderContext& context) const {
-        auto& out = context.out;
+	void Text::RenderObject(const RenderContext& context) const {
+		auto& out = context.out;
+		out << "<text";
+		detail::RenderAttr(out, "x", position_.x);
+		detail::RenderAttr(out, "y", position_.y);
+		detail::RenderAttr(out, "dx", offset_.x);
+		detail::RenderAttr(out, "dy", offset_.y);
+		detail::RenderAttr(out, "font-size", size_);
 
-        context.RenderIndent();
+		detail::RenderOptionalAttr(out, "font-family", font_family_);
+		detail::RenderOptionalAttr(out, "font-weight", font_weight_);
 
-        // Вывод обязательных атрибутов
-        out << "<text "
-            << "x=\"" << position_.x << "\" "
-            << "y=\"" << position_.y << "\" "
-            << "dx=\"" << offset_.x << "\" "
-            << "dy=\"" << offset_.y << "\" "
-            << "font-size=\"" << size_ << "\"";
+		PathProps<Text>::RenderAttrs(out);
 
-        // Вывод атрибутов с контролем заполнения
-        if (!font_family_.empty()) {
-            out << " font-family=\"" << font_family_ << "\"";
-        }
+		out << ">";
+		detail::RenderValue(out, data_);
+		out << "</text>";
+	}
 
-        if (!font_weight_.empty()) {
-            out << " font-weight=\"" << font_weight_ << "\"";
-        }
+	// === Реализация Document ===
 
-        // Вывод собственно текста
-        out << ">"
-            << EscapeSvgText(data_)
-            << "</text>"
-            << std::endl;
-    }
+	void Document::AddPtr(std::unique_ptr<Object>&& obj) {
+		objects_.emplace_back(std::move(obj));
+	}
 
-    // ---------- Document ------------------
+	void Document::Render(std::ostream& out) const {
 
-    void Document::AddPtr(std::unique_ptr<Object>&& obj) {
-        objects_.emplace_back(std::move(obj));
-    }
+		// Вывод заголовка файла
+		out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n";
+		out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n";
 
-    void Document::Render(std::ostream& out) const {
+		// Вывод содержимого файла
+		for (const auto& obj : objects_) {
+			obj->Render(RenderContext(out, 2).Indented());
+			//out << "\n";
+		}
 
-        // Вывод заголовка файла
-        out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n";
-        out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n";
+		// Вывод концовки файла
+		out << "</svg>\n";
+	}
 
-        // Вывод содержимого файла
-        for (const auto& obj : objects_) {
-            obj->Render(RenderContext(out, 2));
-        }
+	// === Реализация StrokeLineCap ===
 
-        // Вывод концовки файла
-        out << "</svg>\n";
-    }
+	std::ostream& operator<<(std::ostream& out, StrokeLineCap value) {
+		std::string_view sv;
+
+		switch (value) {
+		case StrokeLineCap::BUTT:	sv = "butt";	break;
+		case StrokeLineCap::ROUND:	sv = "round";	break;
+		case StrokeLineCap::SQUARE:	sv = "square";	break;
+		}
+		return out << sv;
+	}
+
+	// === Реализация StrokeLineJoin ===
+
+	std::ostream& operator<<(std::ostream& out, StrokeLineJoin value) {
+		std::string_view sv;
+
+		switch (value) {
+		case StrokeLineJoin::ARCS:		 sv = "arcs";		break;
+		case StrokeLineJoin::BEVEL:		 sv = "bevel";		break;
+		case StrokeLineJoin::MITER:		 sv = "miter";		break;
+		case StrokeLineJoin::MITER_CLIP: sv = "miter-clip";	break;
+		case StrokeLineJoin::ROUND:		 sv = "round";		break;
+		}
+		return out << sv;
+	}
+
+	// === Реализация Color ===
+
+	/**
+	 * @brief Выводит цвет в поток в формате SVG.
+	 *
+	 * Использует std::visit и if constexpr для безопасного и эффективного
+	 * доступа к значению variant без исключений.
+	 *
+	 * Обрабатывает все возможные типы, из которых может состоять svg::Color:
+	 * - std::monostate → выводит "none"
+	 * - std::string   → выводит как есть (например, "red", "#ff0000")
+	 * - svg::Rgb      → выводит в формате rgb(R,G,B)
+	 * - svg::Rgba     → выводит в формате rgba(R,G,B,A)
+	 */
+	std::ostream& operator<<(std::ostream& out, const Color& color) {
+
+		// Лямбда для обработки каждого типа цвета
+		auto print_color = [&out](const auto& value) {
+			using T = std::decay_t<decltype(value)>;
+
+			if constexpr (std::is_same_v<T, std::monostate>) {
+				out << "none"s;
+			}
+			else if constexpr (std::is_same_v<T, std::string>) {
+				out << value;
+			}
+			else if constexpr (std::is_same_v<T, Rgb>) {
+				out << "rgb("s
+					<< static_cast<int>(value.red)
+					<< ","s
+					<< static_cast<int>(value.green)
+					<< ","s
+					<< static_cast<int>(value.blue)
+					<< ")"s;
+			}
+			else if constexpr (std::is_same_v<T, Rgba>) {
+				out << "rgba("s
+					<< static_cast<int>(value.red)
+					<< ","s
+					<< static_cast<int>(value.green)
+					<< ","s
+					<< static_cast<int>(value.blue)
+					<< ","s
+					<< value.opacity
+					<< ")"s;
+			}
+			};
+
+		std::visit(print_color, color);
+		return out;
+	}
 
 }  // namespace svg
