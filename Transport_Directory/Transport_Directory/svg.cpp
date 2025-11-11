@@ -1,4 +1,5 @@
 ﻿#include "svg.h"
+#include <iomanip>
 
 namespace svg {
 
@@ -135,6 +136,12 @@ namespace svg {
 	}
 
 	void Document::Render(std::ostream& out) const {
+		// Кэширование состояния потока вывода
+		auto flags = out.flags();
+		auto precision = out.precision();
+
+		// Настройка вывода double
+		out << std::fixed << std::setprecision(6);
 
 		// Вывод заголовка файла
 		out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n";
@@ -143,11 +150,14 @@ namespace svg {
 		// Вывод содержимого файла
 		for (const auto& obj : objects_) {
 			obj->Render(RenderContext(out, 2).Indented());
-			//out << "\n";
 		}
 
 		// Вывод концовки файла
 		out << "</svg>\n";
+
+		// Восстановление состояния потока
+		out.flags(flags);
+		out.precision(precision);
 	}
 
 	// === Реализация StrokeLineCap ===

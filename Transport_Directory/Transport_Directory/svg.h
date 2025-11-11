@@ -8,6 +8,42 @@
 #include <optional>
 #include <variant>
 
+/*
+ * Структура SVG-библиотеки:
+ *
+ *  svg/
+ *      ├── Color         → тип для представления цвета (строка, Rgb, Rgba)
+ *      ├── Point         → точка на плоскости
+ *      ├── RenderContext → контекст рендеринга с отступами
+ *      ├── Object        → абстрактный базовый класс для всех SVG-элементов
+ *      ├── PathProps     → CRTP-миксин для атрибутов обводки и заливки
+ *      ├── Circle        → элемент <circle>
+ *      ├── Polyline      → элемент <polyline>
+ *      ├── Text          → элемент <text>
+ *      ├── ObjectContainer → интерфейс контейнера объектов
+ *      ├── Drawable      → интерфейс для объектов, способных рисовать себя
+ *      └── Document      → корневой элемент SVG-документа
+ *
+ * Библиотека предоставляет:
+ * - Удобный fluent-интерфейс для построения элементов
+ * - Поддержку цветов в форматах: "red", "#ff0000", rgb(255,0,0), rgba(255,0,0,0.5)
+ * - Экранирование текста для безопасного вывода
+ * - Гибкую систему атрибутов (опциональные и обязательные)
+ * - Форматированный вывод с отступами
+ *
+ * Пример использования:
+ * @code
+ * svg::Document doc;
+ * doc.Add(svg::Polyline{}
+ *     .SetStrokeColor("blue")
+ *     .SetStrokeWidth(2)
+ *     .AddPoint({0, 0})
+ *     .AddPoint({100, 100}));
+ *
+ * doc.Render(std::cout);
+ * @endcode
+ */
+
 namespace svg {
 
 	using OptionalString = std::optional<std::string>;
