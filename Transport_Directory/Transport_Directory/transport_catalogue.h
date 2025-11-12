@@ -72,6 +72,42 @@ namespace trans_cat {
 		bool StopExists(std::string_view name) const;
 
 		/**
+		 * @brief Возвращает все маршруты, отсортированные по алфавиту.
+		 *
+		 * Результат упорядочен по полю Route::name. Подходит для визуализации,
+		 * где важна стабильность порядка (например, применение цветовой палитры).
+		 *
+		 * @return std::vector<const Route*> — отсортированный вектор указателей
+		 *
+		 * @note Производительность: O(n log n) из-за сортировки.
+		 *       Используйте GetRoutesInInsertionOrder() для O(n).
+		 *
+		 * @example
+		 * for (const auto* route : catalogue.GetRoutesSortedByName()) {
+		 *     renderer.RenderRoute(route);
+		 * }
+		 */
+		std::vector<const Route*> GetRoutesSortedByName() const;
+
+		/**
+		 * @brief Возвращает маршруты в порядке их добавления в каталог.
+		 *
+		 * Гарантирует, что порядок соответствует последовательности вызовов AddRoute.
+		 * Полезно, если нужно воспроизвести порядок из входного JSON.
+		 *
+		 * @return std::vector<const Route*> — вектор указателей в порядке добавления
+		 *
+		 * @note Производительность: O(n), без сортировки.
+		 *       Не зависит от длины имён маршрутов.
+		 *
+		 * @example
+		 * for (const auto* route : catalogue.GetRoutesInInsertionOrder()) {
+		 *     // Обработка в порядке base_requests
+		 * }
+		 */
+		std::vector<const Route*> GetRoutesInInsertionOrder() const;
+		
+		/**
 		 * @brief Структура с метриками маршрута.
 		 */
 		struct RouteStat {
