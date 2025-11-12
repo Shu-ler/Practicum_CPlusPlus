@@ -148,11 +148,11 @@ namespace svg {
 
 	void Document::Render(std::ostream& out) const {
 		// Кэширование состояния потока вывода
-		auto flags = out.flags();
-		auto precision = out.precision();
+		//auto flags = out.flags();
+		//auto precision = out.precision();
 
 		// Настройка вывода double
-		out << std::setprecision(4); // std::fixed <<
+		//out << std::setprecision(4); // std::fixed <<
 
 		// Вывод заголовка файла
 		out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n";
@@ -167,8 +167,8 @@ namespace svg {
 		out << "</svg>\n";
 
 		// Восстановление состояния потока
-		out.flags(flags);
-		out.precision(precision);
+		//out.flags(flags);
+		//out.precision(precision);
 	}
 
 	Color ReadColor(const json::Node& node) {

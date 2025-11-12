@@ -46,7 +46,7 @@ namespace geo {
      *
      * Пример: разница в 1° по широте ≈ 111.2 км
      */
-    constexpr double DEG_TO_METER = EARTH_RADIUS_METERS * DEG_TO_RAD;
+    constexpr double DEG_TO_METER = 111319.5; // EARTH_RADIUS_METERS* DEG_TO_RAD;
 
     // =============================================================================
     // Функции

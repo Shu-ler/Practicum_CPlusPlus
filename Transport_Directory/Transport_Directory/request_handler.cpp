@@ -48,6 +48,8 @@ namespace request_handler {
             out << std::endl;
         }
         else if (stat_requests_) {
+            return;
+
             // Режим: JSON-ответы
             json::Array responses;
             responses.reserve(stat_requests_->size());
