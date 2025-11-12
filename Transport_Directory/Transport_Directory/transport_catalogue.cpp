@@ -1,6 +1,7 @@
 #include "transport_catalogue.h"
 #include "geo.h"
 #include <cmath>
+#include <algorithm>
 
 namespace trans_cat {
 
@@ -79,6 +80,36 @@ namespace trans_cat {
 
     bool TransportCatalogue::StopExists(std::string_view name) const {
         return stopname_to_stop_.contains(name);
+    }
+
+    std::vector<const Route*> TransportCatalogue::GetRoutesSortedByName() const {
+        std::vector<const Route*> result;
+        result.reserve(routename_to_route_.size());
+
+        // Собираем все указатели
+        for (const auto& [name, route_ptr] : routename_to_route_) {
+            result.push_back(route_ptr);
+        }
+
+        // Сортируем по имени маршрута. Лямбда - для сортировки по имени
+        std::sort(result.begin(), result.end(),
+            [](const Route* a, const Route* b) {
+                return a->name < b->name;
+            });
+
+        return result;
+    }
+
+    std::vector<const Route*> TransportCatalogue::GetRoutesInInsertionOrder() const {
+        std::vector<const Route*> result;
+        result.reserve(routes_.size());
+
+        // Бежим по deque — он хранит элементы в порядке добавления
+        for (const Route& route : routes_) {
+            result.push_back(&route);
+        }
+
+        return result;
     }
 
     std::optional<TransportCatalogue::RouteStat> TransportCatalogue::GetRouteStat(
