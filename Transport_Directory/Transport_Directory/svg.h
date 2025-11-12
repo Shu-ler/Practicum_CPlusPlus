@@ -8,6 +8,8 @@
 #include <optional>
 #include <variant>
 
+#include "json.h"
+
 /*
  * Структура SVG-библиотеки:
  *
@@ -94,6 +96,8 @@ namespace svg {
 
 	// Константа — цвет не задан
 	inline const Color NoneColor{}; // std::monostate, первый из вариантов
+
+	Color ReadColor(const json::Node& node);
 
 	/*
 	 * Вспомогательные функции для внутреннего использования при рендеринге SVG.

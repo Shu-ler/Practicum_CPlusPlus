@@ -152,7 +152,7 @@ namespace svg {
 		auto precision = out.precision();
 
 		// Настройка вывода double
-		out << std::fixed << std::setprecision(6);
+		out << std::setprecision(4); // std::fixed <<
 
 		// Вывод заголовка файла
 		out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n";
@@ -169,6 +169,31 @@ namespace svg {
 		// Восстановление состояния потока
 		out.flags(flags);
 		out.precision(precision);
+	}
+
+	Color ReadColor(const json::Node& node) {
+		if (node.IsString()) {
+			return node.AsString();
+		}
+		else if (node.IsArray()) {
+			const auto& arr = node.AsArray();
+			if (arr.size() == 3) {
+				return Rgb{
+					static_cast<uint8_t>(arr[0].AsInt()),
+					static_cast<uint8_t>(arr[1].AsInt()),
+					static_cast<uint8_t>(arr[2].AsInt())
+				};
+			}
+			else if (arr.size() == 4) {
+				return Rgba{
+					static_cast<uint8_t>(arr[0].AsInt()),
+					static_cast<uint8_t>(arr[1].AsInt()),
+					static_cast<uint8_t>(arr[2].AsInt()),
+					arr[3].AsDouble()
+				};
+			}
+		}
+		throw json::ParsingError("Invalid color format");
 	}
 
 	// =============================================================================

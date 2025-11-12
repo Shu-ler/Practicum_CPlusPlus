@@ -61,6 +61,7 @@ namespace renderer {
         double min_lon_ = 0;        ///< минимальная долгота
         double max_lat_ = 0;        ///< максимальная широта
         double zoom_coeff_ = 0;     ///< коэффициент масштабирования
+        double padding_ = 0;
     };
 
     /**
