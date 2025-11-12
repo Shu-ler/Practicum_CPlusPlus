@@ -2,6 +2,7 @@
 
 #include "transport_catalogue.h"
 #include "json.h"
+#include "map_renderer.h"
 
 #include <optional>
 #include <string>
@@ -16,7 +17,7 @@
  * Позволяет:
  * - Получать статистику по автобусным маршрутам
  * - Получать список маршрутов, проходящих через остановку
- * - (В будущем) генерировать карту маршрутов
+ * - Генерировать карту маршрутов (если заданы render_settings)
  *
  * Поддерживает расширение функциональности без изменения интерфейса парсинга.
  */
@@ -51,21 +52,28 @@ namespace request_handler {
      * Этот класс скрывает сложность взаимодействия с TransportCatalogue
      * и предоставляет простой интерфейс для получения данных.
      *
-     * Является частью паттерна «Фасад»:
-     * - Изолирует логику запросов от формата ввода/вывода (JSON, CLI, HTTP)
-     * - Упрощает тестирование
-     * - Поддерживает расширение (например, добавление визуализации карты)
+     * Позволяет:
+     * - Получать статистику по маршрутам и остановкам
+     * - Генерировать карту маршрутов (если заданы render_settings)
      *
-     * @note В текущей версии работает только с TransportCatalogue.
-     *       В следующих частях проекта будет расширен для поддержки MapRenderer и Router.
+     * Использует статический метод Create() для инициализации в зависимости от входных данных.
      */
     class RequestHandler {
     public:
         /**
-         * @brief Конструктор.
-         * @param catalogue Ссылка на транспортный каталог — источник данных
+         * @brief Фабричный метод: создаёт RequestHandler на основе входного JSON.
+         * @param catalogue - заполненный транспортный каталог
+         * @param input - входной JSON-документ
+         * @return Настроенный RequestHandler
          */
-        explicit RequestHandler(const trans_cat::TransportCatalogue& catalogue);
+        static RequestHandler Create(const trans_cat::TransportCatalogue& catalogue,
+            const json::Document& input);
+
+        /**
+         * @brief Обрабатывает запросы и выводит результат в поток.
+         * @param out Поток вывода (например, std::cout)
+         */
+        void ProcessRequests(std::ostream& out) const;
 
         /**
          * @brief Получает статистику по автобусному маршруту.
@@ -102,7 +110,19 @@ namespace request_handler {
           // std::optional<Router::RouteInfo> BuildRoute(const std::string& from, const std::string& to) const;
 
     private:
+        /**
+         * @brief Приватный конструктор.
+         * @param catalogue Ссылка на транспортный каталог — источник данных
+         */
+        explicit RequestHandler(const trans_cat::TransportCatalogue& catalogue);
+
+        RequestHandler(const trans_cat::TransportCatalogue& catalogue,
+            std::optional<renderer::MapRenderer> renderer,
+            std::optional<json::Array> stat_requests);
+
         const trans_cat::TransportCatalogue& catalogue_;
+        std::optional<renderer::MapRenderer> map_renderer_;
+        std::optional<json::Array> stat_requests_;
     };
 
 } // namespace request_handler

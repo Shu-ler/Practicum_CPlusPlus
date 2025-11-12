@@ -2,6 +2,7 @@
 
 #include "transport_catalogue.h"
 #include "json.h"
+#include "map_renderer.h"
 
 /*
  * Структура библиотеки работы с JSON-входом:
@@ -44,6 +45,8 @@ namespace json_reader {
      */
     const json::Array& GetStatRequests(const json::Document& input);
 
+    renderer::RenderSettings GetRenderSettings(const json::Document& input);
+
     /**
      * @brief Формирует JSON-ответы на массив запросов статистики.
      *
@@ -66,7 +69,7 @@ namespace json_reader {
      *   { "request_id": 3, "error_message": "not found" }
      * ]
      */
-    json::Document MakeResponse(const trans_cat::TransportCatalogue& tc,
-        const json::Array& stat_requests);
+    //json::Document MakeResponse(const trans_cat::TransportCatalogue& tc,
+    //    const json::Array& stat_requests);
 
 } // namespace json_reader
