@@ -7,8 +7,8 @@
 int main() {
 
     // 0. Настройка std::cout для чисел с плавающей точкой
-    std::cout.precision(6);
-    std::cout << std::fixed;
+    //std::cout.precision(6);
+    //std::cout << std::fixed;
 
     try {
         // 1. Прочитать JSON
