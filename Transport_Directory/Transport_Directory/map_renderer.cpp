@@ -5,8 +5,6 @@
 
 using namespace renderer;
 
-// === Реализация SphereProjector ===
-
 // === MapRenderer::Render — без изменений ===
 
 renderer::MapRenderer::MapRenderer(const RenderSettings& settings)
@@ -140,12 +138,12 @@ void MapRenderer::RenderBusLabels(svg::Document& doc,
                 .SetFontSize(settings_.bus_label_font_size)
                 .SetFontFamily("Verdana")
                 .SetFontWeight("bold")
-                .SetData(route->name)
-                .SetFillColor(svg::NoneColor)
+                .SetFillColor(settings_.underlayer_color)
                 .SetStrokeColor(settings_.underlayer_color)
                 .SetStrokeWidth(settings_.underlayer_width)
                 .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
-                .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
+                .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND)
+                .SetData(route->name);
             doc.Add(under);
 
             // Основная надпись — только заливка
@@ -156,8 +154,8 @@ void MapRenderer::RenderBusLabels(svg::Document& doc,
                 .SetFontSize(settings_.bus_label_font_size)
                 .SetFontFamily("Verdana")
                 .SetFontWeight("bold")
-                .SetData(route->name)
-                .SetFillColor(color);
+                .SetFillColor(color)
+                .SetData(route->name);
             doc.Add(label);
             };
 
@@ -198,12 +196,12 @@ void MapRenderer::RenderStopLabels(svg::Document& doc,
             .SetOffset(settings_.stop_label_offset)
             .SetFontSize(settings_.stop_label_font_size)
             .SetFontFamily("Verdana")
-            .SetData(stop->name)
             .SetFillColor(settings_.underlayer_color)
             .SetStrokeColor(settings_.underlayer_color)
             .SetStrokeWidth(settings_.underlayer_width)
-            //.SetPaint(svg::PaintType::STROKE)
-            ;
+            .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
+            .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND)
+            .SetData(stop->name);
         doc.Add(under);
 
         // Текст
@@ -213,8 +211,8 @@ void MapRenderer::RenderStopLabels(svg::Document& doc,
             .SetOffset(settings_.stop_label_offset)
             .SetFontSize(settings_.stop_label_font_size)
             .SetFontFamily("Verdana")
-            .SetData(stop->name)
-            .SetFillColor("black");
+            .SetFillColor("black")
+            .SetData(stop->name);
         doc.Add(label);
     }
 }

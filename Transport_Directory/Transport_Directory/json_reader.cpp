@@ -35,56 +35,6 @@ namespace {
         }
     }
 
-    /**
-     * @brief Начинает построение JSON-ответа, добавляя ключ "request_id".
-     *
-     * Эта вспомогательная функция используется для единообразного формирования
-     * ответов на запросы: она начинает словарь и сразу добавляет поле "request_id",
-     * взятое из входного запроса.
-     *
-     * @param builder Ссылка на Builder, который используется для построения ответа
-     * @param req     Исходный JSON-объект запроса, содержащий ключ "id"
-     * @return        Ссылка на тот же builder (для цепочки вызовов)
-     *
-     * @note Функция предполагает, что ключ "id" существует и имеет тип int.
-     *       Используется внутри MakeResponse для устранения дублирования кода.
-     */
-    json::Builder& StartResponse(json::Builder& builder, const json::Dict& req) {
-        int id = req.at("id").AsInt();
-        return builder.StartDict().Key("request_id").AddNumber(id);
-    }
-
-    /**
-     * @brief Создаёт ответ на запрос "Bus"
-     * @param tc Транспортный каталог
-     * @param request JSON-объект запроса (содержит "id", "name")
-     * @return JSON-объект с результатом
-     */
-    json::Node MakeBusResponse(const trans_cat::TransportCatalogue& tc, const json::Dict& request) {
-        json::Builder builder;
-
-        int id = request.at("id").AsInt();
-        std::string bus_name = request.at("name").AsString();
-        auto stat = tc.GetRouteStat(bus_name);
-
-        builder
-            .StartDict()
-            .Key("request_id").AddNumber(id);
-            
-        if (stat) {
-            builder
-                .Key("stop_count").AddNumber(static_cast<int>(stat->stop_count))
-                .Key("unique_stop_count").AddNumber(static_cast<int>(stat->unique_stop_count))
-                .Key("route_length").AddNumber(static_cast<int>(stat->route_length))
-                .Key("curvature").AddNumber(stat->curvature);
-        }
-        else {
-            builder.Key("error_message").AddString("not found");
-        }
-
-        return builder.EndDict().Build();
-    }
-
     // Обработка остановки из base_requests
     void AddStopFromJson(trans_cat::TransportCatalogue& tc, const json::Dict& stop_node) {
         std::string name = GetJsonValue<std::string>(stop_node, "name");

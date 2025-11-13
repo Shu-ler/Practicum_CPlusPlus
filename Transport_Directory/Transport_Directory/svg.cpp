@@ -55,10 +55,13 @@ namespace svg {
 	void Circle::RenderObject(const RenderContext& context) const {
 		auto& out = context.out;
 		out << "<circle";
+
 		detail::RenderAttr(out, "cx", center_.x);
 		detail::RenderAttr(out, "cy", center_.y);
 		detail::RenderAttr(out, "r", radius_);
+
 		PathProps<Circle>::RenderAttrs(out);
+
 		out << "/>";
 	}
 
@@ -122,6 +125,9 @@ namespace svg {
 	void Text::RenderObject(const RenderContext& context) const {
 		auto& out = context.out;
 		out << "<text";
+
+		PathProps<Text>::RenderAttrs(out);
+
 		detail::RenderAttr(out, "x", position_.x);
 		detail::RenderAttr(out, "y", position_.y);
 		detail::RenderAttr(out, "dx", offset_.x);
@@ -131,8 +137,7 @@ namespace svg {
 		detail::RenderOptionalAttr(out, "font-family", font_family_);
 		detail::RenderOptionalAttr(out, "font-weight", font_weight_);
 
-		PathProps<Text>::RenderAttrs(out);
-
+		
 		out << ">";
 		detail::RenderValue(out, data_);
 		out << "</text>";
