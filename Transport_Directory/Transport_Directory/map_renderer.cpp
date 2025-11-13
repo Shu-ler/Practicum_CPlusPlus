@@ -30,8 +30,16 @@ svg::Document MapRenderer::Render(const trans_cat::TransportCatalogue& catalogue
         return doc;
     }
 
+    // === Сортировка остановок по имени (лексикографически) ===
+    std::vector<const trans_cat::Stop*> sorted_stops(stop_set.begin(), stop_set.end());
+    std::sort(sorted_stops.begin(), sorted_stops.end(),
+        [](const trans_cat::Stop* lhs, const trans_cat::Stop* rhs) {
+            return lhs->name < rhs->name;
+        });
+
+    // === Проекция ===
     std::vector<geo::Coordinates> coords;
-    for (const auto* stop : stop_set) {
+    for (const auto* stop : sorted_stops) {
         coords.push_back(stop->coordinates);
     }
 
@@ -59,10 +67,10 @@ svg::Document MapRenderer::Render(const trans_cat::TransportCatalogue& catalogue
     RenderBusLabels(doc, routes, palette, proj);
 
     // === 3. Рисуем остановки ===
-  //  RenderStops(doc, std::vector<const trans_cat::Stop*>(stop_set.begin(), stop_set.end()), proj);
+    RenderStops(doc, sorted_stops, proj);
 
     // === 4. Рисуем названия остановок ===
-  //  RenderStopLabels(doc, std::vector<const trans_cat::Stop*>(stop_set.begin(), stop_set.end()), proj);
+    RenderStopLabels(doc, sorted_stops, proj);
 
     return doc;
 }
