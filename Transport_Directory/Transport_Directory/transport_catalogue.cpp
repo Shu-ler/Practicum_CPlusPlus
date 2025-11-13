@@ -26,7 +26,7 @@ namespace trans_cat {
         return stop_ptr;
     }
 
-    void TransportCatalogue::AddRoute(std::string name, const std::vector<std::string>& stops,
+    void TransportCatalogue::AddRoute(std::string& name, const std::vector<std::string>& stops,
         bool is_roundtrip) {
         if (stops.empty()) {
             return;
@@ -52,13 +52,13 @@ namespace trans_cat {
         }
 
         // Если маршрут не кольцевой, делаем двусторонний маршрут
-        std::vector<const Stop*> full_route = stop_ptrs;
-        if (!is_roundtrip && stop_ptrs.size() > 1) {
-            full_route.insert(full_route.end(), std::next(stop_ptrs.rbegin()), stop_ptrs.rend());
-        }
+        //std::vector<const Stop*> full_route = stop_ptrs;
+        //if (!is_roundtrip && stop_ptrs.size() > 1) {
+        //    full_route.insert(full_route.end(), std::next(stop_ptrs.rbegin()), stop_ptrs.rend());
+        //}
 
         // Создаём маршрут
-        routes_.push_back(Route{ std::move(name), std::move(full_route), is_roundtrip });
+        routes_.emplace_back(Route{ std::move(name), std::move(stop_ptrs), is_roundtrip });
         const Route* route_ptr = &routes_.back();
         routename_to_route_[route_ptr->name] = route_ptr;
 

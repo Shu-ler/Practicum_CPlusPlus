@@ -56,7 +56,7 @@ svg::Document MapRenderer::Render(const trans_cat::TransportCatalogue& catalogue
     RenderRouteLines(doc, routes, palette, proj);
 
     // === 2. Рисуем подписи маршрутов ===
-  //  RenderBusLabels(doc, routes, palette, proj);
+    RenderBusLabels(doc, routes, palette, proj);
 
     // === 3. Рисуем остановки ===
   //  RenderStops(doc, std::vector<const trans_cat::Stop*>(stop_set.begin(), stop_set.end()), proj);
@@ -79,8 +79,17 @@ void MapRenderer::RenderRouteLines(svg::Document& doc,
         }
 
         svg::Polyline line;
+
+        // Прямой путь
         for (const auto* stop : route->stops) {
             line.AddPoint(proj(stop->coordinates));
+        }
+
+        // Если маршрут некольцевой — добавляем обратный (без первой)
+        if (!route->is_roundtrip) {
+            for (size_t i = route->stops.size() - 1; i-- > 0; ) {
+                line.AddPoint(proj(route->stops[i]->coordinates));
+            }
         }
 
         line
@@ -91,7 +100,7 @@ void MapRenderer::RenderRouteLines(svg::Document& doc,
             .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
         doc.Add(line);
         
-        // Цвет сдвигается только если маршрут **имеет остановки**
+        // Цвет сдвигается только если маршрут имеет остановки
         if (!route->stops.empty()) {
             ++color_idx;
         }
@@ -103,39 +112,56 @@ void MapRenderer::RenderBusLabels(svg::Document& doc,
     const std::vector<svg::Color>& colors,
     const SphereProjector& proj) const {
     size_t color_idx = 0;
+
     for (const auto* route : routes) {
         if (route->stops.empty()) continue;
 
-        const auto pos = proj(route->stops.front()->coordinates);
+        // Зацикливаем color - для случая, когда остановок больше, чем цветов
+        const svg::Color& color = colors[color_idx % colors.size()];
 
-        // Подложка
-        svg::Text under;
-        under
-            .SetPosition(pos)
-            .SetOffset(settings_.bus_label_offset)
-            .SetFontSize(settings_.bus_label_font_size)
-            .SetFontFamily("Verdana")
-            .SetFontWeight("bold")
-            .SetData(route->name)
-            .SetFillColor(settings_.underlayer_color)
-            .SetStrokeColor(settings_.underlayer_color)
-            .SetStrokeWidth(settings_.underlayer_width)
-    //        .SetPaint(svg::PaintType::STROKE)
-            ;
-        doc.Add(under);
+        // Лямбда для добавления подписи в указанной позиции
+        // Стоит в цикле (по [&] многое прилетает)
+        auto add_label = [&](const trans_cat::Stop* stop) {
+            const auto pos = proj(stop->coordinates);
 
-        // Текст
-        svg::Text label;
-        label
-            .SetPosition(pos)
-            .SetOffset(settings_.bus_label_offset)
-            .SetFontSize(settings_.bus_label_font_size)
-            .SetFontFamily("Verdana")
-            .SetFontWeight("bold")
-            .SetData(route->name)
-            .SetFillColor(colors[color_idx % colors.size()]);
-        doc.Add(label);
+            // Подложка — только обводка
+            svg::Text under;
+            under
+                .SetPosition(pos)
+                .SetOffset(settings_.bus_label_offset)
+                .SetFontSize(settings_.bus_label_font_size)
+                .SetFontFamily("Verdana")
+                .SetFontWeight("bold")
+                .SetData(route->name)
+                .SetFillColor(svg::NoneColor)
+                .SetStrokeColor(settings_.underlayer_color)
+                .SetStrokeWidth(settings_.underlayer_width)
+                .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
+                .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
+            doc.Add(under);
 
+            // Основная надпись — только заливка
+            svg::Text label;
+            label
+                .SetPosition(pos)
+                .SetOffset(settings_.bus_label_offset)
+                .SetFontSize(settings_.bus_label_font_size)
+                .SetFontFamily("Verdana")
+                .SetFontWeight("bold")
+                .SetData(route->name)
+                .SetFillColor(color);
+            doc.Add(label);
+            };
+
+        // Выводим у первой остановки (всегда)
+        add_label(route->stops.front());
+
+        // Если маршрут некольцевой и есть хотя бы две разные остановки
+        if (!route->is_roundtrip && route->stops.front() != route->stops.back()) {
+            add_label(route->stops.back());
+        }
+        
+        // Инкремент индекса цвета
         ++color_idx;
     }
 }

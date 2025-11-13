@@ -53,7 +53,7 @@ namespace trans_cat {
 		 * @param stops Список названий остановок в порядке следования
 		 * @param is_roundtrip true, если маршрут кольцевой (без обратного пути)
 		 */
-		void AddRoute(std::string name, const std::vector<std::string>& stops, bool is_roundtrip);
+		void AddRoute(std::string& name, const std::vector<std::string>& stops, bool is_roundtrip);
 
 		/**
 		 * @brief Ищет остановку по имени (O(1)).
