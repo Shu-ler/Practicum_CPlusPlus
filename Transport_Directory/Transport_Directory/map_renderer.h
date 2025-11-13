@@ -30,6 +30,11 @@
 
 namespace renderer {
 
+    inline const double EPSILON = 1e-6;
+    inline bool IsZero(double value) {
+        return std::abs(value) < EPSILON;
+    }
+
     /**
      * @brief Проекция географических координат на прямоугольный SVG-холст.
      *
@@ -41,41 +46,63 @@ namespace renderer {
      */
     class SphereProjector {
     public:
+        // points_begin и points_end задают начало и конец интервала элементов geo::Coordinates
         template <typename PointInputIt>
         SphereProjector(PointInputIt points_begin, PointInputIt points_end,
             double max_width, double max_height, double padding)
-            : padding_(padding)
+            : padding_(padding) //
         {
-            if (points_begin == points_end) return;
+            // Если точки поверхности сферы не заданы, вычислять нечего
+            if (points_begin == points_end) {
+                return;
+            }
 
-            const auto [min_lon_it, max_lon_it] = std::minmax_element(
+            // Находим точки с минимальной и максимальной долготой
+            const auto [left_it, right_it] = std::minmax_element(
                 points_begin, points_end,
-                [](const auto& a, const auto& b) { return a.lng < b.lng; });
-            min_lon_ = min_lon_it->lng;
-            const double max_lon = max_lon_it->lng;
+                [](auto lhs, auto rhs) { return lhs.lng < rhs.lng; });
+            min_lon_ = left_it->lng;
+            const double max_lon = right_it->lng;
 
-            const auto [min_lat_it, max_lat_it] = std::minmax_element(
+            // Находим точки с минимальной и максимальной широтой
+            const auto [bottom_it, top_it] = std::minmax_element(
                 points_begin, points_end,
-                [](const auto& a, const auto& b) { return a.lat < b.lat; });
-            const double min_lat = min_lat_it->lat;
-            max_lat_ = max_lat_it->lat;
+                [](auto lhs, auto rhs) { return lhs.lat < rhs.lat; });
+            const double min_lat = bottom_it->lat;
+            max_lat_ = top_it->lat;
 
-            const double width = (max_lon - min_lon_) * std::cos(max_lat_ * geo::PI / 180.0);
-            const double height = max_lat_ - min_lat;
+            // Вычисляем коэффициент масштабирования вдоль координаты x
+            std::optional<double> width_zoom;
+            if (!IsZero(max_lon - min_lon_)) {
+                width_zoom = (max_width - 2 * padding) / (max_lon - min_lon_);
+            }
 
-            const double width_scale = width * geo::DEG_TO_METER;
-            const double height_scale = height * geo::DEG_TO_METER;
+            // Вычисляем коэффициент масштабирования вдоль координаты y
+            std::optional<double> height_zoom;
+            if (!IsZero(max_lat_ - min_lat)) {
+                height_zoom = (max_height - 2 * padding) / (max_lat_ - min_lat);
+            }
 
-            zoom_coeff_ = std::min(
-                (max_width - 2 * padding) / width_scale,
-                (max_height - 2 * padding) / height_scale
-            );
+            if (width_zoom && height_zoom) {
+                // Коэффициенты масштабирования по ширине и высоте ненулевые,
+                // берём минимальный из них
+                zoom_coeff_ = std::min(*width_zoom, *height_zoom);
+            }
+            else if (width_zoom) {
+                // Коэффициент масштабирования по ширине ненулевой, используем его
+                zoom_coeff_ = *width_zoom;
+            }
+            else if (height_zoom) {
+                // Коэффициент масштабирования по высоте ненулевой, используем его
+                zoom_coeff_ = *height_zoom;
+            }
         }
 
+        // Проецирует широту и долготу в координаты внутри SVG-изображения
         svg::Point operator()(geo::Coordinates coords) const {
             return {
-                padding_ + (coords.lng - min_lon_) * zoom_coeff_ * geo::DEG_TO_METER,
-                padding_ + (max_lat_ - coords.lat) * zoom_coeff_ * geo::DEG_TO_METER
+                (coords.lng - min_lon_) * zoom_coeff_ + padding_,
+                (max_lat_ - coords.lat) * zoom_coeff_ + padding_
             };
         }
 
