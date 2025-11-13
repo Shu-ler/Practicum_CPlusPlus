@@ -7,46 +7,6 @@ using namespace renderer;
 
 // === Реализация SphereProjector ===
 
-SphereProjector::SphereProjector(
-    const std::vector<geo::Coordinates>& coords,
-    double max_width, double max_height, double padding) 
-    : padding_(padding) {
-    
-    if (coords.empty()) {
-        return;
-    }
-
-    // Находим min/max
-    auto [min_lon_it, max_lon_it] = std::minmax_element(coords.begin(), coords.end(),
-        [](const auto& a, const auto& b) { return a.lng < b.lng; });
-    auto [min_lat_it, max_lat_it] = std::minmax_element(coords.begin(), coords.end(),
-        [](const auto& a, const auto& b) { return a.lat < b.lat; });
-
-    min_lon_ = min_lon_it->lng;
-    max_lat_ = max_lat_it->lat;
-
-    // УЧИТЫВАЕМ cos(max_lat) при расчёте ширины в градусах
-    double span_lon = max_lon_it->lng - min_lon_;
-    double span_lat = max_lat_it->lat - min_lat_it->lat;
-
-    // Проекция: ширина зависит от параллели
-    double projected_width = span_lon * std::cos(max_lat_ * geo::PI / 180.0);
-    double projected_height = span_lat;
-
-    // Масштаб по осям
-    zoom_coeff_ = std::min(
-        (max_width - 2 * padding) / (projected_width * geo::DEG_TO_METER),
-        (max_height - 2 * padding) / (projected_height * geo::DEG_TO_METER)
-    );
-}
-
-svg::Point SphereProjector::operator()(geo::Coordinates coords) const {
-    return svg::Point{
-        padding_ + (coords.lng - min_lon_) * zoom_coeff_ * geo::DEG_TO_METER,
-        padding_ + (max_lat_ - coords.lat) * zoom_coeff_ * geo::DEG_TO_METER
-    };
-}
-
 // === MapRenderer::Render — без изменений ===
 
 renderer::MapRenderer::MapRenderer(const RenderSettings& settings)
@@ -76,7 +36,7 @@ svg::Document MapRenderer::Render(const trans_cat::TransportCatalogue& catalogue
     }
 
     // Создаём проектор
-    SphereProjector proj(coords, settings_.width, settings_.height, settings_.padding);
+    SphereProjector proj(coords.begin(), coords.end(), settings_.width, settings_.height, settings_.padding);
 
     // Маршруты
     std::vector<const trans_cat::Route*> routes;
