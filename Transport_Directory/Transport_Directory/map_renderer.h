@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <set>
+#include <algorithm>
 
 /**
  * @mainpage Модуль визуализации карты
@@ -40,28 +41,49 @@ namespace renderer {
      */
     class SphereProjector {
     public:
-        /**
-         * @brief Конструктор проектора.
-         * @param coords Все точки, которые нужно отобразить
-         * @param max_width Максимальная ширина области рисования (без учёта padding)
-         * @param max_height Максимальная высота области рисования
-         * @param padding Отступ от краёв SVG-документа
-         */
-        SphereProjector(const std::vector<geo::Coordinates>& coords,
-            double max_width, double max_height, double padding);
+        template <typename PointInputIt>
+        SphereProjector(PointInputIt points_begin, PointInputIt points_end,
+            double max_width, double max_height, double padding)
+            : padding_(padding)
+        {
+            if (points_begin == points_end) return;
 
-        /**
-         * @brief Оператор вызова: проецирует координаты в точку на экране.
-         * @param coords Геокоординаты
-         * @return Экранные координаты (x, y)
-         */
-        svg::Point operator()(geo::Coordinates coords) const;
+            const auto [min_lon_it, max_lon_it] = std::minmax_element(
+                points_begin, points_end,
+                [](const auto& a, const auto& b) { return a.lng < b.lng; });
+            min_lon_ = min_lon_it->lng;
+            const double max_lon = max_lon_it->lng;
+
+            const auto [min_lat_it, max_lat_it] = std::minmax_element(
+                points_begin, points_end,
+                [](const auto& a, const auto& b) { return a.lat < b.lat; });
+            const double min_lat = min_lat_it->lat;
+            max_lat_ = max_lat_it->lat;
+
+            const double width = (max_lon - min_lon_) * std::cos(max_lat_ * geo::PI / 180.0);
+            const double height = max_lat_ - min_lat;
+
+            const double width_scale = width * geo::DEG_TO_METER;
+            const double height_scale = height * geo::DEG_TO_METER;
+
+            zoom_coeff_ = std::min(
+                (max_width - 2 * padding) / width_scale,
+                (max_height - 2 * padding) / height_scale
+            );
+        }
+
+        svg::Point operator()(geo::Coordinates coords) const {
+            return {
+                padding_ + (coords.lng - min_lon_) * zoom_coeff_ * geo::DEG_TO_METER,
+                padding_ + (max_lat_ - coords.lat) * zoom_coeff_ * geo::DEG_TO_METER
+            };
+        }
 
     private:
-        double min_lon_ = 0;        ///< минимальная долгота
-        double max_lat_ = 0;        ///< максимальная широта
-        double zoom_coeff_ = 0;     ///< коэффициент масштабирования
-        double padding_ = 0;
+        double padding_;
+        double min_lon_ = 0;
+        double max_lat_ = 0;
+        double zoom_coeff_ = 0;
     };
 
     /**
