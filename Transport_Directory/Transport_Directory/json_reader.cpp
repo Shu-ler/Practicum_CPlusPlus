@@ -85,47 +85,6 @@ namespace {
         return builder.EndDict().Build();
     }
 
-    /**
-     * @brief Создаёт ответ на запрос "Stop"
-     * @param tc Транспортный каталог
-     * @param request JSON-объект запроса
-     * @return JSON-объект с результатом
-     */
-    json::Node MakeStopResponse(const trans_cat::TransportCatalogue& tc, const json::Dict& request) {
-        json::Builder builder; 
-
-        int id = request.at("id").AsInt();
-        std::string stop_name = request.at("name").AsString();
-
-        // Проверяем, существует ли остановка
-        if (!tc.StopExists(stop_name)) {
-            return builder
-                .StartDict()
-                    .Key("request_id").AddNumber(id)
-                    .Key("error_message").AddString("not found")
-                .EndDict()
-                .Build();
-        }
-
-        auto buses = tc.GetBusesByStop(stop_name);
-
-        json::Builder buses_builder;
-        buses_builder.StartArray();
-        for (const auto& bus : buses) {
-            buses_builder.AddString(bus);
-        }
-        buses_builder.EndArray();
-        auto buses_node = buses_builder.Build();
-
-        builder
-            .StartDict()
-                .Key("request_id").AddNumber(id)
-                .Key("buses").AddNode(buses_node)
-            .EndDict();
-
-        return builder.Build();
-    }
-
     // Обработка остановки из base_requests
     void AddStopFromJson(trans_cat::TransportCatalogue& tc, const json::Dict& stop_node) {
         std::string name = GetJsonValue<std::string>(stop_node, "name");
@@ -233,49 +192,4 @@ namespace json_reader {
         };
     }
 
-    json::Document MakeResponse(const trans_cat::TransportCatalogue& tc, const json::Array& stat_requests) {
-        json::Array responses;
-        responses.reserve(stat_requests.size());
-
-        for (const auto& req_node : stat_requests) {
-            const json::Dict& req = req_node.AsMap();
-            std::string type = GetJsonValue<std::string>(req, "type");
-
-            try {
-                if (type == "Bus") {
-                    responses.push_back(MakeBusResponse(tc, req));
-                }
-                else if (type == "Stop") {
-                    responses.push_back(MakeStopResponse(tc, req));
-                }
-                else {
-                    json::Builder builder;
-                    StartResponse(builder, req);
-
-                    builder.Key("error_message").AddString("unknown request type");
-                    responses.push_back(builder.EndDict().Build());
-                }
-            }
-            catch (const json::ParsingError& e) {
-                json::Builder builder;
-                StartResponse(builder, req);
-                builder.Key("error_message").AddString(std::string("parse error: ") + e.what());
-                responses.push_back(builder.EndDict().Build());
-            }
-            catch (const std::exception& e) {
-                json::Builder builder;
-                StartResponse(builder, req);
-                builder.Key("error_message").AddString(std::string("request error: ") + e.what());
-                responses.push_back(builder.EndDict().Build());
-            }
-            catch (...) {
-                json::Builder builder;
-                StartResponse(builder, req);
-                builder.Key("error_message").AddString("internal error");
-                responses.push_back(builder.EndDict().Build());
-            }
-        }
-
-        return json::Document(std::move(responses));
-    }
 } // namespace json_reader
