@@ -99,11 +99,10 @@ namespace json_reader {
 
     const json::Array& GetStatRequests(const json::Document& input) {
         const auto& root = input.GetRoot().AsMap();
-        auto it = root.find("stat_requests");
-        if (it == root.end()) {
-            throw json::ParsingError("Missing 'stat_requests' in input JSON");
+        if (root.count("stat_requests")) {
+            return root.at("stat_requests").AsArray();
         }
-        return it->second.AsArray();
+        return {};
     }
 
     renderer::RenderSettings GetRenderSettings(const json::Document& input) {

@@ -121,31 +121,52 @@ namespace trans_cat {
         }
 
         RouteStat stat;
-        stat.stop_count = route->stops.size();
 
-        // Считаем уникальные остановки
+        // Получение количества остановок
+        // Для некольцевых: туда и обратно (с повторением всех, кроме конечной)
+        size_t stop_count = route->stops.size();
+        stop_count = route->is_roundtrip ? stop_count : stop_count * 2 - 1;
+
+        // Уникальные остановки — только в прямом пути
         std::set<std::string_view> unique_stops;
         for (const Stop* stop : route->stops) {
             unique_stops.insert(stop->name);
         }
         stat.unique_stop_count = unique_stops.size();
 
-        // Считаем длину маршрута и прямое расстояние
+        // Длина маршрута и прямое расстояние
         double route_length_direct = 0.0;
+        double route_length = 0.0;
+
+        // Считаем длину в прямом направлении
         const Stop* prev_stop = nullptr;
         geo::Coordinates prev_coords;
 
         for (const Stop* stop : route->stops) {
             if (prev_stop) {
-                stat.route_length += GetDistance(prev_stop, stop);
+                route_length += GetDistance(prev_stop, stop);
                 route_length_direct += ComputeDistance(prev_coords, stop->coordinates);
             }
             prev_stop = stop;
             prev_coords = stop->coordinates;
         }
 
+        // Если маршрут НЕ кольцевой — добавляем обратный путь (без первой остановки)
+        if (!route->is_roundtrip && route->stops.size() > 1) {
+            // Обратный путь: с предпоследней до первой
+            for (size_t i = route->stops.size() - 1; i > 0; --i) {
+                const Stop* from = route->stops[i];
+                const Stop* to = route->stops[i - 1];
+                route_length += GetDistance(from, to);
+                route_length_direct += ComputeDistance(from->coordinates, to->coordinates);
+            }
+        }
+
+        // Финализируем возвращаемое значение
+        stat.stop_count = stop_count;
+        stat.route_length = route_length;
         stat.curvature = (route_length_direct > 1e-6)
-            ? stat.route_length / route_length_direct
+            ? route_length / route_length_direct
             : 1.0;
 
         return stat;

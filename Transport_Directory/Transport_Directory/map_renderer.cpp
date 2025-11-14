@@ -5,13 +5,13 @@
 
 using namespace renderer;
 
-// === MapRenderer::Render — без изменений ===
+// === MapRenderer::RenderMap — без изменений ===
 
 renderer::MapRenderer::MapRenderer(const RenderSettings& settings)
     : settings_(settings) {
 }
 
-svg::Document MapRenderer::Render(const trans_cat::TransportCatalogue& catalogue) const {
+svg::Document MapRenderer::RenderMap(const trans_cat::TransportCatalogue& catalogue) const {
     svg::Document doc;
 
     std::set<const trans_cat::Stop*> stop_set;

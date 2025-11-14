@@ -29,79 +29,78 @@ namespace request_handler {
         const auto& root = input.GetRoot().AsMap();
 
         // Проверяем, есть ли render_settings
+        std::optional<renderer::MapRenderer> renderer = std::nullopt;
         if (root.count("render_settings")) {
             auto settings = json_reader::GetRenderSettings(input);
-            renderer::MapRenderer renderer(settings);
-            return RequestHandler(catalogue, std::move(renderer), std::nullopt);
+            renderer.emplace(settings);
         }
 
-        // Иначе — обработка stat_requests
-        const auto& requests = json_reader::GetStatRequests(input);
-        return RequestHandler(catalogue, std::nullopt, requests);
+        std::optional<json::Array> stat_requests = json_reader::GetStatRequests(input);
+
+        return RequestHandler(catalogue, std::move(renderer), std::move(stat_requests));
     }
 
     void RequestHandler::ProcessRequests(std::ostream& out) const {
-        if (map_renderer_) {
-            // Режим: SVG-карта
-            svg::Document map = map_renderer_->Render(catalogue_);
-            map.Render(out);  // ← напрямую выводим SVG в поток
-            out << std::endl;
+        if (!stat_requests_) {
+            throw std::logic_error("No stat_requests provided");
         }
-        else if (stat_requests_) {
-            return;
 
-            // Режим: JSON-ответы
-            json::Array responses;
-            responses.reserve(stat_requests_->size());
+        json::Array responses;
+        responses.reserve(stat_requests_->size());
 
-            for (const auto& req_node : *stat_requests_) {
-                const json::Dict& req = req_node.AsMap();
-                int id = req.at("id").AsInt();
-                std::string type = req.at("type").AsString();
+        for (const auto& req_node : *stat_requests_) {
+            const auto& req = req_node.AsMap();
+            int id = req.at("id").AsInt();
+            std::string type = req.at("type").AsString();
 
-                json::Builder builder;
-                builder.StartDict().Key("request_id").AddNumber(id);
+            json::Builder builder;
+            builder.StartDict().Key("request_id").AddNumber(id);
 
-                if (type == "Bus") {
-                    auto stat = GetBusStat(req.at("name").AsString());
-                    if (stat) {
-                        builder
-                            .Key("stop_count").AddNumber(static_cast<int>(stat->stop_count))
-                            .Key("unique_stop_count").AddNumber(static_cast<int>(stat->unique_stop_count))
-                            .Key("route_length").AddNumber(static_cast<int>(stat->route_length))
-                            .Key("curvature").AddNumber(stat->curvature);
-                    }
-                    else {
-                        builder.Key("error_message").AddString("not found");
-                    }
-                }
-                else if (type == "Stop") {
-                    auto stat = GetStopStat(req.at("name").AsString());
-                    if (stat) {
-                        builder.Key("buses").StartArray();
-                        for (const auto& bus : stat->bus_names) {
-                            builder.AddString(bus);
-                        }
-                        builder.EndArray();
-                    }
-                    else {
-                        builder.Key("error_message").AddString("not found");
-                    }
+            if (type == "Bus") {
+                auto stat = GetBusStat(req.at("name").AsString());
+                if (stat) {
+                    builder
+                        .Key("stop_count").AddNumber(static_cast<int>(stat->stop_count))
+                        .Key("unique_stop_count").AddNumber(static_cast<int>(stat->unique_stop_count))
+                        .Key("route_length").AddNumber(static_cast<int>(stat->route_length))
+                        .Key("curvature").AddNumber(stat->curvature);
                 }
                 else {
-                    builder.Key("error_message").AddString("unknown request type");
+                    builder.Key("error_message").AddString("not found");
                 }
-
-                responses.push_back(builder.EndDict().Build());
+            }
+            else if (type == "Stop") {
+                auto stat = GetStopStat(req.at("name").AsString());
+                if (stat) {
+                    json::Array buses;
+                    for (const auto& bus : stat->bus_names) {
+                        buses.push_back(json::Node(bus));
+                    }
+                    builder.Key("buses").AddNode(buses);
+                }
+                else {
+                    builder.Key("error_message").AddString("not found");
+                }
+            }
+            else if (type == "Map") {
+                // Генерируем SVG и преобразуем в строку
+                svg::Document doc = map_renderer_->RenderMap(catalogue_);
+                std::ostringstream ss;
+                doc.Render(ss);  // получаем строку SVG
+                builder.Key("map").AddString(ss.str());
+            }
+            else {
+                builder.Key("error_message").AddString("unknown request type");
             }
 
-            json::Print(json::Document(std::move(responses)), out);
-            out << std::endl;
+            responses.push_back(builder.EndDict().Build());
         }
-        else {
-            throw std::logic_error("RequestHandler has no data to process");
-        }
+
+        // Выводим массив JSON
+        json::Print(json::Document(std::move(responses)), out);
+        out << std::endl;
     }
+
     std::optional<RouteStat> RequestHandler::GetBusStat(const std::string& bus_name) const {
         auto stat = catalogue_.GetRouteStat(bus_name);
         if (!stat) {
