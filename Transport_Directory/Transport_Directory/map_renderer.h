@@ -162,7 +162,7 @@ namespace renderer {
          * @param catalogue Источник данных — транспортный справочник
          * @return Готовый SVG-документ с картой
          */
-        svg::Document Render(const trans_cat::TransportCatalogue& catalogue) const;
+        svg::Document RenderMap(const trans_cat::TransportCatalogue& catalogue) const;
 
     private:
 
