@@ -6,6 +6,8 @@
 
 #include <optional>
 #include <string>
+#include <map>
+#include <functional>
 
 /**
  * @file request_handler.h
@@ -89,21 +91,11 @@ namespace request_handler {
          */
         std::optional<StopStat> GetStopStat(const std::string& stop_name) const;
 
-        // ////////////////////////////////////////////////////////////////////////
-        // Следующие методы будут добавлены в следующих частях проекта
-        // ////////////////////////////////////////////////////////////////////////
-
-
-         /**
-          * @brief Рассчитывает маршрут от одной остановки до другой.
-          * @param from Начальная остановка
-          * @param to Конечная остановка
-          * @return Описание маршрута или std::nullopt, если маршрут недостижим
-          * @note Реализуется в части "Маршрутизация"
-          */
-          // std::optional<Router::RouteInfo> BuildRoute(const std::string& from, const std::string& to) const;
-
     private:
+        
+        // Тип обработчика запроса: принимает json::Dict, возвращает json::Dict
+        using HandlerFunc = std::function<json::Dict(const json::Dict&)>;
+
         /**
          * @brief Приватный конструктор.
          * @param catalogue Ссылка на транспортный каталог — источник данных
@@ -114,36 +106,20 @@ namespace request_handler {
             std::optional<renderer::MapRenderer> renderer,
             std::optional<json::Array> stat_requests);
 
+        // Приватные методы обработки
+        json::Dict ProcessBusRequest(const json::Dict& req) const;
+        json::Dict ProcessStopRequest(const json::Dict& req) const;
+        json::Dict ProcessMapRequest(const json::Dict& req) const;
+        json::Dict MakeErrorResponse(int id, std::string_view message) const;
+
+        // Диспетчер команд: тип запроса → обработчик
+        void InitializeHandlers();
+        std::map<std::string, HandlerFunc> request_handlers_;
+
+    private:
         const trans_cat::TransportCatalogue& catalogue_;
         std::optional<renderer::MapRenderer> map_renderer_;
         std::optional<json::Array> stat_requests_;
     };
 
 } // namespace request_handler
-
-
-// TODO удалить из релиза исходное описание
- // Класс RequestHandler играет роль Фасада, упрощающего взаимодействие JSON reader-а
- // с другими подсистемами приложения.
- // См. паттерн проектирования Фасад: https://ru.wikipedia.org/wiki/Фасад_(шаблон_проектирования)
- /*
- class RequestHandler {
- public:
-     // MapRenderer понадобится в следующей части итогового проекта
-     RequestHandler(const TransportCatalogue& db, const renderer::MapRenderer& renderer);
-
-     // Возвращает информацию о маршруте (запрос Bus)
-     std::optional<RouteStat> GetBusStat(const std::string_view& bus_name) const;
-
-     // Возвращает маршруты, проходящие через
-     const std::unordered_set<BusPtr>* GetBusesByStop(const std::string_view& stop_name) const;
-
-     // Этот метод будет нужен в следующей части итогового проекта
-     svg::Document RenderMap() const;
-
- private:
-     // RequestHandler использует агрегацию объектов "Транспортный Справочник" и "Визуализатор Карты"
-     const TransportCatalogue& db_;
-     const renderer::MapRenderer& renderer_;
- };
- */
