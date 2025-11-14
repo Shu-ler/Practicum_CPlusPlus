@@ -5,8 +5,6 @@
 
 using namespace renderer;
 
-// === MapRenderer::RenderMap — без изменений ===
-
 renderer::MapRenderer::MapRenderer(const RenderSettings& settings)
     : settings_(settings) {
 }
