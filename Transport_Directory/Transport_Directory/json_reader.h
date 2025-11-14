@@ -5,13 +5,20 @@
 #include "map_renderer.h"
 
 /*
- * Структура библиотеки работы с JSON-входом:
- * 
- *  json_reader/
- *      ├── LoadFromJson   → читает base_requests
- *      ├── GetStatRequests → читает stat_requests
- *      └── MakeResponse   → формирует ответ
- * 
+ * Структура модуля json_reader:
+ *
+ * Модуль отвечает за:
+ * - Загрузку данных транспортного справочника из JSON (базовые запросы)
+ * - Извлечение статистических запросов
+ * - Парсинг настроек визуализации карты
+ *
+ * Функции:
+ *
+ *   LoadFromJson()     → обрабатывает "base_requests": остановки, маршруты, расстояния
+ *   GetStatRequests()  → извлекает массив "stat_requests": Bus, Stop, Map
+ *   GetRenderSettings()→ парсит "render_settings" для визуализации карты
+ *
+ * Все функции потоконебезопасны.
  */
 
 namespace json_reader {
@@ -19,57 +26,80 @@ namespace json_reader {
     /**
      * @brief Загружает данные транспортного справочника из JSON-документа.
      *
-     * Парсит массив base_requests и:
+     * Парсит массив "base_requests" и:
      * - добавляет остановки (тип "Stop")
      * - добавляет маршруты (тип "Bus")
-     * - устанавливает расстояния между остановками
+     * - устанавливает дорожные расстояния между остановками
      *
-     * @param tc Ссылка на транспортный каталог, который будет заполнен данными
-     * @param input JSON-документ, содержащий ключи "base_requests" и "stat_requests"
+     * @param tc Ссылка на транспортный каталог, который будет заполнен
+     * @param input JSON-документ с ключом "base_requests"
      *
      * @pre input.GetRoot() должен быть словарём (Dict)
-     * @throw json::ParsingError если формат JSON нарушен
+     * @throw json::ParsingError если формат JSON нарушен или отсутствуют обязательные поля
      *
-     * @note Функция не очищает каталог перед загрузкой — новые данные добавляются к существующим.
-     * @note Поддерживает как кольцевые (is_roundtrip: true), так и линейные маршруты.
+     * @note Функция не очищает каталог перед загрузкой — данные добавляются.
+     * @note Поддерживает кольцевые (`is_roundtrip: true`) и линейные маршруты.
+     *
+     * @example
+     * {
+     *   "base_requests": [
+     *     { "type": "Stop", "name": "A", "latitude": 0.0, "longitude": 0.0 },
+     *     { "type": "Bus", "name": "1", "stops": ["A", "B"], "is_roundtrip": false }
+     *   ],
+     *   "stat_requests": [...]
+     * }
      */
     void LoadFromJson(trans_cat::TransportCatalogue& tc, const json::Document& input);
 
     /**
      * @brief Извлекает массив статистических запросов из входного документа.
+     *
+     * Возвращает массив запросов типа "Bus", "Stop", "Map" из ключа "stat_requests".
+     * Если ключ отсутствует, возвращается пустой массив.
+     *
      * @param input Полный входной JSON-документ
-     * @return Константная ссылка на массив запросов
-     * @throws json::ParsingError если ключ 'stat_requests' отсутствует
+     * @return json::Array — копия массива статистических запросов
      *
-     * Используется для обработки запросов типа "Bus", "Stop".
-     */
-    const json::Array& GetStatRequests(const json::Document& input);
-
-    renderer::RenderSettings GetRenderSettings(const json::Document& input);
-
-    /**
-     * @brief Формирует JSON-ответы на массив запросов статистики.
+     * @note Ранее функция возвращала ссылку, что приводило к ошибке возврата ссылки на временный объект.
+     *       Теперь возвращается по значению — безопасно и соответствует стандартной практике.
      *
-     * Для каждого запроса из stat_requests:
-     * - если тип "Bus" — возвращает статистику маршрута
-     * - если тип "Stop" — возвращает список автобусов, проходящих через остановку
-     * - если сущность не найдена — возвращает сообщение об ошибке
-     *
-     * @param tc Константная ссылка на транспортный каталог
-     * @param stat_requests Массив JSON-объектов с запросами (каждый имеет ключи "id", "type")
-     * @return json::Document, содержащий массив ответов
-     *
-     * @note Порядок ответов совпадает с порядком запросов.
-     * @note Все ответы содержат ключ "request_id", равный "id" из запроса.
-     *
-     * Пример ответа:
+     * @example
      * [
-     *   { "request_id": 1, "stop_count": 5, "unique_stop_count": 3, ... },
-     *   { "request_id": 2, "buses": ["750", "256"] },
-     *   { "request_id": 3, "error_message": "not found" }
+     *   { "type": "Bus", "name": "1", "id": 1 },
+     *   { "type": "Map", "id": 2 }
      * ]
      */
-    //json::Document MakeResponse(const trans_cat::TransportCatalogue& tc,
-    //    const json::Array& stat_requests);
+    const json::Array GetStatRequests(const json::Document& input);
+
+    /**
+     * @brief Парсит настройки визуализации карты из JSON.
+     *
+     * Читает словарь "render_settings" и заполняет структуру renderer::RenderSettings.
+     * Если "render_settings" отсутствует, поведение не определено (вызов должен быть защищён проверкой).
+     *
+     * @param input Входной JSON-документ
+     * @return Объект RenderSettings с настройками карты
+     *
+     * @throw json::ParsingError если формат "render_settings" нарушен
+     *
+     * @note Все значения должны присутствовать (кроме цвета underlayer_color, который может быть массивом или строкой).
+     *
+     * @example
+     * "render_settings": {
+     *   "width": 1000,
+     *   "height": 500,
+     *   "padding": 50,
+     *   "stop_radius": 5,
+     *   "line_width": 4,
+     *   "bus_label_font_size": 20,
+     *   "bus_label_offset": [7, 15],
+     *   "stop_label_font_size": 16,
+     *   "stop_label_offset": [7, -3],
+     *   "underlayer_color": "white",
+     *   "underlayer_width": 3.0,
+     *   "color_palette": ["blue", "red", "green"]
+     * }
+     */
+    renderer::RenderSettings GetRenderSettings(const json::Document& input);
 
 } // namespace json_reader
