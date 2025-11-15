@@ -168,22 +168,6 @@ namespace trans_cat {
         return stat;
     }
 
-    //const std::set<std::string> TransportCatalogue::GetBusesByStop(std::string_view stop_name) const {
-    //    static const std::set<const Route*, RouteNameLess> empty;
-
-    //    if (!stop) {
-    //        return empty;
-    //    }
-
-    //    auto it = stop_to_routes_.find(stop);
-    //    if (it == stop_to_routes_.end()) {
-    //        return empty;
-    //    }
-
-    //    return it->second;
-    //}
-    //}
-
     const std::set<const Route*, RouteNameLess>& TransportCatalogue::GetBusesByStop(const Stop* stop) const {
         static const std::set<const Route*, RouteNameLess> empty;
 
