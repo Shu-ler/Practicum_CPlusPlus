@@ -16,13 +16,18 @@ int main() {
 
         // 2. Создать каталог
         trans_cat::TransportCatalogue catalogue;
-        json_reader::LoadFromJson(catalogue, input);
 
-        // 3. Создать обработчик запросов
+        // 3. Создать ридер 
+        json_reader::JSONReader reader(catalogue);
+
+        // 4. Загрузить каталог
+        reader.LoadFromJson(input);
+
+        // 5. Создать обработчик запросов
         request_handler::RequestHandler handler = 
             request_handler::RequestHandler::Create(catalogue, input);
 
-        // 4. Обработать и вывести результат
+        // 6. Обработать и вывести результат
         handler.ProcessRequests(std::cout);
 
         return 0;
