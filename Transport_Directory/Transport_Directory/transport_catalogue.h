@@ -135,13 +135,28 @@ namespace trans_cat {
 		std::optional<RouteStat> GetRouteStat(std::string_view route_name) const;
 
 		/**
-		 * @brief Возвращает множество названий маршрутов, проходящих через остановку.
-		 * @param stop_name Имя остановки
-		 * @return Отсортированный набор названий маршрутов (лексикографически)
+		 * @brief Возвращает ссылку на отсортированный набор маршрутов, проходящих через остановку.
 		 *
-		 * @note Если остановка не найдена, возвращается пустой набор.
+		 * Метод предоставляет доступ к множеству указателей на маршруты, которые включают указанную остановку.
+		 * Результат отсортирован по имени маршрута (лексикографически) с использованием компаратора RouteNameLess.
+		 *
+		 * @param stop Указатель на остановку (должен быть валидным или nullptr)
+		 * @return const std::set<const Route*, RouteNameLess>& — ссылка на внутреннее множество маршрутов
+		 *         или на статический пустой набор, если остановка равна nullptr или через неё не проходит ни один маршрут.
+		 *
+		 * @note Возвращаемая ссылка остаётся валидной до следующего изменения набора маршрутов
+		 *       (например, добавления нового маршрута через AddRoute).
+		 * @note Метод не выполняет поиск остановки по имени — ожидается, что указатель уже получен.
+		 * @note Подходит для случаев, когда требуется доступ к объектам маршрутов, а не только к их именам.
+		 *
+		 * @example
+		 * const Stop* stop = catalogue.FindStop("A");
+		 * const auto& routes = catalogue.GetBusesByStop(stop);
+		 * for (const Route* route : routes) {
+		 *     std::cout << route->name << std::endl;
+		 * }
 		 */
-		std::set<std::string> GetBusesByStop(std::string_view stop_name) const;
+		const std::set<const Route*, RouteNameLess>& GetBusesByStop(const Stop* stop) const;
 
 		/**
 		 * @brief Устанавливает дорожное расстояние между двумя остановками.

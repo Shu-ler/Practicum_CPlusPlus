@@ -159,16 +159,20 @@ namespace request_handler {
     }
 
     std::optional<StopStat> RequestHandler::GetStopStat(const std::string& stop_name) const {
-        const auto* stop = catalogue_.FindStop(stop_name);
+        const trans_cat::Stop* stop = catalogue_.FindStop(stop_name);
         if (!stop) {
             return std::nullopt;
         }
 
         StopStat result;
-        result.name = stop_name;
-        const auto& buses = catalogue_.GetBusesByStop(stop_name);
-        result.bus_names.assign(buses.begin(), buses.end());
-        std::sort(result.bus_names.begin(), result.bus_names.end());
+
+        // Получаем ссылку на маршруты — O(1)
+        const auto& routes = catalogue_.GetBusesByStop(stop);
+
+        // Формируем имена — только один раз, при необходимости
+        for (const trans_cat::Route* route : routes) {
+            result.bus_names.push_back(route->name);
+        }
 
         return result;
     }
