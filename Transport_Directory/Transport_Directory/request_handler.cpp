@@ -108,11 +108,11 @@ namespace request_handler {
         // Проверяем, есть ли render_settings
         std::optional<renderer::MapRenderer> renderer = std::nullopt;
         if (root.count("render_settings")) {
-            auto settings = json_reader::GetRenderSettings(input);
+            auto settings = json_reader::JSONReader::GetRenderSettings(input);
             renderer.emplace(settings);
         }
 
-        std::optional<json::Array> stat_requests = json_reader::GetStatRequests(input);
+        std::optional<json::Array> stat_requests = json_reader::JSONReader::GetStatRequests(input);
 
         return RequestHandler(catalogue, std::move(renderer), std::move(stat_requests));
     }
