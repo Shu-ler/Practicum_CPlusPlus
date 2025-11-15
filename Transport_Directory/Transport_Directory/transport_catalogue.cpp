@@ -168,21 +168,35 @@ namespace trans_cat {
         return stat;
     }
 
-    std::set<std::string> TransportCatalogue::GetBusesByStop(std::string_view stop_name) const {
-        std::set<std::string> result;
-        const Stop* stop = FindStop(stop_name);
+    //const std::set<std::string> TransportCatalogue::GetBusesByStop(std::string_view stop_name) const {
+    //    static const std::set<const Route*, RouteNameLess> empty;
+
+    //    if (!stop) {
+    //        return empty;
+    //    }
+
+    //    auto it = stop_to_routes_.find(stop);
+    //    if (it == stop_to_routes_.end()) {
+    //        return empty;
+    //    }
+
+    //    return it->second;
+    //}
+    //}
+
+    const std::set<const Route*, RouteNameLess>& TransportCatalogue::GetBusesByStop(const Stop* stop) const {
+        static const std::set<const Route*, RouteNameLess> empty;
+
         if (!stop) {
-            return result;
+            return empty;
         }
 
         auto it = stop_to_routes_.find(stop);
-        if (it != stop_to_routes_.end()) {
-            for (const Route* route : it->second) {
-                result.insert(route->name);
-            }
+        if (it == stop_to_routes_.end()) {
+            return empty;
         }
 
-        return result;
+        return it->second;
     }
 
     void TransportCatalogue::SetDistance(std::string_view from_name, std::string_view to_name,
