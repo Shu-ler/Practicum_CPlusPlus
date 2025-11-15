@@ -26,17 +26,19 @@ namespace trans_cat {
         return stop_ptr;
     }
 
-    void TransportCatalogue::AddRoute(std::string& name, const std::vector<std::string>& stops,
+    void TransportCatalogue::AddRoute(std::string& name, const std::vector<std::string>& stop_names,
         bool is_roundtrip) {
-        if (stops.empty()) {
+        if (stop_names.empty()) {
             return;
         }
 
         // Преобразуем имена в указатели
+        // Имеем вектор имен остановок, на его основе получаем вектор указателей остановок
+        // Для ненайденных остановок создаютя остановки - заглушки, содержащие только имя
         std::vector<const Stop*> stop_ptrs;
-        stop_ptrs.reserve(stops.size());
+        stop_ptrs.reserve(stop_names.size());
 
-        for (const auto& stop_name : stops) {
+        for (const auto& stop_name : stop_names) {
             if (const Stop* stop = FindStop(stop_name)) {
 
                 // Добавляем существующую остановку
@@ -50,12 +52,6 @@ namespace trans_cat {
                 stop_ptrs.push_back(new_stop);
             }
         }
-
-        // Если маршрут не кольцевой, делаем двусторонний маршрут
-        //std::vector<const Stop*> full_route = stop_ptrs;
-        //if (!is_roundtrip && stop_ptrs.size() > 1) {
-        //    full_route.insert(full_route.end(), std::next(stop_ptrs.rbegin()), stop_ptrs.rend());
-        //}
 
         // Создаём маршрут
         routes_.emplace_back(Route{ std::move(name), std::move(stop_ptrs), is_roundtrip });

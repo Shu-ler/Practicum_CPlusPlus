@@ -9,6 +9,13 @@
 
 namespace trans_cat {
 
+	// Компаратор для сортировки маршрутов по наименованию
+	struct RouteNameLess {
+		bool operator()(const Route* lhs, const Route* rhs) const {
+			return lhs->name < rhs->name;
+		}
+	};
+
 	/**
 	 * @brief Хранилище транспортных данных: остановки, маршруты, расстояния.
 	 *
@@ -164,7 +171,7 @@ namespace trans_cat {
 		std::unordered_map<std::string_view, const Route*> routename_to_route_;
 
 		// Остановка → множество маршрутов, проходящих через неё
-		std::unordered_map<const Stop*, std::unordered_set<const Route*>> stop_to_routes_;
+		std::unordered_map<const Stop*, std::set<const Route*, RouteNameLess>> stop_to_routes_;
 
 		// Хэшер для пар указателей
 		struct PairHash {
