@@ -2,31 +2,33 @@
 #include <functional>
 #include <string>
 #include <optional>
+#include <mutex>
 
 using namespace std;
 
 template <typename T>
 class LazyValue {
 public:
-    explicit LazyValue(function<T()> init) 
-        : init_(move(init))
-        , value_() {
+    explicit LazyValue(std::function<T()> init)
+        : init_(std::move(init))
+    {
     }
 
     bool HasValue() const {
-        return value_.has_value();
+        return static_cast<bool>(value_);
     }
 
     const T& Get() const {
-        if (!value_.has_value()) {
+        std::call_once(flag_, [this]() {
             value_.emplace(init_());
-        }
+            });
         return value_.value();
     }
 
 private:
-    mutable function<T()> init_;
-    mutable optional<T> value_;
+    mutable std::function<T()> init_;
+    mutable std::optional<T> value_;
+    mutable std::once_flag flag_;
 };
 
 void UseExample() {
