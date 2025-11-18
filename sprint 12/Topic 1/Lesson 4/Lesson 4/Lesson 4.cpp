@@ -51,75 +51,110 @@ vector<Person> ReadPeople(istream& input) {
     return result;
 }
 
-int main() {
-    vector<Person> people = ReadPeople(cin);
-
-    sort(people.begin(), people.end(),
-        [](const Person& lhs, const Person& rhs) {
-            return lhs.age < rhs.age;
-        });
-
-    for (string command; cin >> command;) {
-        if (command == "AGE"s) {
-            int adult_age;
-            cin >> adult_age;
-
-            auto adult_begin = lower_bound(people.begin(), people.end(), adult_age,
-                [](const Person& lhs, int age) {
-                    return lhs.age < age;
-                });
-
-            cout << "There are "s << distance(adult_begin, people.end()) << " adult people for maturity age "s
-                << adult_age << '\n';
-        }
-        else if (command == "WEALTHY"s) {
-            int count;
-            cin >> count;
-
-            auto head = Head(people, count);
-
-            partial_sort(head.begin(), head.end(), people.end(),
-                [](const Person& lhs, const Person& rhs) {
-                    return lhs.income > rhs.income;
-                });
-
-            int total_income = accumulate(head.begin(), head.end(), 0, [](int cur, Person& p) {
-                return p.income += cur;
-                });
-            cout << "Top-"s << count << " people have total income "s << total_income << '\n';
-        }
-        else if (command == "POPULAR_NAME"s) {
+class PeopleAnalyzer {
+public:
+    explicit PeopleAnalyzer(istream& input) {
+        int count;
+        input >> count;
+        people_.resize(count);
+        for (Person& p : people_) {
             char gender;
-            cin >> gender;
+            input >> p.name >> p.age >> p.income >> gender;
+            p.is_male = (gender == 'M');
+        }
+    }
 
-            IteratorRange range{ people.begin(), partition(people.begin(), people.end(),
-                                [gender](Person& p) {
-                                    return p.is_male = (gender == 'M');
-                                }) };
-            if (range.begin() == range.end()) {
-                cout << "No people of gender "s << gender << '\n';
+    void ProcessCommands(istream& input, ostream& output) const {
+        string command;
+        while (input >> command) {
+            if (command == "AGE") {
+                int adult_age;
+                input >> adult_age;
+                ProcessAgeCommand(adult_age, output);
             }
-            else {
-                sort(range.begin(), range.end(),
-                    [](const Person& lhs, const Person& rhs) {
-                        return lhs.name < rhs.name;
-                    });
-                const string* most_popular_name = &range.begin()->name;
-                int count = 1;
-                for (auto i = range.begin(); i != range.end();) {
-                    auto same_name_end = find_if_not(i, range.end(),
-                        [i](const Person& p) {
-                            return p.name == i->name;
-                        });
-                    auto cur_name_count = distance(i, same_name_end);
-                    if (cur_name_count > count) {
-                        count = cur_name_count;
-                        most_popular_name = &i->name;
-                    }
-                    i = same_name_end;
-                }
-                cout << "Most popular name among people of gender "s << gender << " is "s << *most_popular_name << '\n';
+            else if (command == "WEALTHY") {
+                int count;
+                input >> count;
+                ProcessWealthyCommand(count, output);
+            }
+            else if (command == "POPULAR_NAME") {
+                char gender;
+                input >> gender;
+                ProcessPopularNameCommand(gender, output);
             }
         }
     }
+
+private:
+    vector<Person> people_;  // изменяется только в конструкторе
+
+    void ProcessAgeCommand(int adult_age, ostream& out) const {
+        // Считаем количество людей с age >= adult_age
+        int count = 0;
+        for (const auto& p : people_) {
+            if (p.age >= adult_age) {
+                ++count;
+            }
+        }
+        out << "There are " << count << " adult people for maturity age " << adult_age << '\n';
+    }
+
+    void ProcessWealthyCommand(int count, ostream& out) const {
+        vector<const Person*> people_ptrs;
+        people_ptrs.reserve(people_.size());
+        for (const auto& p : people_) {
+            people_ptrs.push_back(&p);
+        }
+
+        // Сортируем указатели по убыванию дохода
+        partial_sort(people_ptrs.begin(),
+            people_ptrs.begin() + min(count, (int)people_ptrs.size()),
+            people_ptrs.end(),
+            [](const Person* a, const Person* b) {
+                return a->income > b->income;
+            });
+
+        long long total_income = 0;
+        for (int i = 0; i < min(count, (int)people_ptrs.size()); ++i) {
+            total_income += people_ptrs[i]->income;
+        }
+
+        out << "Top-" << count << " people have total income " << total_income << '\n';
+    }
+
+    void ProcessPopularNameCommand(char gender, ostream& out) const {
+        vector<string> names;
+        for (const auto& p : people_) {
+            if ((gender == 'M') == p.is_male) {
+                names.push_back(p.name);
+            }
+        }
+
+        if (names.empty()) {
+            out << "No people of gender " << gender << '\n';
+            return;
+        }
+
+        sort(names.begin(), names.end());
+
+        string most_popular;
+        int max_count = 0;
+        for (auto i = names.begin(); i != names.end();) {
+            auto j = find_if_not(i, names.end(), [i](const string& n) { return n == *i; });
+            int count = distance(i, j);
+            if (count > max_count) {
+                max_count = count;
+                most_popular = *i;
+            }
+            i = j;
+        }
+
+        out << "Most popular name among people of gender " << gender
+            << " is " << most_popular << '\n';
+    }
+};
+
+int main() {
+    PeopleAnalyzer analyzer(cin);
+    analyzer.ProcessCommands(cin, cout);
 }
