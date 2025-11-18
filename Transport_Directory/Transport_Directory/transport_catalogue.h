@@ -1,0 +1,205 @@
+#pragma once
+
+#include "domain.h"
+#include <unordered_map>
+#include <unordered_set>
+#include <set>
+#include <optional>
+#include <deque>
+
+namespace trans_cat {
+
+	// Компаратор для сортировки маршрутов по наименованию
+	struct RouteNameLess {
+		bool operator()(const Route* lhs, const Route* rhs) const {
+			return lhs->name < rhs->name;
+		}
+	};
+
+	/**
+	 * @brief Хранилище транспортных данных: остановки, маршруты, расстояния.
+	 *
+	 * Класс предоставляет методы для:
+	 * - Добавления остановок и маршрутов
+	 * - Установки дорожных расстояний между остановками
+	 * - Получения статистики по маршрутам
+	 * - Поиска остановок и маршрутов
+	 * - Определения маршрутов, проходящих через остановку
+	 *
+	 * Все методы потоконебезопасны.
+	 */
+	class TransportCatalogue {
+	public:
+		// Конструктор по умолчанию
+		TransportCatalogue() = default;
+
+		// Запрещаем копирование
+		TransportCatalogue(const TransportCatalogue&) = delete;
+		TransportCatalogue& operator=(const TransportCatalogue&) = delete;
+
+		// Разрешаем перемещение
+		TransportCatalogue(TransportCatalogue&&) = default;
+		TransportCatalogue& operator=(TransportCatalogue&&) = default;
+
+		/**
+		 * @brief Добавляет новую остановку в каталог.
+		 *
+		 * Если остановка с таким именем уже существует, обновляет её координаты.
+		 * @param name Название остановки
+		 * @param coords Географические координаты остановки
+		 * @return Указатель на добавленную остановку
+		 */
+		const Stop* AddStop(std::string_view name, geo::Coordinates coords);
+
+		/**
+		 * @brief Добавляет новый маршрут в каталог.
+		 *
+		 * Маршрут задаётся списком названий остановок.
+		 * Если остановки ещё не добавлены — они должны быть добавлены автоматически (без координат).
+		 * @param name Название маршрута
+		 * @param stops Список названий остановок в порядке следования
+		 * @param is_roundtrip true, если маршрут кольцевой (без обратного пути)
+		 */
+		void AddRoute(std::string& name, const std::vector<std::string>& stops, bool is_roundtrip);
+
+		/**
+		 * @brief Ищет остановку по имени (O(1)).
+		 * @param name Имя остановки
+		 * @return Указатель на остановку или nullptr, если не найдена
+		 */
+		const Stop* FindStop(std::string_view name) const;
+
+		/**
+		 * @brief Ищет маршрут по имени (O(1)).
+		 * @param name Имя маршрута
+		 * @return Указатель на маршрут или nullptr, если не найден
+		 */
+		const Route* FindRoute(std::string_view name) const;
+
+		bool StopExists(std::string_view name) const;
+
+		/**
+		 * @brief Возвращает все маршруты, отсортированные по алфавиту.
+		 *
+		 * Результат упорядочен по полю Route::name. Подходит для визуализации,
+		 * где важна стабильность порядка (например, применение цветовой палитры).
+		 *
+		 * @return std::vector<const Route*> — отсортированный вектор указателей
+		 *
+		 * @note Производительность: O(n log n) из-за сортировки.
+		 *       Используйте GetRoutesInInsertionOrder() для O(n).
+		 *
+		 * @example
+		 * for (const auto* route : catalogue.GetRoutesSortedByName()) {
+		 *     renderer.RenderRoute(route);
+		 * }
+		 */
+		std::vector<const Route*> GetRoutesSortedByName() const;
+
+		/**
+		 * @brief Возвращает маршруты в порядке их добавления в каталог.
+		 *
+		 * Гарантирует, что порядок соответствует последовательности вызовов AddRoute.
+		 * Полезно, если нужно воспроизвести порядок из входного JSON.
+		 *
+		 * @return std::vector<const Route*> — вектор указателей в порядке добавления
+		 *
+		 * @note Производительность: O(n), без сортировки.
+		 *       Не зависит от длины имён маршрутов.
+		 *
+		 * @example
+		 * for (const auto* route : catalogue.GetRoutesInInsertionOrder()) {
+		 *     // Обработка в порядке base_requests
+		 * }
+		 */
+		std::vector<const Route*> GetRoutesInInsertionOrder() const;
+		
+		/**
+		 * @brief Структура с метриками маршрута.
+		 */
+		struct RouteStat {
+			size_t stop_count = 0;           ///< Общее количество остановок (с учётом повторений)
+			size_t unique_stop_count = 0;    ///< Количество уникальных остановок
+			double route_length = 0.0;       ///< Длина маршрута по дорогам (в метрах)
+			double curvature = 0.0;          ///< Коэффициент извилистости (route_length / direct_length)
+		};
+
+		/**
+		 * @brief Рассчитывает статистику для указанного маршрута.
+		 * @param route_name Имя маршрута
+		 * @return RouteStat, если маршрут найден; std::nullopt — если нет
+		 *
+		 * @note Длина маршрута — сумма дорожных расстояний между соседними остановками.
+		 *       Прямое расстояние — сумма географических расстояний между соседними остановками.
+		 */
+		std::optional<RouteStat> GetRouteStat(std::string_view route_name) const;
+
+		/**
+		 * @brief Возвращает ссылку на отсортированный набор маршрутов, проходящих через остановку.
+		 *
+		 * Метод предоставляет доступ к множеству указателей на маршруты, которые включают указанную остановку.
+		 * Результат отсортирован по имени маршрута (лексикографически) с использованием компаратора RouteNameLess.
+		 *
+		 * @param stop Указатель на остановку (должен быть валидным или nullptr)
+		 * @return const std::set<const Route*, RouteNameLess>& — ссылка на внутреннее множество маршрутов
+		 *         или на статический пустой набор, если остановка равна nullptr или через неё не проходит ни один маршрут.
+		 *
+		 * @note Возвращаемая ссылка остаётся валидной до следующего изменения набора маршрутов
+		 *       (например, добавления нового маршрута через AddRoute).
+		 * @note Метод не выполняет поиск остановки по имени — ожидается, что указатель уже получен.
+		 * @note Подходит для случаев, когда требуется доступ к объектам маршрутов, а не только к их именам.
+		 *
+		 * @example
+		 * const Stop* stop = catalogue.FindStop("A");
+		 * const auto& routes = catalogue.GetBusesByStop(stop);
+		 * for (const Route* route : routes) {
+		 *     std::cout << route->name << std::endl;
+		 * }
+		 */
+		const std::set<const Route*, RouteNameLess>& GetBusesByStop(const Stop* stop) const;
+
+		/**
+		 * @brief Устанавливает дорожное расстояние между двумя остановками.
+		 *
+		 * Расстояние одностороннее: от from до to.
+		 * @param from Имя начальной остановки
+		 * @param to Имя конечной остановки
+		 * @param distance Расстояние в метрах
+		 */
+		void SetDistance(std::string_view from, std::string_view to, int distance);
+
+		/**
+		 * @brief Возвращает дорожное расстояние между двумя остановками.
+		 * @param from Указатель на начальную остановку
+		 * @param to Указатель на конечную остановку
+		 * @return Расстояние в метрах
+		 */
+		int GetDistance(const Stop* from, const Stop* to) const;
+
+	private:
+		// Хранилища (владеют объектами)
+		std::deque<Stop> stops_;
+		std::deque<Route> routes_;
+
+		// Индексы: имя → указатель
+		std::unordered_map<std::string_view, const Stop*> stopname_to_stop_;
+		std::unordered_map<std::string_view, const Route*> routename_to_route_;
+
+		// Остановка → множество маршрутов, проходящих через неё
+		std::unordered_map<const Stop*, std::set<const Route*, RouteNameLess>> stop_to_routes_;
+
+		// Хэшер для пар указателей
+		struct PairHash {
+			size_t operator()(const std::pair<const Stop*, const Stop*>& p) const;
+		};
+
+		// Граф дорожных расстояний: (from, to) → meters
+		std::unordered_map<std::pair<const Stop*, const Stop*>, int, PairHash> distances_;
+	};
+
+	// Вспомогательная функция для комбинирования хэшей (C++17/20)
+	template<typename T>
+	void hash_combine(size_t& seed, const T& value) {
+		seed ^= std::hash<T>{}(value)+0x9e3779b9 + (seed << 6) + (seed >> 2);
+	}
+} // namespace trans_cat
