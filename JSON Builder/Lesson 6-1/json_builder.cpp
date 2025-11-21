@@ -4,7 +4,9 @@
 
 namespace json {
 
-    // Вспомогательные методы Builder
+    // ============================================================================= 
+    // Реализация класса Builder - Приватные методы
+    // =============================================================================
 
     Node& Builder::Current() {
         return *stack_.back();
@@ -18,8 +20,6 @@ namespace json {
             throw std::logic_error("Builder: cannot Build() — no value was set");
         }
     }
-
-    // === Приватные методы "Do" ===
 
     void Builder::DoKey(std::string key) {
         if (stack_.empty()) {
@@ -48,7 +48,6 @@ namespace json {
         }
 
         Node& curr = Current();
-
         if (key_.has_value()) {
             Dict& dict = const_cast<Dict&>(curr.AsDict());
             dict[key_.value()] = std::move(node);
@@ -142,24 +141,19 @@ namespace json {
         stack_.pop_back();
     }
 
-    // === Builder::Start* — возвращают контекст ===
+    // ============================================================================= 
+    // Конструкторы контекстов
+    // =============================================================================
 
-    DictContext Builder::StartDict() {
-        DoStartDict();
-        return DictContext(*this);
-    }
+    DictContext::DictContext(Builder& b) : BaseContext<DictContext>(b) {}
 
-    ArrayContext Builder::StartArray() {
-        DoStartArray();
-        return ArrayContext(*this);
-    }
+    ArrayContext::ArrayContext(Builder& b) : BaseContext<ArrayContext>(b) {}
 
-    Node Builder::Build() {
-        CheckBuildReady();
-        return root_;
-    }
+    ValueContext::ValueContext(Builder& b) : BaseContext<ValueContext>(b) {}
 
-    // === Реализация контекстов ===
+    // ============================================================================= 
+    // Реализация методов контекстов
+    // =============================================================================
 
     ValueContext DictContext::Key(std::string key) {
         builder_.DoKey(std::move(key));
@@ -206,7 +200,29 @@ namespace json {
         return builder_;
     }
 
-    // === Реализация шаблонных методов Context — теперь в .cpp ===
+    // ============================================================================= 
+    // Реализация класса Builder - Публичные методы
+    // =============================================================================
+
+    DictContext Builder::StartDict() {
+        DoStartDict();
+        return DictContext(*this);
+    }
+
+    ArrayContext Builder::StartArray() {
+        DoStartArray();
+        return ArrayContext(*this);
+    }
+
+    Node Builder::Build() {
+        CheckBuildReady();
+        return root_;
+    }
+
+    // ============================================================================= 
+    // Реализация методов класса BaseContext<Derived>
+    // ВАЖНО: после всего, чтобы friendship сработало
+    // =============================================================================
 
     template <typename D>
     DictContext BaseContext<D>::StartDict() {
@@ -243,8 +259,7 @@ namespace json {
         return builder_;
     }
 
-    // Явная инстанциация шаблонов для всех возможных Derived
-    // Это нужно, потому что шаблоны определены в .cpp
+    // === Явная инстанциация шаблонов ===
     template class BaseContext<DictContext>;
     template class BaseContext<ValueContext>;
     template class BaseContext<ArrayContext>;

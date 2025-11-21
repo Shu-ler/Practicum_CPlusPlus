@@ -38,7 +38,8 @@ namespace json {
     template <typename Derived>
     class BaseContext {
     protected:
-        explicit BaseContext(Builder& b) : builder_(b) {}
+        explicit BaseContext(Builder& b) : builder_(b) {};
+
         Builder& builder_;
 
     public:
@@ -93,6 +94,11 @@ namespace json {
         Node Build();
 
     private:
+
+        // Разрешаем BaseContext<...> доступ к private методам
+        template <typename T>
+        friend class BaseContext;
+
         // Приватные методы
         Node& Current();
         void CheckBuildReady();
