@@ -1,140 +1,112 @@
-#pragma once
+п»ї#pragma once
 #include "json.h"
 #include <optional>
 #include <deque>
 #include <string>
 
+/*
+        Builder
+        в”‚
+        в”њв”Ђв”Ђ StartDict()     в†’ DictContext
+        в”‚   в”њв”Ђ Key(...)     в†’ ValueContext
+        в”‚   в””в”Ђ EndDict()    в†’ Builder&
+        в”‚
+        в”њв”Ђв”Ђ StartArray()    в†’ ArrayContext
+        в”‚   в”њв”Ђ Value(...)   в†’ ArrayContext
+        в”‚   в”њв”Ђ StartDict()  в†’ DictContext
+        в”‚   в”њв”Ђ StartArray() в†’ ArrayContext
+        в”‚   в””в”Ђ EndArray()   в†’ Builder&
+        в”‚
+        в”њв”Ђв”Ђ Key(...)        в†’ ValueContext
+        в”‚   в”њв”Ђ Value(...)   в†’ Builder&
+        в”‚   в”њв”Ђ StartDict()  в†’ DictContext
+        в”‚   в””в”Ђ StartArray() в†’ ArrayContext
+        в”‚
+        в””в”Ђв”Ђ Value(...)      в†’ Builder& (РІ РєРѕСЂРЅРµ РёР»Рё РјР°СЃСЃРёРІРµ)
+*/
+
 namespace json {
 
+    class Builder;
+
+    // Forward declarations
+    class DictContext;
+    class ArrayContext;
+    class ValueContext;
+
+    // Р‘Р°Р·РѕРІС‹Р№ РєР»Р°СЃСЃ РґР»СЏ РґРµР»РµРіРёСЂРѕРІР°РЅРёСЏ
+    template <typename Derived>
+    class BaseContext {
+    protected:
+        explicit BaseContext(Builder& b) : builder_(b) {}
+        Builder& builder_;
+
+    public:
+        DictContext StartDict();
+        ArrayContext StartArray();
+        ValueContext Key(std::string key);
+        Node Build();
+        Builder& EndDict();
+        Builder& EndArray();
+    };
+
+    // РљРѕРЅС‚РµРєСЃС‚: РїРѕСЃР»Рµ StartDict вЂ” РјРѕР¶РЅРѕ Key РёР»Рё EndDict
+    class DictContext : private BaseContext<DictContext> {
+    public:
+        explicit DictContext(Builder& b);
+
+        ValueContext Key(std::string key);
+        Builder& EndDict();
+    };
+
+    // РљРѕРЅС‚РµРєСЃС‚: РїРѕСЃР»Рµ StartArray вЂ” РјРѕР¶РЅРѕ Value, Start*, EndArray
+    class ArrayContext : private BaseContext<ArrayContext> {
+    public:
+        explicit ArrayContext(Builder& b);
+
+        ArrayContext Value(Node::Value value);
+        DictContext StartDict();
+        ArrayContext StartArray();
+        Builder& EndArray();
+    };
+
+    // РљРѕРЅС‚РµРєСЃС‚: РїРѕСЃР»Рµ Key вЂ” РјРѕР¶РЅРѕ Value, StartDict, StartArray
+    class ValueContext : private BaseContext<ValueContext> {
+    public:
+        explicit ValueContext(Builder& b);
+
+        Builder& Value(Node::Value value);
+        DictContext StartDict();
+        ArrayContext StartArray();
+    };
+
     /**
-     * @brief Класс для построения JSON-объекта с помощью цепочки вызовов (fluent interface).
-     *
-     * Позволяет пошагово собирать JSON-объект, используя методы:
-     *   - StartDict / EndDict — для словарей
-     *   - StartArray / EndArray — для массивов
-     *   - Key — для задания ключа в словаре
-     *   - Value — для добавления значения
-     *   - Build — для получения готового Node
-     *
-     * Пример:
-     *   json::Builder{}
-     *       .StartDict()
-     *           .Key("name"s).Value("Alice"s)
-     *           .Key("age"s).Value(30)
-     *       .EndDict()
-     *       .Build();
+     * @brief РљР»Р°СЃСЃ РґР»СЏ РїРѕС€Р°РіРѕРІРѕРіРѕ РїРѕСЃС‚СЂРѕРµРЅРёСЏ JSON-РѕР±СЉРµРєС‚Р°.
+     * РџРѕРґРґРµСЂР¶РёРІР°РµС‚ fluent-РёРЅС‚РµСЂС„РµР№СЃ СЃ РїСЂРѕРІРµСЂРєРѕР№ РєРѕРЅС‚РµРєСЃС‚Р° РЅР° СЌС‚Р°РїРµ РєРѕРјРїРёР»СЏС†РёРё.
      */
     class Builder {
     public:
         Builder() = default;
 
-        /**
-         * @brief Задаёт ключ в текущем словаре.
-         * @param key строка — ключ.
-         * @return Ссылка на *this для цепочки вызовов.
-         * @throws std::logic_error если:
-         *   - вызван вне словаря;
-         *   - предыдущий ключ не был связан со значением.
-         */
-        Builder& Key(std::string key);
-
-        /**
-         * @brief Добавляет значение.
-         * Может быть вызван:
-         *   - после конструктора — чтобы задать весь объект;
-         *   - после Key — чтобы задать значение по ключу;
-         *   - в массиве — чтобы добавить элемент.
-         * @param value значение любого типа из Node::Value.
-         * @return Ссылка на *this.
-         * @throws std::logic_error при нарушении контекста.
-         */
-        Builder& Value(Node::Value value);
-
-        /**
-         * @brief Начинает определение словаря.
-         * @return Ссылка на *this.
-         * @throws std::logic_error если:
-         *   - вызван после Key, но до Value;
-         *   - вызван в недопустимом контексте.
-         */
-        Builder& StartDict();
-
-        /**
-         * @brief Завершает определение словаря.
-         * @return Ссылка на *this.
-         * @throws std::logic_error если:
-         *   - стек пуст;
-         *   - текущий узел — не словарь;
-         *   - в словаре есть незавершённый ключ.
-         */
-        Builder& EndDict();
-
-        /**
-         * @brief Начинает определение массива.
-         * @return Ссылка на *this.
-         * @throws std::logic_error в случае ошибки контекста.
-         */
-        Builder& StartArray();
-
-        /**
-         * @brief Завершает определение массива.
-         * @return Ссылка на *this.
-         * @throws std::logic_error если:
-         *   - стек пуст;
-         *   - текущий узел — не массив.
-         */
-        Builder& EndArray();
-
-        /**
-         * @brief Возвращает построенный JSON-объект.
-         * @return объект Node.
-         * @throws std::logic_error если:
-         *   - объект не инициализирован;
-         *   - есть незавершённые контейнеры.
-         */
+        DictContext StartDict();
+        ArrayContext StartArray();
         Node Build();
 
     private:
-        /**
-         * @brief Корневой узел JSON-объекта.
-         *
-         * - До первого вызова Value/Start* — содержит std::nullptr_t
-         * - После Build() — остаётся неизменным
-         */
-        Node root_;
-
-        /**
-         * @brief Стек указателей на открытые контейнеры.
-         *
-         * Хранит путь от корня к текущему контексту.
-         * Позволяет вернуться к родительскому узлу при EndDict/EndArray.
-         *
-         * Пуст, если контекст — корень.
-         */
-        std::deque<Node*> stack_;
-
-        /**
-         * @brief Текущий ожидаемый ключ в словаре.
-         *
-         * Состояния:
-         * - nullopt: можно вызвать Key(), Value() (в массиве), Start* или End*.
-         * - имеет значение: ожидается вызов Value(), StartDict() или StartArray()
-         *   для завершения пары "ключ-значение".
-         *
-         * Устанавливается в Key(), сбрасывается в Value()/Start*.
-         */
-        std::optional<std::string> key_;
-
-        // Вспомогательные методы
-        Node& Current();  // Получить текущий узел (верх стека)
-
-        /**
-         * @brief Проверяет, что Build() может быть вызван.
-         * @throws std::logic_error если:
-         *   - стек не пуст (есть незавершённые контейнеры);
-         *   - root_ не инициализирован.
-         */
+        // РџСЂРёРІР°С‚РЅС‹Рµ РјРµС‚РѕРґС‹
+        Node& Current();
         void CheckBuildReady();
+
+        void DoKey(std::string key);
+        void DoValue(Node::Value value);
+        void DoStartDict();
+        void DoStartArray();
+        void DoEndDict();
+        void DoEndArray();
+
+        Node root_;
+        std::deque<Node*> stack_;
+        std::optional<std::string> key_;
     };
 
 } // namespace json
