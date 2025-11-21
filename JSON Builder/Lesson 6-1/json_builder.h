@@ -4,27 +4,6 @@
 #include <deque>
 #include <string>
 
-/*
-        Builder
-        │
-        ├── StartDict()     → DictContext
-        │   ├─ Key(...)     → ValueContext
-        │   └─ EndDict()    → Builder&
-        │
-        ├── StartArray()    → ArrayContext
-        │   ├─ Value(...)   → ArrayContext
-        │   ├─ StartDict()  → DictContext
-        │   ├─ StartArray() → ArrayContext
-        │   └─ EndArray()   → Builder&
-        │
-        ├── Key(...)        → ValueContext
-        │   ├─ Value(...)   → Builder&
-        │   ├─ StartDict()  → DictContext
-        │   └─ StartArray() → ArrayContext
-        │
-        └── Value(...)      → Builder& (в корне или массиве)
-*/
-
 namespace json {
 
     class Builder;
@@ -34,74 +13,67 @@ namespace json {
     class ArrayContext;
     class ValueContext;
 
-    // Базовый класс для делегирования
-    template <typename Derived>
+    // Базовый класс для общих методов
     class BaseContext {
     protected:
-        explicit BaseContext(Builder& b) : builder_(b) {};
-
+        explicit BaseContext(Builder& b) : builder_(b) {}
         Builder& builder_;
 
     public:
         DictContext StartDict();
         ArrayContext StartArray();
-        ValueContext Key(std::string key);
-        Node Build();
         Builder& EndDict();
         Builder& EndArray();
+        Node Build();
     };
 
     // Контекст: после StartDict — можно Key или EndDict
-    class DictContext : private BaseContext<DictContext> {
+    class DictContext : private BaseContext {
+        Builder& builder_;  // ← нужен для Value() после Key()
+
     public:
         explicit DictContext(Builder& b);
 
-        ValueContext Key(std::string key);
-        Builder& EndDict();
+        ValueContext Key(std::string key);  // ← не из BaseContext
+        using BaseContext::EndDict;         // ✅
     };
 
     // Контекст: после StartArray — можно Value, Start*, EndArray
-    class ArrayContext : private BaseContext<ArrayContext> {
+    class ArrayContext : private BaseContext {
+        Builder& builder_;  // ← нужен для Value()
+
     public:
         explicit ArrayContext(Builder& b);
 
-        ArrayContext Value(Node::Value value);
-        DictContext StartDict();
-        ArrayContext StartArray();
-        Builder& EndArray();
+        ArrayContext Value(Node::Value value);  // ← не из BaseContext
+        using BaseContext::StartDict;           // ✅
+        using BaseContext::StartArray;          // ✅
+        using BaseContext::EndArray;            // ✅
     };
 
     // Контекст: после Key — можно Value, StartDict, StartArray
-    class ValueContext : private BaseContext<ValueContext> {
+    class ValueContext : private BaseContext {
+        Builder& builder_;  // ← нужен для Value()
+
     public:
         explicit ValueContext(Builder& b);
 
-        Builder& Value(Node::Value value);
-        DictContext StartDict();
-        ArrayContext StartArray();
+        ValueContext Value(Node::Value value);     // ← не из BaseContext
+        ValueContext Key(std::string key);  // ← ДОБАВИТЬ
+        using BaseContext::StartDict;          // ✅
+        using BaseContext::StartArray;         // ✅
     };
 
-    /**
-     * @brief Класс для пошагового построения JSON-объекта.
-     * Поддерживает fluent-интерфейс с проверкой контекста на этапе компиляции.
-     */
     class Builder {
-    public:
-        Builder() = default;
+        Node root_;
+        std::deque<Node*> stack_;
+        std::optional<std::string> key_;
 
-        DictContext StartDict();
-        ArrayContext StartArray();
-        Node Build();
-
-    private:
-
-        // Разрешаем BaseContext<...> доступ к private методам
-        template <typename T>
+        // Разрешаем контекстам доступ к Do*
         friend class BaseContext;
-
-        // Приватные методы
-        Node& Current();
-        void CheckBuildReady();
+        friend class DictContext;
+        friend class ArrayContext;
+        friend class ValueContext;
 
         void DoKey(std::string key);
         void DoValue(Node::Value value);
@@ -109,10 +81,16 @@ namespace json {
         void DoStartArray();
         void DoEndDict();
         void DoEndArray();
+        Node& Current();
+        void CheckBuildReady();
 
-        Node root_;
-        std::deque<Node*> stack_;
-        std::optional<std::string> key_;
+    public:
+        Builder() = default;
+
+        DictContext StartDict();
+        ArrayContext StartArray();
+        Node Build();
+        Builder& Value(Node::Value value);
     };
 
 } // namespace json

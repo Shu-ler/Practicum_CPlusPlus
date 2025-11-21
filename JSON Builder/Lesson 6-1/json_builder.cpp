@@ -4,8 +4,46 @@
 
 namespace json {
 
-    // ============================================================================= 
-    // Реализация класса Builder - Приватные методы
+    // =============================================================================
+    // Реализация BaseContext — делегирует общие методы
+    // =============================================================================
+
+    DictContext BaseContext::StartDict() {
+        builder_.DoStartDict();
+        return DictContext(builder_);
+    }
+
+    ArrayContext BaseContext::StartArray() {
+        builder_.DoStartArray();
+        return ArrayContext(builder_);
+    }
+
+    Builder& BaseContext::EndDict() {
+        builder_.DoEndDict();
+        return builder_;
+    }
+
+    Builder& BaseContext::EndArray() {
+        builder_.DoEndArray();
+        return builder_;
+    }
+
+    Node BaseContext::Build() {
+        return builder_.Build();
+    }
+
+    // =============================================================================
+    // Конструкторы контекстов
+    // =============================================================================
+
+    DictContext::DictContext(Builder& b) : BaseContext(b), builder_(b) {}
+
+    ArrayContext::ArrayContext(Builder& b) : BaseContext(b), builder_(b) {}
+
+    ValueContext::ValueContext(Builder& b) : BaseContext(b), builder_(b) {}
+
+    // =============================================================================
+    // Реализация Builder — приватные методы
     // =============================================================================
 
     Node& Builder::Current() {
@@ -141,67 +179,8 @@ namespace json {
         stack_.pop_back();
     }
 
-    // ============================================================================= 
-    // Конструкторы контекстов
     // =============================================================================
-
-    DictContext::DictContext(Builder& b) : BaseContext<DictContext>(b) {}
-
-    ArrayContext::ArrayContext(Builder& b) : BaseContext<ArrayContext>(b) {}
-
-    ValueContext::ValueContext(Builder& b) : BaseContext<ValueContext>(b) {}
-
-    // ============================================================================= 
-    // Реализация методов контекстов
-    // =============================================================================
-
-    ValueContext DictContext::Key(std::string key) {
-        builder_.DoKey(std::move(key));
-        return ValueContext(builder_);
-    }
-
-    Builder& DictContext::EndDict() {
-        builder_.DoEndDict();
-        return builder_;
-    }
-
-    Builder& ValueContext::Value(Node::Value value) {
-        builder_.DoValue(std::move(value));
-        return builder_;
-    }
-
-    DictContext ValueContext::StartDict() {
-        builder_.DoStartDict();
-        return DictContext(builder_);
-    }
-
-    ArrayContext ValueContext::StartArray() {
-        builder_.DoStartArray();
-        return ArrayContext(builder_);
-    }
-
-    ArrayContext ArrayContext::Value(Node::Value value) {
-        builder_.DoValue(std::move(value));
-        return *this;
-    }
-
-    DictContext ArrayContext::StartDict() {
-        builder_.DoStartDict();
-        return DictContext(builder_);
-    }
-
-    ArrayContext ArrayContext::StartArray() {
-        builder_.DoStartArray();
-        return *this;
-    }
-
-    Builder& ArrayContext::EndArray() {
-        builder_.DoEndArray();
-        return builder_;
-    }
-
-    // ============================================================================= 
-    // Реализация класса Builder - Публичные методы
+    // Реализация Builder — публичные методы
     // =============================================================================
 
     DictContext Builder::StartDict() {
@@ -219,49 +198,37 @@ namespace json {
         return root_;
     }
 
-    // ============================================================================= 
-    // Реализация методов класса BaseContext<Derived>
-    // ВАЖНО: после всего, чтобы friendship сработало
+    Builder& Builder::Value(Node::Value value) {
+        DoValue(std::move(value));
+        return *this;
+    }
+
+    // =============================================================================
+    // Реализация методов контекстов
     // =============================================================================
 
-    template <typename D>
-    DictContext BaseContext<D>::StartDict() {
-        builder_.DoStartDict();
-        return DictContext(builder_);
-    }
-
-    template <typename D>
-    ArrayContext BaseContext<D>::StartArray() {
-        builder_.DoStartArray();
-        return ArrayContext(builder_);
-    }
-
-    template <typename D>
-    ValueContext BaseContext<D>::Key(std::string key) {
+    // --- DictContext ---
+    ValueContext DictContext::Key(std::string key) {
         builder_.DoKey(std::move(key));
         return ValueContext(builder_);
     }
 
-    template <typename D>
-    Node BaseContext<D>::Build() {
-        return builder_.Build();
+    // --- ArrayContext ---
+    ArrayContext ArrayContext::Value(Node::Value value) {
+        builder_.DoValue(std::move(value));
+        return *this;
     }
 
-    template <typename D>
-    Builder& BaseContext<D>::EndDict() {
-        builder_.DoEndDict();
-        return builder_;
+    // --- ValueContext ---
+
+    ValueContext ValueContext::Key(std::string key) {
+        builder_.DoKey(std::move(key));
+        return *this;
     }
 
-    template <typename D>
-    Builder& BaseContext<D>::EndArray() {
-        builder_.DoEndArray();
-        return builder_;
+    ValueContext ValueContext::Value(Node::Value value) {
+        builder_.DoValue(std::move(value));
+        return *this;  // продолжаем в контексте словаря
     }
-
-    // === Явная инстанциация шаблонов ===
-    template class BaseContext<DictContext>;
-    template class BaseContext<ValueContext>;
-    template class BaseContext<ArrayContext>;
 
 } // namespace json
