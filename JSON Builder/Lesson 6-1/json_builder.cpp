@@ -5,7 +5,7 @@
 namespace json {
 
     // =============================================================================
-    // Вспомогательные
+    // Builder - Вспомогательные методы
     // =============================================================================
 
     Node& Builder::Current() {
@@ -22,7 +22,7 @@ namespace json {
     }
 
     // =============================================================================
-    // Do* методы
+    // Builder - Do* методы
     // =============================================================================
 
     void Builder::DoKey(std::string key) {
@@ -146,6 +146,45 @@ namespace json {
     }
 
     // =============================================================================
+    // Builder - публичные методы
+    // =============================================================================
+
+    Builder::DictItemContext Builder::StartDict() {
+        DoStartDict();
+        return DictItemContext(*this);
+    }
+
+    Builder::ArrayItemContext Builder::StartArray() {
+        DoStartArray();
+        return ArrayItemContext(*this);
+    }
+
+    Builder::DictValueContext Builder::Key(std::string key) {
+        DoKey(key);
+        return DictValueContext(*this);
+    }
+
+    Builder& Builder::Value(Node::Value value) {
+        DoValue(std::move(value));
+        return *this;
+    }
+
+    Builder& Builder::EndArray() {
+        DoEndArray();
+        return *this;
+    }
+
+    Builder& Builder::EndDict() {
+        DoEndDict();
+        return *this;
+    }
+
+    Node Builder::Build() {
+        CheckBuildReady();
+        return root_;
+    }
+
+    // =============================================================================
     // BaseContext — реализация
     // =============================================================================
 
@@ -184,19 +223,19 @@ namespace json {
     }
 
     // =============================================================================
-    // DictItemContext
+    // DictItemContext — реализация
     // =============================================================================
 
     Builder::DictItemContext::DictItemContext(Builder& b) : BaseContext(b), builder_(b) {}
 
     // =============================================================================
-    // DictValueContext
+    // DictValueContext — реализация
     // =============================================================================
 
     Builder::DictValueContext::DictValueContext(Builder& b) : BaseContext(b), builder_(b) {}
 
     // =============================================================================
-    // ArrayItemContext
+    // ArrayItemContext — реализация
     // =============================================================================
 
     Builder::ArrayItemContext::ArrayItemContext(Builder& b) : BaseContext(b), builder_(b) {}
@@ -204,45 +243,6 @@ namespace json {
     Builder::ArrayItemContext Builder::ArrayItemContext::Value(Node::Value value) {
         builder_.DoValue(std::move(value));
         return *this;
-    }
-
-    // =============================================================================
-    // Builder: публичные методы
-    // =============================================================================
-
-    Builder::DictItemContext Builder::StartDict() {
-        DoStartDict();
-        return DictItemContext(*this);
-    }
-
-    Builder::ArrayItemContext Builder::StartArray() {
-        DoStartArray();
-        return ArrayItemContext(*this);
-    }
-
-    Builder::DictValueContext Builder::Key(std::string key) {
-        DoKey(key);
-        return DictValueContext(*this);
-    }
-
-    Builder& Builder::Value(Node::Value value) {
-        DoValue(std::move(value));
-        return *this;
-    }
-
-    Builder& Builder::EndArray() {
-        DoEndArray();
-        return *this;
-    }
-
-    Builder& Builder::EndDict() {
-        DoEndDict();
-        return *this;
-    }
-
-    Node Builder::Build() {
-        CheckBuildReady();
-        return root_;
     }
 
 } // namespace json
