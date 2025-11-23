@@ -5,7 +5,6 @@
 using namespace std;
 
 int main() {
-    
     json::Print(
         json::Document{
             json::Builder{}
@@ -27,6 +26,7 @@ int main() {
         cout
     );
     cout << endl;
+    cout << endl; 
 
     json::Print(
         json::Document{
@@ -37,4 +37,33 @@ int main() {
         cout
     );
     cout << endl;
+    cout << endl;
+
+    json::Print(
+        json::Document{
+            json::Builder{}
+            .StartArray()
+                .Value(1)
+                .Value(2)
+                .Value(3)
+            .EndArray()
+            .Build()
+        },
+        cout
+    );
+    cout << endl;
+    cout << endl;
+
+	json::Print(
+		json::Document{
+            json::Builder{}
+            .StartDict()
+                .Key("1").StartDict()
+                .EndDict()
+                .Key("2").Value(2)
+            .EndDict()
+            .Build() 
+        },
+	    cout
+	);
 }

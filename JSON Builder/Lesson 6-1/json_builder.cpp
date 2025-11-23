@@ -5,45 +5,7 @@
 namespace json {
 
     // =============================================================================
-    // Реализация BaseContext — делегирует общие методы
-    // =============================================================================
-
-    DictContext BaseContext::StartDict() {
-        builder_.DoStartDict();
-        return DictContext(builder_);
-    }
-
-    ArrayContext BaseContext::StartArray() {
-        builder_.DoStartArray();
-        return ArrayContext(builder_);
-    }
-
-    Builder& BaseContext::EndDict() {
-        builder_.DoEndDict();
-        return builder_;
-    }
-
-    Builder& BaseContext::EndArray() {
-        builder_.DoEndArray();
-        return builder_;
-    }
-
-    Node BaseContext::Build() {
-        return builder_.Build();
-    }
-
-    // =============================================================================
-    // Конструкторы контекстов
-    // =============================================================================
-
-    DictContext::DictContext(Builder& b) : BaseContext(b), builder_(b) {}
-
-    ArrayContext::ArrayContext(Builder& b) : BaseContext(b), builder_(b) {}
-
-    ValueContext::ValueContext(Builder& b) : BaseContext(b), builder_(b) {}
-
-    // =============================================================================
-    // Реализация Builder — приватные методы
+    // Вспомогательные
     // =============================================================================
 
     Node& Builder::Current() {
@@ -58,6 +20,10 @@ namespace json {
             throw std::logic_error("Builder: cannot Build() — no value was set");
         }
     }
+
+    // =============================================================================
+    // Do* методы
+    // =============================================================================
 
     void Builder::DoKey(std::string key) {
         if (stack_.empty()) {
@@ -85,14 +51,14 @@ namespace json {
             throw std::logic_error("Builder: Value() called on already built object");
         }
 
-        Node& curr = Current();
+        Node& curr_node = Current();
         if (key_.has_value()) {
-            Dict& dict = const_cast<Dict&>(curr.AsDict());
+            Dict& dict = const_cast<Dict&>(curr_node.AsDict());
             dict[key_.value()] = std::move(node);
             key_.reset();
         }
-        else if (curr.IsArray()) {
-            Array& array = const_cast<Array&>(curr.AsArray());
+        else if (curr_node.IsArray()) {
+            Array& array = const_cast<Array&>(curr_node.AsArray());
             array.emplace_back(std::move(node));
         }
         else {
@@ -180,22 +146,83 @@ namespace json {
     }
 
     // =============================================================================
-    // Реализация Builder — публичные методы
+    // BaseContext — реализация
     // =============================================================================
 
-    DictContext Builder::StartDict() {
+    Node Builder::BaseContext::Build() {
+        return builder_.Build();
+    }
+
+    Builder::DictValueContext Builder::BaseContext::Key(std::string key) {
+        builder_.DoKey(std::move(key));
+        return DictValueContext(builder_);
+    }
+
+    Builder::DictItemContext Builder::BaseContext::Value(Node::Value value) {
+        builder_.DoValue(std::move(value));
+        return DictItemContext(builder_);
+    }
+
+    Builder::DictItemContext Builder::BaseContext::StartDict() {
+        builder_.DoStartDict();
+        return DictItemContext(builder_);
+    }
+
+    Builder::ArrayItemContext Builder::BaseContext::StartArray() {
+        builder_.DoStartArray();
+        return ArrayItemContext(builder_);
+    }
+
+    Builder& Builder::BaseContext::EndDict() {
+        builder_.DoEndDict();
+        return builder_;
+    }
+
+    Builder& Builder::BaseContext::EndArray() {
+        builder_.DoEndArray();
+        return builder_;
+    }
+
+    // =============================================================================
+    // DictItemContext
+    // =============================================================================
+
+    Builder::DictItemContext::DictItemContext(Builder& b) : BaseContext(b), builder_(b) {}
+
+    // =============================================================================
+    // DictValueContext
+    // =============================================================================
+
+    Builder::DictValueContext::DictValueContext(Builder& b) : BaseContext(b), builder_(b) {}
+
+    // =============================================================================
+    // ArrayItemContext
+    // =============================================================================
+
+    Builder::ArrayItemContext::ArrayItemContext(Builder& b) : BaseContext(b), builder_(b) {}
+
+    Builder::ArrayItemContext Builder::ArrayItemContext::Value(Node::Value value) {
+        builder_.DoValue(std::move(value));
+        return *this;
+    }
+
+    // =============================================================================
+    // Builder: публичные методы
+    // =============================================================================
+
+    Builder::DictItemContext Builder::StartDict() {
         DoStartDict();
-        return DictContext(*this);
+        return DictItemContext(*this);
     }
 
-    ArrayContext Builder::StartArray() {
+    Builder::ArrayItemContext Builder::StartArray() {
         DoStartArray();
-        return ArrayContext(*this);
+        return ArrayItemContext(*this);
     }
 
-    Node Builder::Build() {
-        CheckBuildReady();
-        return root_;
+    Builder::DictValueContext Builder::Key(std::string key) {
+        DoKey(key);
+        return DictValueContext(*this);
     }
 
     Builder& Builder::Value(Node::Value value) {
@@ -203,32 +230,19 @@ namespace json {
         return *this;
     }
 
-    // =============================================================================
-    // Реализация методов контекстов
-    // =============================================================================
-
-    // --- DictContext ---
-    ValueContext DictContext::Key(std::string key) {
-        builder_.DoKey(std::move(key));
-        return ValueContext(builder_);
-    }
-
-    // --- ArrayContext ---
-    ArrayContext ArrayContext::Value(Node::Value value) {
-        builder_.DoValue(std::move(value));
+    Builder& Builder::EndArray() {
+        DoEndArray();
         return *this;
     }
 
-    // --- ValueContext ---
-
-    ValueContext ValueContext::Key(std::string key) {
-        builder_.DoKey(std::move(key));
+    Builder& Builder::EndDict() {
+        DoEndDict();
         return *this;
     }
 
-    ValueContext ValueContext::Value(Node::Value value) {
-        builder_.DoValue(std::move(value));
-        return *this;  // продолжаем в контексте словаря
+    Node Builder::Build() {
+        CheckBuildReady();
+        return root_;
     }
 
 } // namespace json
