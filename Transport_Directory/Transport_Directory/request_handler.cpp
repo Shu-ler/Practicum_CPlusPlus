@@ -2,6 +2,7 @@
 #include "json_reader.h"
 #include "map_renderer.h"
 #include <algorithm>
+#include "json_builder.h"
 
 namespace request_handler {
 
@@ -31,13 +32,13 @@ namespace request_handler {
 
         return json::Builder{}
             .StartDict()
-                .Key("request_id").AddNumber(id)
-                .Key("stop_count").AddNumber(static_cast<int>(stat->stop_count))
-                .Key("unique_stop_count").AddNumber(static_cast<int>(stat->unique_stop_count))
-                .Key("route_length").AddNumber(static_cast<int>(stat->route_length))
-                .Key("curvature").AddNumber(stat->curvature)
+                .Key("request_id").Value(id)
+                .Key("stop_count").Value(static_cast<int>(stat->stop_count))
+                .Key("unique_stop_count").Value(static_cast<int>(stat->unique_stop_count))
+                .Key("route_length").Value(static_cast<int>(stat->route_length))
+                .Key("curvature").Value(stat->curvature)
             .EndDict()
-            .Build().AsMap();
+            .Build().AsDict();
     }
 
     json::Dict RequestHandler::ProcessStopRequest(const json::Dict& req) const {
@@ -55,10 +56,10 @@ namespace request_handler {
 
         return json::Builder{}
             .StartDict()
-                .Key("request_id").AddNumber(id)
-                .Key("buses").AddNode(std::move(buses))
+                .Key("request_id").Value(id)
+                .Key("buses").Value(std::move(buses))
             .EndDict()
-            .Build().AsMap();
+            .Build().AsDict();
     }
 
     json::Dict RequestHandler::ProcessMapRequest(const json::Dict& req) const {
@@ -74,19 +75,19 @@ namespace request_handler {
 
         return json::Builder{}
             .StartDict()
-                .Key("request_id").AddNumber(id)
-                .Key("map").AddString(ss.str())
+                .Key("request_id").Value(id)
+                .Key("map").Value(ss.str())
                 .EndDict()
-            .Build().AsMap();
+            .Build().AsDict();
     }
 
     json::Dict RequestHandler::MakeErrorResponse(int id, std::string_view message) const {
         return json::Builder{}
             .StartDict()
-                .Key("request_id").AddNumber(id)
-                .Key("error_message").AddString(std::string(message))
+                .Key("request_id").Value(id)
+                .Key("error_message").Value(std::string(message))
             .EndDict()
-            .Build().AsMap();
+            .Build().AsDict();
     }
 
 	void RequestHandler::InitializeHandlers() {
@@ -103,7 +104,7 @@ namespace request_handler {
 
     RequestHandler RequestHandler::Create(const trans_cat::TransportCatalogue& catalogue, 
         const json::Document& input) {
-        const auto& root = input.GetRoot().AsMap();
+        const auto& root = input.GetRoot().AsDict();
 
         // Проверяем, есть ли render_settings
         std::optional<renderer::MapRenderer> renderer = std::nullopt;
@@ -126,7 +127,7 @@ namespace request_handler {
         responses.reserve(stat_requests_->size());
 
         for (const auto& req_node : *stat_requests_) {
-            const auto& req = req_node.AsMap();
+            const auto& req = req_node.AsDict();
             std::string type = req.at("type").AsString();
 
             auto it = request_handlers_.find(type);

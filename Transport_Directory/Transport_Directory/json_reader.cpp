@@ -11,7 +11,7 @@ namespace json_reader {
     void JSONReader::LoadFromJson(const json::Document& input) {
 
         // Читаем root из json'а
-        const json::Dict& root = input.GetRoot().AsMap();
+        const json::Dict& root = input.GetRoot().AsDict();
 
         // Попытка найти в root узел 'base_requests'
         auto it = root.find("base_requests");
@@ -24,7 +24,7 @@ namespace json_reader {
 
         // В цикле обрабатываем остановки и маршруты
         for (const auto& req_node : base_requests) {
-            const json::Dict& req = req_node.AsMap();
+            const json::Dict& req = req_node.AsDict();
             std::string type = req.at("type").AsString();
 
             if (type == "Stop") {
@@ -40,7 +40,7 @@ namespace json_reader {
     }
 
     json::Array JSONReader::GetStatRequests(const json::Document& input) {
-        const auto& root = input.GetRoot().AsMap();
+        const auto& root = input.GetRoot().AsDict();
         if (root.count("stat_requests")) {
             return root.at("stat_requests").AsArray();
         }
@@ -50,10 +50,10 @@ namespace json_reader {
     renderer::RenderSettings JSONReader::GetRenderSettings(const json::Document& input) {
         
         // Читаем root из json'а
-        const auto& root = input.GetRoot().AsMap();
+        const auto& root = input.GetRoot().AsDict();
 
         // Читаем словарь с настройками рендеринга
-        const auto& rs = root.at("render_settings").AsMap();
+        const auto& rs = root.at("render_settings").AsDict();
 
         // Парсим color_palette
         std::vector<svg::Color> color_palette;
@@ -102,7 +102,7 @@ namespace json_reader {
 
         // При наличии - заносим расстояния в каталог
         if (dist_it != stop_node.end()) {
-            const json::Dict& distances = dist_it->second.AsMap();
+            const json::Dict& distances = dist_it->second.AsDict();
             for (const auto& [to, dist_node] : distances) {
                 int distance = dist_node.AsInt();
                 catalogue_.SetDistance(name, to, distance);

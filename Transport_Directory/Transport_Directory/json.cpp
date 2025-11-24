@@ -223,7 +223,7 @@ namespace json {
     bool Node::IsString() const { return std::holds_alternative<std::string>(value_); }
     bool Node::IsNull() const { return std::holds_alternative<std::nullptr_t>(value_); }
     bool Node::IsArray() const { return std::holds_alternative<Array>(value_); }
-    bool Node::IsMap() const { return std::holds_alternative<Dict>(value_); }
+    bool Node::IsDict() const { return std::holds_alternative<Dict>(value_); }
 
     int Node::AsInt() const {
         if (!IsInt()) throw std::logic_error("Not an int");
@@ -251,8 +251,8 @@ namespace json {
         return std::get<Array>(value_);
     }
 
-    const Dict& Node::AsMap() const {
-        if (!IsMap()) throw std::logic_error("Not a map");
+    const Dict& Node::AsDict() const {
+        if (!IsDict()) throw std::logic_error("Not a map");
         return std::get<Dict>(value_);
     }
 

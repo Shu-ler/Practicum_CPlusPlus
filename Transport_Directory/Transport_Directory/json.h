@@ -71,8 +71,13 @@ namespace json {
      *
      * Хранит одно значение любого типа из Value.
      */
-    class Node {
+    class Node final 
+        : private std::variant<std::nullptr_t, int, double, bool, std::string, Array, Dict> {
     public:
+
+        using variant::variant;
+        using Value = variant;
+
         // Конструкторы (не explicit, чтобы работала инициализация вроде Array{1, 2.5, "str"})
         Node() = default;
         Node(int value);
@@ -96,7 +101,7 @@ namespace json {
         bool IsString() const;
         bool IsNull() const;
         bool IsArray() const;
-        bool IsMap() const;         ///< Аналог IsObject
+        bool IsDict() const;         ///< Аналог IsObject
 
         // Методы получения значения (бросает logic_error при несовпадении типов)
         int AsInt() const;
@@ -104,7 +109,7 @@ namespace json {
         double AsDouble() const;
         const std::string& AsString() const;
         const Array& AsArray() const;
-        const Dict& AsMap() const;
+        const Dict& AsDict() const;
 
         /**
          * @brief Извлекает значение заданного типа из узла.
@@ -159,7 +164,7 @@ namespace json {
             return AsArray();
         }
         else if constexpr (std::is_same_v<T, Dict>) {
-            return AsMap();
+            return AsDict();
         }
         else {
             static_assert(sizeof(T) == 0, "Node::As<T> not specialized for this type");
