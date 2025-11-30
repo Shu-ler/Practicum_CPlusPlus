@@ -6,8 +6,11 @@
 
 namespace json {
 
-    class Builder;
-
+    /**
+     * @brief Построитель JSON-документа с fluent-интерфейсом
+     *
+     * Позволяет пошагово создавать JSON-объекты с типобезопасным API.
+     */
     class Builder {
         Node root_;
         std::deque<Node*> stack_;
@@ -19,12 +22,12 @@ namespace json {
         class DictValueContext;
         class ArrayItemContext;
 
-        // Друзья
+        // Друзья — для доступа к Do* методам
         friend class DictItemContext;
         friend class DictValueContext;
         friend class ArrayItemContext;
 
-        // Вспомогательные
+        // Вспомогательные методы
         Node& Current();
         void CheckBuildReady();
 
@@ -38,22 +41,28 @@ namespace json {
     public:
         Builder() = default;
 
+        // Начало контейнеров
         DictItemContext StartDict();
         ArrayItemContext StartArray();
+
+        // Работа с ключами и значениями
         DictValueContext Key(std::string key);
         Builder& Value(Node::Value value);
 
+        // Завершение контейнеров
         Builder& EndArray();
         Builder& EndDict();
-        
-        Node Build();
 
+        // Финализация
+        Node Build();
     };
 
     // =============================================================================
-    // BaseContext — общий базовый класс
+    // BaseContext — общий базовый класс для контекстов
+    //
+    // Содержит все возможные методы, но каждый наследник решает,
+    // какие из них разрешены через `using`.
     // =============================================================================
-
     class Builder::BaseContext {
     protected:
         Builder& builder_;
@@ -62,30 +71,33 @@ namespace json {
         explicit BaseContext(Builder& b) : builder_(b) {}
 
         Node Build();
+
         DictValueContext Key(std::string key);
         DictItemContext Value(Node::Value value);
+
         DictItemContext StartDict();
         ArrayItemContext StartArray();
+
         Builder& EndDict();
         Builder& EndArray();
     };
 
     // =============================================================================
-    // DictItemContext — внутри словаря: можно Key, EndDict
+    // DictItemContext — внутри словаря после StartDict(): можно .Key() или .EndDict() 
     // =============================================================================
 
     class Builder::DictItemContext : private BaseContext {
         Builder& builder_;
     public:
         explicit DictItemContext(Builder& b);
-        
-        // Общие методы
+
+        // Доступные операции
         using BaseContext::Key;
         using BaseContext::EndDict;
     };
 
     // =============================================================================
-    // DictValueContext — после Key: можно Value, Start*
+    // DictValueContext — после .Key(): можно .Value(), .StartDict(), .StartArray()
     // =============================================================================
 
     class Builder::DictValueContext : private BaseContext {
@@ -93,14 +105,14 @@ namespace json {
     public:
         explicit DictValueContext(Builder& b);
 
-        // Общие методы
+        // Доступные операции
         using BaseContext::Value;
         using BaseContext::StartDict;
         using BaseContext::StartArray;
     };
 
     // =============================================================================
-    // ArrayItemContext — внутри массива: можно Value, Start*, EndArray
+    // ArrayItemContext — внутри массива: можно .Value(), .Start*, .EndArray()
     // =============================================================================
 
     class Builder::ArrayItemContext : private BaseContext {
@@ -108,9 +120,10 @@ namespace json {
     public:
         explicit ArrayItemContext(Builder& b);
 
+        // 'Перегрузка' операции
         ArrayItemContext Value(Node::Value value);
 
-        // Общие методы
+        // Доступные операции
         using BaseContext::StartDict;
         using BaseContext::StartArray;
         using BaseContext::EndArray;
