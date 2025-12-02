@@ -26,17 +26,26 @@ int ComputeMedianAge(InputIt range_begin, InputIt range_end) {
     return middle->age;
 }
 
-// напишите сигнатуру и реализацию функции PrintStats
-? ? ? PrintStats(? ? ? ) {
-    ? ? ?
+void PrintStats(vector<Person>& persons) {
+    auto females_end = partition(persons.begin(), persons.end(), [](const Person& p) {
+        return p.gender == Gender::FEMALE;
+        });
 
-        cout << "Median age = "s << ? ? ? << endl;
-    cout << "Median age for females = "s << ? ? ? << endl;
-    cout << "Median age for males = "s << ? ? ? << endl;
-    cout << "Median age for employed females = "s << ? ? ? << endl;
-    cout << "Median age for unemployed females = "s << ? ? ? << endl;
-    cout << "Median age for employed males = " << ? ? ? << endl;
-    cout << "Median age for unemployed males = "s << ? ? ? << endl;
+    auto employed_females_end = partition(persons.begin(), females_end, [](const Person& p) {
+        return p.is_employed;
+        });
+
+    auto employed_males_end = partition(females_end, persons.end(), [](const Person& p) {
+        return p.is_employed;
+        });
+
+    cout << "Median age = " << ComputeMedianAge(persons.begin(), persons.end()) << '\n';
+    cout << "Median age for females = " << ComputeMedianAge(persons.begin(), females_end) << '\n';
+    cout << "Median age for males = " << ComputeMedianAge(females_end, persons.end()) << '\n';
+    cout << "Median age for employed females = " << ComputeMedianAge(persons.begin(), employed_females_end) << '\n';
+    cout << "Median age for unemployed females = " << ComputeMedianAge(employed_females_end, females_end) << '\n';
+    cout << "Median age for employed males = " << ComputeMedianAge(females_end, employed_males_end) << '\n';
+    cout << "Median age for unemployed males = " << ComputeMedianAge(employed_males_end, persons.end()) << '\n';
 }
 
 int main() {
