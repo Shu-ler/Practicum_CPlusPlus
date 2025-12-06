@@ -1,11 +1,51 @@
 ﻿#include <iostream>
 #include <string>
 #include <string_view>
+#include <memory>
+#include <utility>
 
 using namespace std;
 
+// Базовый абстрактный класс для хранения любого типа
+class AnyStorageBase {
+public:
+    virtual ~AnyStorageBase() = default;                    // Виртуальный деструктор
+    virtual void Print(ostream& out) const = 0;             // Чистый виртуальный метод
+};
+
+// Шаблонный класс, хранящий значение типа T
+template <typename T>
+class AnyStorage : public AnyStorageBase {
+public:
+    // Конструктор с forwarding reference
+    template <typename U>
+    AnyStorage(U&& value) : data_(std::forward<U>(value)) {}
+
+    void Print(ostream& out) const override {
+        out << data_;
+    }
+
+private:
+    T data_;
+};
+
+// Основной класс Any — не шаблонный
 class Any {
-    // разработайте класс
+public:
+    // Шаблонный конструктор — forwarding reference
+    template <typename S>
+    Any(S&& value) {
+        using Initial = std::remove_reference_t<S>;
+        ptr_ = std::make_unique<AnyStorage<Initial>>(std::forward<S>(value));
+    }
+
+    // Вывод через делегирование
+    void Print(std::ostream& out) const {
+        ptr_->Print(out);
+    }
+
+private:
+    std::unique_ptr<AnyStorageBase> ptr_;
 };
 
 class Dumper {
@@ -32,11 +72,13 @@ public:
     }
 };
 
+// Оператор вывода в поток
 ostream& operator<<(ostream& out, const Any& arg) {
     arg.Print(out);
     return out;
 }
 
+// Специализация для Dumper (ничего не выводит)
 ostream& operator<<(ostream& out, const Dumper&) {
     return out;
 }
