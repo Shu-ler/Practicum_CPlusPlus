@@ -1,11 +1,8 @@
 ﻿#include "budget_manager.h"
+#include "parser.h"
 
 #include <iostream>
 #include <string_view>
-
-void ParseAndProcessQuery(BudgetManager& manager, std::string_view line) {
-    // Разработайте функцию чтения и обработки запроса.
-}
 
 int ReadNumberOnLine(std::istream& input) {
     std::string line;
