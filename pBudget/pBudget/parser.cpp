@@ -39,12 +39,14 @@ namespace {
 
         void InitializeHandlers();
         void HandleEarn(const std::string& line);
+        void HandleSpend(const std::string& line);
         void HandlePayTax(const std::string& line);
         void HandleComputeIncome(const std::string& line);
     };
 
     void CommandHandler::InitializeHandlers() {
         request_handlers_["Earn"] = [this](const std::string& line) { HandleEarn(line); };
+        request_handlers_["Spend"] = [this](const std::string& line) { HandleSpend(line); };
         request_handlers_["PayTax"] = [this](const std::string& line) { HandlePayTax(line); };
         request_handlers_["ComputeIncome"] = [this](const std::string& line) { HandleComputeIncome(line); };
     }
@@ -62,16 +64,30 @@ namespace {
         manager_.Earn(from_idx, to_idx, value);
     }
 
-    void CommandHandler::HandlePayTax(const std::string& line) {
+    void CommandHandler::HandleSpend(const std::string& line) {
         std::istringstream is(line);
         std::string cmd, from_str, to_str;
-        is >> cmd >> from_str >> to_str;
+        double value;
+        is >> cmd >> from_str >> to_str >> value;
 
         Date from(from_str), to(to_str);
         int from_idx = ParseDateToIndex(from);
         int to_idx = ParseDateToIndex(to);
 
-        manager_.PayTax(from_idx, to_idx);
+        manager_.Spend(from_idx, to_idx, value);
+    }
+
+    void CommandHandler::HandlePayTax(const std::string& line) {
+        std::istringstream is(line);
+        std::string cmd, from_str, to_str;
+        int rate;
+        is >> cmd >> from_str >> to_str >> rate;
+
+        Date from(from_str), to(to_str);
+        int from_idx = ParseDateToIndex(from);
+        int to_idx = ParseDateToIndex(to);
+
+        manager_.PayTax(from_idx, to_idx, rate);
     }
 
     void CommandHandler::HandleComputeIncome(const std::string& line) {

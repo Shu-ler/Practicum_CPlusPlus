@@ -11,12 +11,14 @@ public:
 
     BudgetManager();
 
-    // Обработать запрос
+    // Команды
     void Earn(int from, int to, double value);
-    void PayTax(int from, int to);
+    void Spend(int from, int to, double value);
+    void PayTax(int from, int to, int rate);
     double ComputeIncome(int from, int to) const;
 
 private:
-    // Индекс дня = количество дней от START_DATE
-    std::vector<double> earnings_;  // доходы по дням
+    // Храним два вектора: заработано и потрачено
+    std::vector<double> earned_;
+    std::vector<double> spent_;
 };
