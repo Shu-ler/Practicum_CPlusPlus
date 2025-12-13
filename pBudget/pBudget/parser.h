@@ -3,5 +3,5 @@
 #include "budget_manager.h"
 #include <string_view>
 
-// Обрабатывает одну строку запроса
+// РћР±СЂР°Р±Р°С‚С‹РІР°РµС‚ РѕРґРЅСѓ СЃС‚СЂРѕРєСѓ Р·Р°РїСЂРѕСЃР°
 void ParseAndProcessQuery(BudgetManager& manager, std::string_view line);

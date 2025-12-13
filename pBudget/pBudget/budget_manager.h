@@ -11,15 +11,12 @@ public:
 
     BudgetManager();
 
-    // Обработать запрос
+    // РћР±СЂР°Р±РѕС‚Р°С‚СЊ Р·Р°РїСЂРѕСЃ
     void Earn(int from, int to, double value);
     void PayTax(int from, int to);
     double ComputeIncome(int from, int to) const;
 
 private:
-    // Индекс дня = количество дней от START_DATE
-    std::vector<double> earnings_;  // доходы по дням
+    // РРЅРґРµРєСЃ РґРЅСЏ = РєРѕР»РёС‡РµСЃС‚РІРѕ РґРЅРµР№ РѕС‚ START_DATE
+    std::vector<double> earnings_;  // РґРѕС…РѕРґС‹ РїРѕ РґРЅСЏРј
 };
-
-// Вспомогательные функции (внутри .cpp)
-// int ParseDateToIndex(const Date& date);

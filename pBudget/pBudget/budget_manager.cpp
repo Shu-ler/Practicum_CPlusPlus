@@ -32,9 +32,3 @@ double BudgetManager::ComputeIncome(int from, int to) const {
     }
     return total;
 }
-
-//// Вспомогательная функция: конвертирует дату в индекс дня
-//int ParseDateToIndex(const Date& date) {
-//    int index = Date::ComputeDistance(BudgetManager::START_DATE, date);
-//    return index;
-//}

@@ -89,7 +89,7 @@ namespace {
 
 } // namespace
 
-// Единожды создаём обработчик для первого manager
+// Р•РґРёРЅРѕР¶РґС‹ СЃРѕР·РґР°С‘Рј РѕР±СЂР°Р±РѕС‚С‡РёРє РґР»СЏ РїРµСЂРІРѕРіРѕ manager
 CommandHandler& GetHandler(BudgetManager& manager) {
     static CommandHandler handler(manager);
     return handler;
