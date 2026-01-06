@@ -226,19 +226,19 @@ namespace json {
     // DictItemContext — реализация
     // =============================================================================
 
-    Builder::DictItemContext::DictItemContext(Builder& b) : BaseContext(b), builder_(b) {}
+    Builder::DictItemContext::DictItemContext(Builder& b) : BaseContext(b) {}
 
     // =============================================================================
     // DictValueContext — реализация
     // =============================================================================
 
-    Builder::DictValueContext::DictValueContext(Builder& b) : BaseContext(b), builder_(b) {}
+    Builder::DictValueContext::DictValueContext(Builder& b) : BaseContext(b) {}
 
     // =============================================================================
     // ArrayItemContext — реализация
     // =============================================================================
 
-    Builder::ArrayItemContext::ArrayItemContext(Builder& b) : BaseContext(b), builder_(b) {}
+    Builder::ArrayItemContext::ArrayItemContext(Builder& b) : BaseContext(b) {}
 
     Builder::ArrayItemContext Builder::ArrayItemContext::Value(Node::Value value) {
         builder_.DoValue(std::move(value));

@@ -67,9 +67,9 @@ namespace json {
     protected:
         Builder& builder_;
 
-    public:
         explicit BaseContext(Builder& b) : builder_(b) {}
 
+    public:
         Node Build();
 
         DictValueContext Key(std::string key);
@@ -86,8 +86,7 @@ namespace json {
     // DictItemContext — внутри словаря после StartDict(): можно .Key() или .EndDict() 
     // =============================================================================
 
-    class Builder::DictItemContext : private BaseContext {
-        Builder& builder_;
+    class Builder::DictItemContext final : private BaseContext {
     public:
         explicit DictItemContext(Builder& b);
         
@@ -100,8 +99,7 @@ namespace json {
     // DictValueContext — после .Key(): можно .Value(), .StartDict(), .StartArray()
     // =============================================================================
 
-    class Builder::DictValueContext : private BaseContext {
-        Builder& builder_;
+    class Builder::DictValueContext final : private BaseContext {
     public:
         explicit DictValueContext(Builder& b);
 
@@ -115,8 +113,7 @@ namespace json {
     // ArrayItemContext — внутри массива: можно .Value(), .Start*, .EndArray()
     // =============================================================================
 
-    class Builder::ArrayItemContext : private BaseContext {
-        Builder& builder_;
+    class Builder::ArrayItemContext final : private BaseContext {
     public:
         explicit ArrayItemContext(Builder& b);
 
