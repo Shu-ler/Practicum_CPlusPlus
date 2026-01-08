@@ -5,29 +5,20 @@
 #include <exception>
 
 int main() {
-
-    // 0. Настройка std::cout для чисел с плавающей точкой
-    //std::cout.precision(6);
-    //std::cout << std::fixed;
-
     try {
-        // 1. Прочитать JSON
+        // 1. Считываем JSON
         json::Document input = json::Load(std::cin);
 
-        // 2. Создать каталог
+        // 2. Создаём и заполняем транспортный каталог
         trans_cat::TransportCatalogue catalogue;
-
-        // 3. Создать ридер 
         json_reader::JSONReader reader(catalogue);
-
-        // 4. Загрузить каталог
         reader.LoadFromJson(input);
 
-        // 5. Создать обработчик запросов
-        request_handler::RequestHandler handler = 
+        // 3. Создаём обработчик запросов
+        request_handler::RequestHandler handler =
             request_handler::RequestHandler::Create(catalogue, input);
 
-        // 6. Обработать и вывести результат
+        // 4. Обрабатываем запросы и выводим результат
         handler.ProcessRequests(std::cout);
 
         return 0;

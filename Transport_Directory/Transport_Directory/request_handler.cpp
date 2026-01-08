@@ -1,181 +1,154 @@
 ﻿#include "request_handler.h"
 #include "json_reader.h"
-#include "map_renderer.h"
-#include <algorithm>
 #include "json_builder.h"
+#include <sstream>
 
 namespace request_handler {
 
-    using namespace std::string_literals;
+	using namespace std::string_literals;
 
-    RequestHandler::RequestHandler(const trans_cat::TransportCatalogue& catalogue)
-        : catalogue_(catalogue)
-        , map_renderer_(std::nullopt) {
-    }
-
-    RequestHandler::RequestHandler(const trans_cat::TransportCatalogue& catalogue,
-        std::optional<renderer::MapRenderer> renderer,
-        std::optional<json::Array> stat_requests)
-        : catalogue_(catalogue)
-        , map_renderer_(std::move(renderer))
-        , stat_requests_(std::move(stat_requests)) {
-        InitializeHandlers();
-    }
-
-    json::Dict RequestHandler::ProcessBusRequest(const json::Dict& req) const {
-        auto stat = GetBusStat(req.at("name").AsString());
-        int id = req.at("id").AsInt();
-
-        if (!stat) {
-            return MakeErrorResponse(id, "not found");
-        }
-
-        return json::Builder{}
-            .StartDict()
-                .Key("request_id").Value(id)
-                .Key("stop_count").Value(static_cast<int>(stat->stop_count))
-                .Key("unique_stop_count").Value(static_cast<int>(stat->unique_stop_count))
-                .Key("route_length").Value(static_cast<int>(stat->route_length))
-                .Key("curvature").Value(stat->curvature)
-            .EndDict()
-            .Build().AsDict();
-    }
-
-    json::Dict RequestHandler::ProcessStopRequest(const json::Dict& req) const {
-        auto stat = GetStopStat(req.at("name").AsString());
-        int id = req.at("id").AsInt();
-
-        if (!stat) {
-            return MakeErrorResponse(id, "not found");
-        }
-
-        json::Array buses;
-        for (const auto& bus : stat->bus_names) {
-            buses.push_back(json::Node(bus));
-        }
-
-        return json::Builder{}
-            .StartDict()
-                .Key("request_id").Value(id)
-                .Key("buses").Value(std::move(buses))
-            .EndDict()
-            .Build().AsDict();
-    }
-
-    json::Dict RequestHandler::ProcessMapRequest(const json::Dict& req) const {
-        int id = req.at("id").AsInt();
-
-        if (!map_renderer_) {
-            return MakeErrorResponse(id, "render settings are not provided");
-        }
-
-        svg::Document doc = map_renderer_->RenderMap(catalogue_);
-        std::ostringstream ss;
-        doc.Render(ss);
-
-        return json::Builder{}
-            .StartDict()
-                .Key("request_id").Value(id)
-                .Key("map").Value(ss.str())
-                .EndDict()
-            .Build().AsDict();
-    }
-
-    json::Dict RequestHandler::MakeErrorResponse(int id, std::string_view message) const {
-        return json::Builder{}
-            .StartDict()
-                .Key("request_id").Value(id)
-                .Key("error_message").Value(std::string(message))
-            .EndDict()
-            .Build().AsDict();
-    }
-
-	void RequestHandler::InitializeHandlers() {
-		request_handlers_["Bus"] = [this](const json::Dict& req) {
+	RequestHandler::RequestHandler(const trans_cat::TransportCatalogue& catalogue,
+		std::optional<renderer::MapRenderer> renderer,
+		std::optional<json::Array> stat_requests)
+		: catalogue_(catalogue)
+		, map_renderer_(std::move(renderer))
+		, stat_requests_(std::move(stat_requests))
+	{
+		// Регистрация обработчиков — в конструкторе
+		processor_.AddHandler("Bus", [this](const json::Dict& req) {
 			return ProcessBusRequest(req);
-			};
-		request_handlers_["Stop"] = [this](const json::Dict& req) {
+			});
+		processor_.AddHandler("Stop", [this](const json::Dict& req) {
 			return ProcessStopRequest(req);
-			};
-		request_handlers_["Map"] = [this](const json::Dict& req) {
+			});
+		processor_.AddHandler("Map", [this](const json::Dict& req) {
 			return ProcessMapRequest(req);
-			};
+			});
 	}
 
-    RequestHandler RequestHandler::Create(const trans_cat::TransportCatalogue& catalogue, 
-        const json::Document& input) {
-        const auto& root = input.GetRoot().AsDict();
+	json::Dict RequestHandler::ProcessBusRequest(const json::Dict& req) const {
+		auto stat = GetBusStat(req.at("name").AsString());
+		int id = req.at("id").AsInt();
 
-        // Проверяем, есть ли render_settings
-        std::optional<renderer::MapRenderer> renderer = std::nullopt;
-        if (root.count("render_settings")) {
-            auto settings = json_reader::JSONReader::GetRenderSettings(input);
-            renderer.emplace(settings);
-        }
+		if (!stat) {
+			return MakeErrorResponse(id, "not found");
+		}
 
-        std::optional<json::Array> stat_requests = json_reader::JSONReader::GetStatRequests(input);
+		return json::Builder{}
+			.StartDict()
+			.Key("request_id").Value(id)
+			.Key("stop_count").Value(static_cast<int>(stat->stop_count))
+			.Key("unique_stop_count").Value(static_cast<int>(stat->unique_stop_count))
+			.Key("route_length").Value(stat->route_length)
+			.Key("curvature").Value(stat->curvature)
+			.EndDict()
+			.Build().AsDict();
+	}
 
-        return RequestHandler(catalogue, std::move(renderer), std::move(stat_requests));
-    }
+	json::Dict RequestHandler::ProcessStopRequest(const json::Dict& req) const {
+		auto stat = GetStopStat(req.at("name").AsString());
+		int id = req.at("id").AsInt();
 
-    void RequestHandler::ProcessRequests(std::ostream& out) const {
-        if (!stat_requests_) {
-            throw std::logic_error("No stat_requests provided");
-        }
+		if (!stat) {
+			return MakeErrorResponse(id, "not found");
+		}
 
-        json::Array responses;
-        responses.reserve(stat_requests_->size());
+		json::Array buses;
+		for (const auto& bus : stat->bus_names) {
+			buses.push_back(json::Node(bus));
+		}
 
-        for (const auto& req_node : *stat_requests_) {
-            const auto& req = req_node.AsDict();
-            std::string type = req.at("type").AsString();
+		return json::Builder{}
+			.StartDict()
+			.Key("request_id").Value(id)
+			.Key("buses").Value(std::move(buses))
+			.EndDict()
+			.Build().AsDict();
+	}
 
-            auto it = request_handlers_.find(type);
-            if (it != request_handlers_.end()) {
-                responses.push_back(it->second(req));
-            }
-            else {
-                responses.push_back(MakeErrorResponse(req.at("id").AsInt(), "unknown request type"));
-            }
-        }
+	json::Dict RequestHandler::ProcessMapRequest(const json::Dict& req) const {
+		int id = req.at("id").AsInt();
 
-        json::Print(json::Document(std::move(responses)), out);
-        out << std::endl;
-    }
+		if (!map_renderer_) {
+			return MakeErrorResponse(id, "render settings are not provided");
+		}
 
-    std::optional<RouteStat> RequestHandler::GetBusStat(const std::string& bus_name) const {
-        auto stat = catalogue_.GetRouteStat(bus_name);
-        if (!stat) {
-            return std::nullopt;
-        }
+		svg::Document doc = map_renderer_->RenderMap(catalogue_);
+		std::ostringstream ss;
+		doc.Render(ss);
 
-        RouteStat result;
-        result.name = bus_name;
-        result.stop_count = stat->stop_count;
-        result.unique_stop_count = stat->unique_stop_count;
-        result.route_length = stat->route_length;
-        result.curvature = stat->curvature;
+		return json::Builder{}
+			.StartDict()
+			.Key("request_id").Value(id)
+			.Key("map").Value(ss.str())
+			.EndDict()
+			.Build().AsDict();
+	}
 
-        return result;
-    }
+	json::Dict RequestHandler::MakeErrorResponse(int id, std::string_view message) {
+		return json::Builder{}
+			.StartDict()
+			.Key("request_id").Value(id)
+			.Key("error_message").Value(std::string{ message })
+			.EndDict()
+			.Build().AsDict();
+	}
 
-    std::optional<StopStat> RequestHandler::GetStopStat(const std::string& stop_name) const {
-        const trans_cat::Stop* stop = catalogue_.FindStop(stop_name);
-        if (!stop) {
-            return std::nullopt;
-        }
+	RequestHandler RequestHandler::Create(const trans_cat::TransportCatalogue& catalogue,
+		const json::Document& input) {
+		const auto& root = input.GetRoot().AsDict();
 
-        StopStat result;
+		// Создание рендерера, если заданы настройки
+		std::optional<renderer::MapRenderer> renderer = std::nullopt;
+		if (root.count("render_settings")) {
+			auto settings = json_reader::JSONReader::GetRenderSettings(input);
+			renderer.emplace(settings);
+		}
 
-        // Получаем ссылку на маршруты — O(1)
-        const auto& routes = catalogue_.GetBusesByStop(stop);
+		// Получение запросов
+		std::optional<json::Array> stat_requests = json_reader::JSONReader::GetStatRequests(input);
 
-        // Формируем имена — только один раз, при необходимости
-        for (const trans_cat::Route* route : routes) {
-            result.bus_names.push_back(route->name);
-        }
+		return RequestHandler(catalogue, std::move(renderer), std::move(stat_requests));
+	}
 
-        return result;
-    }
+	void RequestHandler::ProcessRequests(std::ostream& out) const {
+		if (!stat_requests_) {
+			throw std::logic_error("No stat_requests provided");
+		}
+
+		auto responses = processor_.Process(*stat_requests_);
+		processor_.Print(responses, out);
+	}
+
+	std::optional<RouteStat> RequestHandler::GetBusStat(const std::string& bus_name) const {
+		auto stat = catalogue_.GetRouteStat(bus_name);
+		if (!stat) {
+			return std::nullopt;
+		}
+
+		return RouteStat{
+			bus_name,
+			stat->stop_count,
+			stat->unique_stop_count,
+			stat->route_length,
+			stat->curvature
+		};
+	}
+
+	std::optional<StopStat> RequestHandler::GetStopStat(const std::string& stop_name) const {
+		const trans_cat::Stop* stop = catalogue_.FindStop(stop_name);
+		if (!stop) {
+			return std::nullopt;
+		}
+
+		StopStat result;
+		result.name = stop_name;
+
+		const auto& routes = catalogue_.GetBusesByStop(stop);
+		for (const trans_cat::Route* route : routes) {
+			result.bus_names.push_back(route->name);
+		}
+		return result;
+	}
 
 } // namespace request_handler
