@@ -1,10 +1,7 @@
-// transport_router.cpp
 #include "transport_router.h"
 #include <cmath>
 
 namespace tr = transport_router;
-
-using namespace std::string_literals;
 
 tr::TransportRouter::TransportRouter(const trans_cat::TransportCatalogue& catalogue)
     : catalogue_(catalogue)
@@ -21,22 +18,33 @@ void tr::TransportRouter::SetRoutingSettings(RoutingSettings settings) {
     stop_to_wait_vertex_.clear();
     stop_to_bus_vertex_.clear();
     wait_edge_ids_.clear();
-    edge_data_.clear();
 
     size_t vertex_id = 0;
     for (const auto& [name, stop_ptr] : stops) {
-        stop_to_wait_vertex_[name] = vertex_id++;
-        stop_to_bus_vertex_[name] = vertex_id++;
+        std::string key(stop_ptr->name);
+        stop_to_wait_vertex_[key] = vertex_id++;
+        stop_to_bus_vertex_[key] = vertex_id++;
     }
 
-    edge_data_.clear(); // будет расти при добавлении рёбер
     BuildGraph();
 }
 
 void tr::TransportRouter::BuildGraph() {
+    bus_edge_buffer_.clear();
+
     AddWaitEdges();
     for (const auto& route : catalogue_.GetRoutesInInsertionOrder()) {
         AddBusEdges(*route);
+    }
+
+    // Инициализируем edge_data_ после добавления всех рёбер
+    edge_data_.assign(graph_.GetEdgeCount(), std::nullopt);
+
+    // Заполняем данные о маршрутах
+    for (const auto& [edge_id, data] : bus_edge_buffer_) {
+        if (edge_id < edge_data_.size()) {
+            edge_data_[edge_id] = data;
+        }
     }
 
     router_.emplace(graph_);
@@ -58,9 +66,9 @@ void tr::TransportRouter::AddWaitEdges() {
 
 void tr::TransportRouter::AddBusEdges(const trans_cat::Route& route) {
     const auto& stops = route.stops;
-    const double velocity_m_min = settings_.bus_velocity * 1000.0 / 60.0; // м/мин
+    const double velocity_m_min = settings_.bus_velocity * 1000.0 / 60.0;
 
-    // Прямой путь: от i до j
+    // Прямой путь: от i до j (j > i)
     for (size_t i = 0; i < stops.size(); ++i) {
         double accumulated_distance = 0.0;
 
@@ -73,23 +81,22 @@ void tr::TransportRouter::AddBusEdges(const trans_cat::Route& route) {
 
             auto edge_id = graph_.AddEdge(graph::Edge<double>{
                 .from = from,
-                    .to = to,
-                    .weight = time
+                .to = to,
+                .weight = time
             });
 
-            edge_data_.push_back(BusEdgeData{
-                .bus_name = route.name,
-                .span_count = j - i
+            bus_edge_buffer_.push_back({
+                edge_id,
+                BusEdgeData{.bus_name = route.name, .span_count = j - i}
                 });
         }
     }
 
-    // Обратный путь — только для некольцевых
+    // Обратный путь: только для некольцевых маршрутов
     if (!route.is_roundtrip) {
         for (size_t i = 0; i < stops.size(); ++i) {
             double accumulated_distance = 0.0;
 
-            // От i до 0 (обратно)
             for (size_t j = i; j > 0; --j) {
                 accumulated_distance += catalogue_.GetDistance(stops[j], stops[j - 1]);
                 double time = accumulated_distance / velocity_m_min;
@@ -99,13 +106,13 @@ void tr::TransportRouter::AddBusEdges(const trans_cat::Route& route) {
 
                 auto edge_id = graph_.AddEdge(graph::Edge<double>{
                     .from = from,
-                        .to = to,
-                        .weight = time
+                    .to = to,
+                    .weight = time
                 });
 
-                edge_data_.push_back(BusEdgeData{
-                    .bus_name = route.name,
-                    .span_count = i - j + 1
+                bus_edge_buffer_.push_back({
+                    edge_id,
+                    BusEdgeData{.bus_name = route.name, .span_count = i - j}
                     });
             }
         }
@@ -116,12 +123,16 @@ std::optional<tr::RouteInfo> tr::TransportRouter::BuildRoute(std::string_view fr
     const auto* from_stop = catalogue_.FindStop(from);
     const auto* to_stop = catalogue_.FindStop(to);
 
+    if (!router_.has_value()) {
+        return std::nullopt;
+    }
+
     if (!from_stop || !to_stop) {
         return std::nullopt;
     }
 
-    auto from_vertex_it = stop_to_wait_vertex_.find(from);
-    auto to_vertex_it = stop_to_wait_vertex_.find(to);
+    auto from_vertex_it = stop_to_wait_vertex_.find(std::string(from));
+    auto to_vertex_it = stop_to_wait_vertex_.find(std::string(to));
 
     if (from_vertex_it == stop_to_wait_vertex_.end() || to_vertex_it == stop_to_wait_vertex_.end()) {
         return std::nullopt;
@@ -137,11 +148,11 @@ std::optional<tr::RouteInfo> tr::TransportRouter::BuildRoute(std::string_view fr
 
     for (graph::EdgeId edge_id : route->edges) {
         if (wait_edge_ids_.count(edge_id)) {
-            // Wait-ребро
-            auto stop_vertex = graph_.GetEdge(edge_id).from;
+            // Wait-ребро: ожидание на остановке
+            auto edge = graph_.GetEdge(edge_id);
             std::string_view stop_name;
             for (const auto& [name, vertex] : stop_to_wait_vertex_) {
-                if (vertex == stop_vertex) {
+                if (vertex == edge.from) {
                     stop_name = name;
                     break;
                 }
@@ -150,16 +161,19 @@ std::optional<tr::RouteInfo> tr::TransportRouter::BuildRoute(std::string_view fr
             result.segments.push_back(RouteSegment{
                 .type = RouteSegment::Type::Wait,
                 .stop_name = std::string(stop_name),
+                .bus_name = "",
+                .span_count = 0,
                 .time = static_cast<double>(settings_.bus_wait_time)
                 });
         }
         else {
-            // Bus-ребро
+            // Bus-ребро: поездка на автобусе
             const auto& data = edge_data_[edge_id].value();
             const auto& edge = graph_.GetEdge(edge_id);
 
             result.segments.push_back(RouteSegment{
                 .type = RouteSegment::Type::Bus,
+                .stop_name = "",
                 .bus_name = data.bus_name,
                 .span_count = data.span_count,
                 .time = edge.weight

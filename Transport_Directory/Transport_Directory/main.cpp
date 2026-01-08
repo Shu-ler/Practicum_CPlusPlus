@@ -6,19 +6,20 @@
 
 int main() {
     try {
-        // 1. Считываем JSON
+        // Читаем весь входной JSON
         json::Document input = json::Load(std::cin);
 
-        // 2. Создаём и заполняем транспортный каталог
+        // Создаём каталог
         trans_cat::TransportCatalogue catalogue;
+
+        // Загружаем базовые данные (остановки и маршруты)
         json_reader::JSONReader reader(catalogue);
         reader.LoadFromJson(input);
 
-        // 3. Создаём обработчик запросов
-        request_handler::RequestHandler handler =
-            request_handler::RequestHandler::Create(catalogue, input);
+        // Создаём обработчик запросов
+        auto handler = request_handler::RequestHandler::Create(catalogue, input);
 
-        // 4. Обрабатываем запросы и выводим результат
+        // Обрабатываем статистические запросы и выводим ответ
         handler.ProcessRequests(std::cout);
 
         return 0;

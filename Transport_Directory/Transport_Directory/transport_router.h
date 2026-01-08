@@ -1,4 +1,3 @@
-// transport_router.h
 #pragma once
 
 #include "transport_catalogue.h"
@@ -14,8 +13,8 @@
 namespace transport_router {
 
     struct RoutingSettings {
-        int bus_wait_time = 0;        // минуты
-        double bus_velocity = 0.0;    // км/ч
+        int bus_wait_time = 0;        ///< минуты
+        double bus_velocity = 0.0;    ///< км/ч
     };
 
     struct RouteSegment {
@@ -31,8 +30,8 @@ namespace transport_router {
 
         // Для Bus
         std::string bus_name;
-        size_t span_count = 0;  // количество перегонов
-        double time = 0.0;      // время в минутах
+        size_t span_count = 0;  ///< количество перегонов
+        double time = 0.0;      ///< время в минутах
     };
 
     struct RouteInfo {
@@ -40,12 +39,17 @@ namespace transport_router {
         std::vector<RouteSegment> segments;
     };
 
-    // ✅ Перемещено вверх: объявление BusEdgeData
     struct BusEdgeData {
         std::string bus_name;
         size_t span_count;
     };
 
+    /**
+     * @brief Роутер для построения оптимальных маршрутов между остановками.
+     *
+     * Использует graph::DirectedWeightedGraph и graph::Router.
+     * Поддерживает ожидание на остановке и поездки на автобусах с учётом времени и перегонов.
+     */
     class TransportRouter {
     public:
         explicit TransportRouter(const trans_cat::TransportCatalogue& catalogue);
@@ -62,13 +66,18 @@ namespace transport_router {
 
         graph::DirectedWeightedGraph<double> graph_;
 
-        std::unordered_map<std::string_view, graph::VertexId> stop_to_wait_vertex_;
-        std::unordered_map<std::string_view, graph::VertexId> stop_to_bus_vertex_;
+        // Отображение: остановка → вершина ожидания / посадки
+        std::unordered_map<std::string, graph::VertexId> stop_to_wait_vertex_;
+        std::unordered_map<std::string, graph::VertexId> stop_to_bus_vertex_;
 
+        // Множество ID рёбер ожидания
         std::unordered_set<graph::EdgeId> wait_edge_ids_;
 
-        // Теперь знает, что такое BusEdgeData
+        // Данные для каждого ребра (только для автобусных)
         std::vector<std::optional<BusEdgeData>> edge_data_;
+
+        // Буфер для временного хранения данных до resize
+        std::vector<std::pair<graph::EdgeId, BusEdgeData>> bus_edge_buffer_;
 
         mutable std::optional<graph::Router<double>> router_;
     };

@@ -148,6 +148,8 @@ namespace request_handler {
 
 		transport_router::RoutingSettings routing_settings = json_reader::JSONReader::GetRoutingSettings(input);
 
+//		std::cerr << "In Create: stops = " << catalogue.GetAllStops().size() << std::endl;
+
 		return RequestHandler(catalogue, std::move(renderer), std::move(stat_requests), routing_settings);
 	}
 
