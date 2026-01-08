@@ -10,12 +10,14 @@ namespace request_handler {
 	RequestHandler::RequestHandler(const trans_cat::TransportCatalogue& catalogue,
 								std::optional<renderer::MapRenderer> renderer,
 								std::optional<json::Array> stat_requests,
-								json_reader::RoutingSettings routing_settings)
+								transport_router::RoutingSettings routing_settings)
 		: catalogue_(catalogue)
 		, map_renderer_(std::move(renderer))
 		, stat_requests_(std::move(stat_requests))
-		, routing_settings_(routing_settings) 
+		, transport_router_(catalogue)
 	{
+		transport_router_.SetRoutingSettings(routing_settings);
+
 		processor_.AddHandler("Bus", [this](const json::Dict& req) { return ProcessBusRequest(req); });
 		processor_.AddHandler("Stop", [this](const json::Dict& req) { return ProcessStopRequest(req); });
 		processor_.AddHandler("Map", [this](const json::Dict& req) { return ProcessMapRequest(req); });
@@ -86,11 +88,39 @@ namespace request_handler {
 		std::string from = req.at("from").AsString();
 		std::string to = req.at("to").AsString();
 
-		// Пока просто возвращаем заглушку
+		auto route = transport_router_.BuildRoute(from, to);
+		if (!route) {
+			return MakeErrorResponse(id, "not found");
+		}
+
+		json::Array items;
+		for (const auto& seg : route->segments) {
+			if (seg.type == transport_router::RouteSegment::Type::Wait) {
+				items.push_back(json::Builder{}
+					.StartDict()
+					.Key("type").Value("Wait")
+					.Key("stop_name").Value(seg.stop_name)
+					.Key("time").Value(seg.time)
+					.EndDict()
+					.Build());
+			}
+			else {
+				items.push_back(json::Builder{}
+					.StartDict()
+					.Key("type").Value("Bus")
+					.Key("bus").Value(seg.bus_name)
+					.Key("span_count").Value(static_cast<int>(seg.span_count))
+					.Key("time").Value(seg.time)
+					.EndDict()
+					.Build());
+			}
+		}
+
 		return json::Builder{}
 			.StartDict()
 			.Key("request_id").Value(id)
-			.Key("total_time").Value(0.0)
+			.Key("total_time").Value(route->total_time)
+			.Key("items").Value(std::move(items))
 			.EndDict()
 			.Build().AsDict();
 	}
@@ -116,7 +146,7 @@ namespace request_handler {
 
 		std::optional<json::Array> stat_requests = json_reader::JSONReader::GetStatRequests(input);
 
-		json_reader::RoutingSettings routing_settings = json_reader::JSONReader::GetRoutingSettings(input);
+		transport_router::RoutingSettings routing_settings = json_reader::JSONReader::GetRoutingSettings(input);
 
 		return RequestHandler(catalogue, std::move(renderer), std::move(stat_requests), routing_settings);
 	}

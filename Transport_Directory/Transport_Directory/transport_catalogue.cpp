@@ -69,6 +69,10 @@ namespace trans_cat {
         return (it != stopname_to_stop_.end()) ? it->second : nullptr;
     }
 
+    const std::unordered_map<std::string_view, const Stop*>& TransportCatalogue::GetAllStops() const {
+        return stopname_to_stop_;
+    }
+
     const Route* TransportCatalogue::FindRoute(std::string_view name) const {
         auto it = routename_to_route_.find(name);
         return (it != routename_to_route_.end()) ? it->second : nullptr;

@@ -70,6 +70,14 @@ namespace trans_cat {
 		const Stop* FindStop(std::string_view name) const;
 
 		/**
+		 * @brief Возвращает все остановки в каталоге.
+		 * @return Константная ссылка на внутренний индекс "имя → указатель"
+		 *
+		 * @note Используйте осторожно: ссылка действительна, пока каталог не изменяется.
+		 */
+		const std::unordered_map<std::string_view, const Stop*>& GetAllStops() const;
+
+		/**
 		 * @brief Ищет маршрут по имени (O(1)).
 		 * @param name Имя маршрута
 		 * @return Указатель на маршрут или nullptr, если не найден

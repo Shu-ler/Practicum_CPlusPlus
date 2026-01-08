@@ -4,6 +4,7 @@
 #include "json.h"
 #include "map_renderer.h"
 #include "json_reader.h"
+#include "transport_router.h"
 
 #include <optional>
 #include <string>
@@ -73,7 +74,7 @@ namespace request_handler {
 		explicit RequestHandler(const trans_cat::TransportCatalogue& catalogue,
 								std::optional<renderer::MapRenderer> renderer,
 								std::optional<json::Array> stat_requests,
-								json_reader::RoutingSettings routing_settings);
+								transport_router::RoutingSettings routing_settings);
 
 		// Обработчики запросов
 		json::Dict ProcessBusRequest(const json::Dict& req) const;
@@ -127,7 +128,8 @@ namespace request_handler {
 		std::optional<renderer::MapRenderer> map_renderer_;
 		std::optional<json::Array> stat_requests_;
 		RequestProcessor processor_;  // диспетчер запросов
-		json_reader::RoutingSettings routing_settings_;
+		transport_router::RoutingSettings routing_settings_;
+		transport_router::TransportRouter transport_router_;
 	};
 
 } // namespace request_handler
