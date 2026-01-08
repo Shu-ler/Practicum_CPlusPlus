@@ -87,6 +87,16 @@ namespace json_reader {
         };
     }
 
+    RoutingSettings JSONReader::GetRoutingSettings(const json::Document& input) {
+        const auto& root = input.GetRoot().AsDict();
+        const auto& rs = root.at("routing_settings").AsDict();
+
+        return RoutingSettings{
+            .bus_wait_time = rs.at("bus_wait_time").AsInt(),
+            .bus_velocity = rs.at("bus_velocity").AsDouble()
+        };
+    }
+
     void JSONReader::AddStopFromJSON(const json::Dict& stop_node) {
         
         // Берем из узла json наименование и координаты

@@ -3,6 +3,7 @@
 #include "transport_catalogue.h"
 #include "json.h"
 #include "map_renderer.h"
+#include "json_reader.h"
 
 #include <optional>
 #include <string>
@@ -51,7 +52,7 @@ namespace request_handler {
 	public:
 		// Создаёт обработчик на основе каталога и входных данных.
 		static RequestHandler Create(const trans_cat::TransportCatalogue& catalogue,
-			const json::Document& input);
+									const json::Document& input);
 
 		// Обрабатывает запросы и выводит результат в поток.
 		void ProcessRequests(std::ostream& out) const;
@@ -68,14 +69,17 @@ namespace request_handler {
 		/// Функция-обработчик запроса
 		using Handler = std::function<json::Dict(const json::Dict&)>;
 
+		/// Параметрический конструктор
 		explicit RequestHandler(const trans_cat::TransportCatalogue& catalogue,
-			std::optional<renderer::MapRenderer> renderer,
-			std::optional<json::Array> stat_requests);
+								std::optional<renderer::MapRenderer> renderer,
+								std::optional<json::Array> stat_requests,
+								json_reader::RoutingSettings routing_settings);
 
 		// Обработчики запросов
 		json::Dict ProcessBusRequest(const json::Dict& req) const;
 		json::Dict ProcessStopRequest(const json::Dict& req) const;
 		json::Dict ProcessMapRequest(const json::Dict& req) const;
+		json::Dict ProcessRouteRequest(const json::Dict& req) const;
 
 		// Универсальный генератор ответа об ошибке
 		static json::Dict MakeErrorResponse(int id, std::string_view message);
@@ -123,6 +127,7 @@ namespace request_handler {
 		std::optional<renderer::MapRenderer> map_renderer_;
 		std::optional<json::Array> stat_requests_;
 		RequestProcessor processor_;  // диспетчер запросов
+		json_reader::RoutingSettings routing_settings_;
 	};
 
 } // namespace request_handler

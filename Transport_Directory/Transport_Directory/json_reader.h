@@ -8,6 +8,14 @@
 #include <string_view>
 
 namespace json_reader {
+	
+	/**
+	 * @brief Настройки маршрутизации: время ожидания и скорость автобусов.
+	 */
+	struct RoutingSettings {
+		int bus_wait_time = 0;        ///< Время ожидания автобуса (минуты)
+		double bus_velocity = 0.0;    ///< Скорость автобусов (км/ч)
+	};
 
 	/**
 	 * @brief Утилита для парсинга JSON-входа и заполнения транспортного каталога.
@@ -83,6 +91,19 @@ namespace json_reader {
 		 * }
 		 */
 		static renderer::RenderSettings GetRenderSettings(const json::Document& input);
+
+		/**
+		 * @brief Парсит настройки маршрутизации из JSON.
+		 *
+		 * Ожидает словарь "routing_settings" с полями:
+		 * - bus_wait_time: int — время ожидания автобуса в минутах
+		 * - bus_velocity: double — скорость автобуса в км/ч
+		 *
+		 * @param input Входной JSON-документ
+		 * @return RoutingSettings — заполненная структура
+		 * @throw json::ParsingError если поля отсутствуют или имеют неверный тип
+		 */
+		static RoutingSettings GetRoutingSettings(const json::Document& input);
 
 	private:
 

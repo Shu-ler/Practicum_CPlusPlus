@@ -8,22 +8,18 @@ namespace request_handler {
 	using namespace std::string_literals;
 
 	RequestHandler::RequestHandler(const trans_cat::TransportCatalogue& catalogue,
-		std::optional<renderer::MapRenderer> renderer,
-		std::optional<json::Array> stat_requests)
+								std::optional<renderer::MapRenderer> renderer,
+								std::optional<json::Array> stat_requests,
+								json_reader::RoutingSettings routing_settings)
 		: catalogue_(catalogue)
 		, map_renderer_(std::move(renderer))
 		, stat_requests_(std::move(stat_requests))
+		, routing_settings_(routing_settings) 
 	{
-		// Регистрация обработчиков — в конструкторе
-		processor_.AddHandler("Bus", [this](const json::Dict& req) {
-			return ProcessBusRequest(req);
-			});
-		processor_.AddHandler("Stop", [this](const json::Dict& req) {
-			return ProcessStopRequest(req);
-			});
-		processor_.AddHandler("Map", [this](const json::Dict& req) {
-			return ProcessMapRequest(req);
-			});
+		processor_.AddHandler("Bus", [this](const json::Dict& req) { return ProcessBusRequest(req); });
+		processor_.AddHandler("Stop", [this](const json::Dict& req) { return ProcessStopRequest(req); });
+		processor_.AddHandler("Map", [this](const json::Dict& req) { return ProcessMapRequest(req); });
+		processor_.AddHandler("Route", [this](const json::Dict& req) { return ProcessRouteRequest(req); });
 	}
 
 	json::Dict RequestHandler::ProcessBusRequest(const json::Dict& req) const {
@@ -85,6 +81,20 @@ namespace request_handler {
 			.Build().AsDict();
 	}
 
+	json::Dict RequestHandler::ProcessRouteRequest(const json::Dict& req) const {
+		int id = req.at("id").AsInt();
+		std::string from = req.at("from").AsString();
+		std::string to = req.at("to").AsString();
+
+		// Пока просто возвращаем заглушку
+		return json::Builder{}
+			.StartDict()
+			.Key("request_id").Value(id)
+			.Key("total_time").Value(0.0)
+			.EndDict()
+			.Build().AsDict();
+	}
+
 	json::Dict RequestHandler::MakeErrorResponse(int id, std::string_view message) {
 		return json::Builder{}
 			.StartDict()
@@ -98,17 +108,17 @@ namespace request_handler {
 		const json::Document& input) {
 		const auto& root = input.GetRoot().AsDict();
 
-		// Создание рендерера, если заданы настройки
 		std::optional<renderer::MapRenderer> renderer = std::nullopt;
 		if (root.count("render_settings")) {
 			auto settings = json_reader::JSONReader::GetRenderSettings(input);
 			renderer.emplace(settings);
 		}
 
-		// Получение запросов
 		std::optional<json::Array> stat_requests = json_reader::JSONReader::GetStatRequests(input);
 
-		return RequestHandler(catalogue, std::move(renderer), std::move(stat_requests));
+		json_reader::RoutingSettings routing_settings = json_reader::JSONReader::GetRoutingSettings(input);
+
+		return RequestHandler(catalogue, std::move(renderer), std::move(stat_requests), routing_settings);
 	}
 
 	void RequestHandler::ProcessRequests(std::ostream& out) const {
