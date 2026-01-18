@@ -14,7 +14,7 @@ public:
     /// Алгоритмическая сложность: O(1). 
     Vector() = default;
 
-    /// Конструктор, который создаёт вектор заданного размера. 
+    /// Конструктор вектора заданного размера. 
     /// Вместимость созданного вектора равна его размеру, а элементы 
     /// проинициализированы значением по умолчанию для типа T. 
     /// Алгоритмическая сложность: O(размер вектора).
@@ -22,8 +22,26 @@ public:
         : data_(Allocate(size))
         , capacity_(size)
         , size_(size) {
-        for (size_t i = 0; i != size; ++i) {
-            new (data_ + i) T();
+        size_t constructed = 0;
+        try {
+            for (size_t i = 0; i != size; ++i) {
+                new (data_ + i) T();
+                ++constructed;
+            }
+        }
+        catch (...) {
+            // Уничтожаем созданные объекты
+            DestroyN(data_, constructed);
+
+            // Освобождаем память, выделенную через Allocate
+            Deallocate(data_);
+
+            // Обнуляем данные вектора
+            data_ = nullptr;
+            capacity_ = size_ = 0;
+
+            // Перевыбрасываем пойманное исключение
+            throw;
         }
     }
 
@@ -34,8 +52,26 @@ public:
         : data_(Allocate(other.size_))
         , capacity_(other.size_)
         , size_(other.size_) {
-        for (size_t i = 0; i != other.size_; ++i) {
-            CopyConstruct(data_ + i, other.data_[i]);
+        size_t constructed = 0;
+        try {
+            for (size_t i = 0; i != other.size_; ++i) {
+                CopyConstruct(data_ + i, other.data_[i]);
+                ++constructed;
+            }
+        }
+        catch (...) {
+            // Уничтожаем созданные объекты
+            DestroyN(data_, constructed);
+
+            // Освобождаем память, выделенную через Allocate
+            Deallocate(data_);
+
+            // Обнуляем данные вектора
+            data_ = nullptr;
+            capacity_ = size_ = 0;
+
+            // Перевыбрасываем пойманное исключение
+            throw;
         }
     }
 
@@ -62,15 +98,31 @@ public:
         if (new_capacity <= capacity_) {
             return;
         }
+
         T* new_data = Allocate(new_capacity);
-        for (size_t i = 0; i != size_; ++i) {
-            CopyConstruct(new_data + i, data_[i]);
+        size_t constructed = 0;
+        try {
+            for (size_t i = 0; i != size_; ++i) {
+                CopyConstruct(new_data + i, data_[i]);
+                ++constructed;
+            }
         }
+        catch (...) {
+            // Уничтожаем скопированные объекты
+            DestroyN(new_data, constructed);
+            // Освобождаем память
+            Deallocate(new_data);
+            // Вектор не меняется
+            throw;  // перевыбрасываем
+        }
+
+        // Успешно скопировали — разрушаем старые объекты и освобождаем память
         DestroyN(data_, size_);
         Deallocate(data_);
 
         data_ = new_data;
         capacity_ = new_capacity;
+        // size_ остаётся прежним
     }
 
     const T& operator[](size_t index) const noexcept {
