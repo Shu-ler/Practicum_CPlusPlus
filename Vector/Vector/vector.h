@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <new>
 #include <utility>
+#include <memory>
+#include <type_traits>
 
 template <typename T>
 class RawMemory {
@@ -87,17 +89,7 @@ public:
     explicit Vector(size_t size)
         : data_(size)
         , size_(size) {
-        size_t constructed = 0;
-        try {
-            for (size_t i = 0; i != size; ++i) {
-                new (data_ + i) T();
-                ++constructed;
-            }
-        }
-        catch (...) {
-            DestroyN(data_.GetAddress(), constructed);
-            throw;
-        }
+        std::uninitialized_value_construct_n(data_.GetAddress(), size_);
     }
 
     /// Копирующий конструктор. Создаёт копию элементов исходного вектора. 
@@ -106,24 +98,14 @@ public:
     Vector(const Vector& other)
         : data_(other.size_)
         , size_(other.size_) {
-        size_t constructed = 0;
-        try {
-            for (size_t i = 0; i != other.size_; ++i) {
-                CopyConstruct(data_ + i, other.data_[i]);
-                ++constructed;
-            }
-        }
-        catch (...) {
-            DestroyN(data_.GetAddress(), constructed);
-            throw;
-        }
+        std::uninitialized_copy_n(other.data_.GetAddress(), size_, data_.GetAddress());
     }
 
     /// Деструктор. 
     /// Разрушает содержащиеся в векторе элементы. 
     /// Алгоритмическая сложность: O(размер вектора).
     ~Vector() {
-        DestroyN(data_.GetAddress(), size_);
+        std::destroy_n(data_.GetAddress(), size_);
     }
 
     size_t Size() const noexcept {
@@ -143,21 +125,21 @@ public:
         }
 
         RawMemory<T> new_data(new_capacity);
-        size_t constructed = 0;
-        try {
-            for (size_t i = 0; i != size_; ++i) {
-                CopyConstruct(new_data + i, data_[i]);
-                ++constructed;
-            }
+
+        if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) {
+            // Можно безопасно перемещать
+            std::uninitialized_move_n(data_.GetAddress(), size_, new_data.GetAddress());
         }
-        catch (...) {
-            DestroyN(new_data.GetAddress(), constructed);
-            throw;
+        else {
+            // Приходится копировать (move может выбросить, а копирование — безопасный путь)
+            std::uninitialized_copy_n(data_.GetAddress(), size_, new_data.GetAddress());
         }
 
-        // Обмениваем текущие данные на новые
-        data_.Swap(new_data);  // data_ = new_data, new_data = старый data_
-        size_ = size_;  // размер не меняется
+        // Уничтожаем старые объекты
+        std::destroy_n(data_.GetAddress(), size_);
+        // Меняем местами буферы
+        data_.Swap(new_data);
+        // size_ остаётся прежним
     }
 
     const T& operator[](size_t index) const noexcept {
@@ -167,24 +149,6 @@ public:
     T& operator[](size_t index) noexcept {
         assert(index < size_);
         return data_[index];
-    }
-
-private:
-    // Вызывает деструкторы n объектов массива по адресу buf
-    static void DestroyN(T* buf, size_t n) noexcept {
-        for (size_t i = 0; i != n; ++i) {
-            Destroy(buf + i);
-        }
-    }
-
-    // Создаёт копию объекта elem в сырой памяти по адресу buf
-    static void CopyConstruct(T* buf, const T& elem) {
-        new (buf) T(elem);
-    }
-
-    // Вызывает деструктор объекта по адресу buf
-    static void Destroy(T* buf) noexcept {
-        buf->~T();
     }
 
 private:
