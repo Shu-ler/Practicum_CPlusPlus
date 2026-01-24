@@ -222,6 +222,16 @@ public:
         }
     }
 
+    /// Создаёт значение "на месте", разрушая старое, если оно было
+    template <typename... Args>
+    void Emplace(Args&&... args) {
+        if (is_initialized_) {
+            Reset();
+        }
+        new (data_) T(std::forward<Args>(args)...);
+        is_initialized_ = true;
+    }
+
 private:
     /// Проверяет, что Optional инициализирован. Бросает исключение, если нет.
     void CheckHasValue() const {
@@ -230,7 +240,8 @@ private:
         }
     }
 
-    /// Выровненная сырвая память для хранения объекта типа T
+private:
+    /// Выровненная сырая память для хранения объекта типа T
     alignas(T) char data_[sizeof(T)];
 
     /// Флаг, указывающий, инициализирован ли объект
