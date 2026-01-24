@@ -237,6 +237,111 @@ public:
         return data_[index];
     }
 
+    /// Изменяет размер вектора
+    void Resize(size_t new_size) {
+        if (new_size <= size_) {
+            std::destroy_n(data_.GetAddress() + new_size, size_ - new_size);
+            size_ = new_size;
+            return;
+        }
+
+        if (new_size <= data_.Capacity()) {
+            std::uninitialized_value_construct_n(data_.GetAddress() + size_, new_size - size_);
+            size_ = new_size;
+            return;
+        }
+
+        // Нужно выделить новую память
+        RawMemory<T> new_data(new_size);
+
+        if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) {
+            std::uninitialized_move_n(data_.GetAddress(), size_, new_data.GetAddress());
+        }
+        else {
+            std::uninitialized_copy_n(data_.GetAddress(), size_, new_data.GetAddress());
+        }
+
+        std::destroy_n(data_.GetAddress(), size_);
+        data_.Swap(new_data);
+        std::uninitialized_value_construct_n(data_.GetAddress() + size_, new_size - size_);
+        size_ = new_size;
+    }
+
+    /// Добавляет элемент в конец (копирование)
+    void PushBack(const T& value) {
+        EmplaceBack(value);
+    }
+
+    /// Добавляет элемент в конец (перемещение)
+    void PushBack(T&& value) {
+        EmplaceBack(std::move(value));
+    }
+
+    /// Удаляет последний элемент 
+    void PopBack() noexcept {
+        assert(size_ > 0);
+        --size_;
+        std::destroy_at(data_.GetAddress() + size_);
+    }
+
+private:
+    /// Общий механизм для PushBack и EmplaceBack
+    template <typename... Args>
+    void EmplaceBack(Args&&... args) {
+        // Если ёмкость позволяет — просто создаём элемент в конце
+        if (size_ < data_.Capacity()) {
+            new (data_.GetAddress() + size_) T(std::forward<Args>(args)...);
+            ++size_;
+            return;
+        }
+
+        // Иначе — нужно расширить вектор
+        // Выделяем новую память: в 2 раза больше, или 1, если был пуст
+        const size_t new_capacity = size_ == 0 ? 1 : size_ * 2;
+        RawMemory<T> new_data(new_capacity);
+
+        // Этап 1: копируем или перемещаем существующие элементы в новую память
+        try {
+            if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) {
+                // Можно безопасно перемещать — используем move
+                std::uninitialized_move_n(data_.GetAddress(), size_, new_data.GetAddress());
+            }
+            else {
+                // Приходится копировать (move может выбросить, а копирование — безопасный путь)
+                std::uninitialized_copy_n(data_.GetAddress(), size_, new_data.GetAddress());
+            }
+        }
+        catch (...) {
+            // Если при копировании/перемещении старых элементов возникло исключение:
+            // - уничтожаем все сконструированные объекты в new_data
+            // - выбрасываем исключение дальше
+            // Исходный вектор остаётся нетронутым
+            std::destroy_n(new_data.GetAddress(), size_);
+            throw;
+        }
+
+        // Этап 2: конструируем новый элемент в новой памяти
+        try {
+            new (new_data.GetAddress() + size_) T(std::forward<Args>(args)...);
+        }
+        catch (...) {
+            // Если при создании нового элемента возникло исключение:
+            // - уничтожаем все старые элементы в new_data
+            // - выбрасываем исключение
+            // Исходный вектор не изменён
+            std::destroy_n(new_data.GetAddress(), size_);
+            throw;
+        }
+
+        // Этап 3: после успешного копирования и вставки —
+        // разрушаем старые объекты и меняем буферы местами
+        std::destroy_n(data_.GetAddress(), size_);
+        data_.Swap(new_data);
+
+        // Увеличиваем размер — операция завершена
+        ++size_;
+    }
+
 private:
     RawMemory<T> data_;
     size_t size_ = 0;
