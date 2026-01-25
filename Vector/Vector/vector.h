@@ -41,13 +41,7 @@ public:
     /// Перемещающее присваивание
     RawMemory& operator=(RawMemory&& rhs) noexcept {
         if (this != &rhs) {
-            T* const temp_buffer = rhs.buffer_;
-            const size_t temp_capacity = rhs.capacity_;
-            rhs.buffer_ = nullptr;
-            rhs.capacity_ = 0;
-            Deallocate(buffer_);
-            buffer_ = temp_buffer;
-            capacity_ = temp_capacity;
+            Swap(rhs);
         }
         return *this;
     }
@@ -160,20 +154,7 @@ public:
     Vector& operator=(const Vector& rhs) {
         if (this != &rhs) {
             if (rhs.size_ <= data_.Capacity()) {
-                // Есть место — можно скопировать "на месте"
-                const size_t min_size = std::min(size_, rhs.size_);
-                // Копируем общую часть
-                std::copy_n(rhs.data_.GetAddress(), min_size, data_.GetAddress());
-                // Если rhs больше — инициализируем новые
-                if (rhs.size_ > size_) {
-                    std::uninitialized_copy_n(rhs.data_.GetAddress() + min_size,
-                        rhs.size_ - min_size,
-                        data_.GetAddress() + min_size);
-                }
-                else {
-                    // rhs меньше — уничтожаем лишние
-                    std::destroy_n(data_.GetAddress() + rhs.size_, size_ - rhs.size_);
-                }
+                AssignInPlace(rhs);
             }
             else {
                 // Мало места — делаем copy-and-swap
@@ -184,6 +165,7 @@ public:
         }
         return *this;
     }
+
 
     /// Перемещающее присваивание
     /// O(1), noexcept
@@ -518,6 +500,26 @@ private:
         ++size_;
 
         return result_addr;
+    }
+
+    void AssignInPlace(const Vector<T>& rhs)
+    {
+        // Есть место — можно скопировать "на месте"
+        const size_t min_size = std::min(size_, rhs.size_);
+
+        // Копируем общую часть
+        std::copy_n(rhs.data_.GetAddress(), min_size, data_.GetAddress());
+
+        // Если rhs больше — инициализируем новые
+        if (rhs.size_ > size_) {
+            std::uninitialized_copy_n(rhs.data_.GetAddress() + min_size,
+                rhs.size_ - min_size,
+                data_.GetAddress() + min_size);
+        }
+        else {
+            // rhs меньше — уничтожаем лишние
+            std::destroy_n(data_.GetAddress() + rhs.size_, size_ - rhs.size_);
+        }
     }
 
 private:
