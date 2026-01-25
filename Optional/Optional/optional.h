@@ -171,7 +171,7 @@ public:
     }
 
     //=====================================================
-    // Доступ к значению
+    // Доступ к значению с квалификаторами ссылок
     //=====================================================
 
     /// Разыменование: возвращает ссылку на значение
@@ -187,14 +187,16 @@ public:
         return *reinterpret_cast<const T*>(data_);
     }
 
-    /// Доступ к членам: возвращает указатель на значение
-    T* operator->() {
-        return std::addressof(**this);
+    // rvalue-перегрузка: *std::move(opt) → возвращает rvalue-ссылку
+    T&& operator*()&& {
+        assert(is_initialized_ && "Dereferencing empty Optional");
+        return std::move(*reinterpret_cast<T*>(data_));
     }
 
-    /// Константный доступ к членам
-    const T* operator->() const {
-        return std::addressof(**this);
+    // rvalue-перегрузка: std::move(opt).Value() → возвращает rvalue-ссылку
+    T&& Value()&& {
+        CheckHasValue();
+        return std::move(*reinterpret_cast<T*>(data_));
     }
 
     /// Доступ к значению с проверкой
@@ -209,6 +211,21 @@ public:
         CheckHasValue();
         return *reinterpret_cast<const T*>(data_);
     }
+
+    //=====================================================
+    // Доступ к членам
+    //=====================================================
+
+    /// Доступ к членам: возвращает указатель на значение
+    T* operator->() {
+        return std::addressof(**this);
+    }
+
+    /// Константный доступ к членам
+    const T* operator->() const {
+        return std::addressof(**this);
+    }
+        
 
     //=====================================================
     // Управление значением
