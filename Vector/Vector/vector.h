@@ -107,6 +107,9 @@ private:
 template <typename T>
 class Vector {
 public:
+    //=====================================================
+    // Конструкторы / деструктор
+    //=====================================================
 
     /// Конструктор по умолчанию
     /// Инициализирует вектор нулевого размера и вместимости. 
@@ -149,6 +152,10 @@ public:
         std::destroy_n(data_.GetAddress(), size_);
     }
     
+    //=====================================================
+    // Присваивания
+    //=====================================================
+
     /// Копирующее присваивание
     Vector& operator=(const Vector& rhs) {
         if (this != &rhs) {
@@ -193,6 +200,46 @@ public:
 
     size_t Capacity() const noexcept {
         return data_.Capacity();
+    }
+
+    //=====================================================
+    // Итераторы
+    //=====================================================
+    using iterator = T*;
+    using const_iterator = const T*;
+
+    iterator begin() noexcept {
+        return data_.GetAddress();
+    }
+
+    iterator end() noexcept {
+        return data_.GetAddress() + size_;
+    }
+
+    const_iterator begin() const noexcept {
+        return data_.GetAddress();
+    }
+
+    const_iterator end() const noexcept {
+        return data_.GetAddress() + size_;
+    }
+
+    const_iterator cbegin() const noexcept {
+        return data_.GetAddress();
+    }
+
+    const_iterator cend() const noexcept {
+        return data_.GetAddress() + size_;
+    }
+
+    T& back() noexcept {
+        assert(size_ > 0);
+        return data_[size_ - 1];
+    }
+
+    const T& back() const noexcept {
+        assert(size_ > 0);
+        return data_[size_ - 1];
     }
 
     /// Резервирует достаточно места, чтобы вместить количество элементов, равное capacity. 
@@ -343,6 +390,134 @@ public:
         ++size_;
 
         return *result;
+    }
+
+    /// Emplace — вставка с perfect forwarding
+    template <typename... Args>
+    iterator Emplace(const_iterator pos, Args&&... args) {
+        assert(pos >= begin() && pos <= end());
+
+        if (size_ < data_.Capacity()) {
+            return EmplaceWithoutReallocation(pos, std::forward<Args>(args)...);
+        }
+        else {
+            return EmplaceWithReallocation(pos, std::forward<Args>(args)...);
+        }
+    }
+
+    /// Insert — на основе Emplace
+    iterator Insert(const_iterator pos, const T& value) {
+        return Emplace(pos, value);
+    }
+
+    iterator Insert(const_iterator pos, T&& value) {
+        return Emplace(pos, std::move(value));
+    }
+
+    /// Erase — удаление элемента
+    iterator Erase(const_iterator pos) {
+        assert(pos >= begin() && pos < end());
+        T* const mutable_pos = const_cast<T*>(pos);
+
+        // Перемещаем элементы влево
+        std::move(mutable_pos + 1, end(), mutable_pos);
+
+        // Уничтожаем "висячий" последний элемент
+        --size_;
+        std::destroy_at(data_.GetAddress() + size_);
+
+        return mutable_pos;
+    }
+
+private:
+    // Вставляет элемент в позицию 'pos' без перевыделения памяти
+    template <typename... Args>
+    iterator EmplaceWithoutReallocation(const_iterator pos, Args&&... args) {
+        T* const insert_pos = const_cast<T*>(pos);
+        const size_t insert_index = pos - begin();
+
+        // Случай 1: вставка в конец — просто конструируем в конце
+        if (pos == end()) {
+            T* result = new (insert_pos) T(std::forward<Args>(args)...);
+            ++size_;
+            return result;
+        }
+
+        // Случай 2: вставка не в конец
+        // 1. Создаём временный объект
+        T temporary(std::forward<Args>(args)...);
+
+        // 2. Создаём копию последнего элемента в позиции end()
+        std::construct_at(end(), std::move(back()));
+
+        try {
+            // 3. Сдвигаем элементы вправо
+            std::move_backward(begin() + insert_index, end() - 1, end());
+
+            // 4. Перемещаем временный объект в pos
+            data_[insert_index] = std::move(temporary);
+        }
+        catch (...) {
+            std::destroy_at(end());
+            throw;
+        }
+    
+        ++size_;
+
+        return insert_pos;
+    }
+
+    // Вставляет элемент в позицию 'pos' с перевыделением памяти
+    template <typename... Args>
+    iterator EmplaceWithReallocation(const_iterator pos, Args&&... args) {
+        const size_t new_capacity = size_ == 0 ? 1 : size_ * 2;
+        RawMemory<T> new_data(new_capacity);
+
+        constexpr bool nothrow_move_or_no_copy =
+            std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>;
+
+        T* new_pos;
+        try {
+            if constexpr (nothrow_move_or_no_copy) {
+                new_pos = std::uninitialized_move(begin(), const_cast<T*>(pos), new_data.GetAddress());
+            }
+            else {
+                new_pos = std::uninitialized_copy(begin(), const_cast<T*>(pos), new_data.GetAddress());
+            }
+        }
+        catch (...) {
+            std::destroy_n(new_data.GetAddress(), pos - begin());
+            throw;
+        }
+
+        T* result_addr;
+        try {
+            result_addr = new (new_pos) T(std::forward<Args>(args)...);
+        }
+        catch (...) {
+            std::destroy_n(new_data.GetAddress(), pos - begin());
+            throw;
+        }
+
+        try {
+            if constexpr (nothrow_move_or_no_copy) {
+                std::uninitialized_move(const_cast<T*>(pos), end(), new_pos + 1);
+            }
+            else {
+                std::uninitialized_copy(const_cast<T*>(pos), end(), new_pos + 1);
+            }
+        }
+        catch (...) {
+            std::destroy_at(new_pos);
+            std::destroy_n(new_data.GetAddress(), pos - begin());
+            throw;
+        }
+
+        std::destroy_n(begin(), size_);
+        data_.Swap(new_data);
+        ++size_;
+
+        return result_addr;
     }
 
 private:
