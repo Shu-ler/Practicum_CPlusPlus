@@ -1,4 +1,4 @@
-﻿#include "ppm_image.h"
+#include "ppm_image.h"
 
 #include <iostream>
 #include <string_view>
