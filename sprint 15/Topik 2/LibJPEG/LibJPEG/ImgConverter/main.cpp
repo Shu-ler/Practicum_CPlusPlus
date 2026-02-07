@@ -1,6 +1,7 @@
 #include <img_lib.h>
 #include <jpeg_image.h>
 #include <ppm_image.h>
+#include <bmp_image.h>
 
 #include <filesystem>
 #include <string_view>
@@ -12,7 +13,8 @@ namespace img_lib {
     enum class Format {
         UNKNOWN,
         PPM,
-        JPEG
+        JPEG,
+        BMP
     };
 }
 
@@ -45,6 +47,16 @@ namespace FormatInterfaces {
             return img_lib::LoadJPEG(file);
         }
     };
+
+    class BMP : public ImageFormatInterface {
+    public:
+        bool SaveImage(const Path& file, const Image& image) const override {
+            return img_lib::SaveBMP(file, image);
+        }
+        Image LoadImage(const Path& file) const override {
+            return img_lib::LoadBMP(file);
+        }
+    };
 }
 
 Format GetFormatByExtension(const Path& input_file) {
@@ -57,18 +69,25 @@ Format GetFormatByExtension(const Path& input_file) {
         return Format::PPM;
     }
 
+    if (ext == ".bmp"sv) {
+        return Format::BMP;
+    }
+
     return Format::UNKNOWN;
 }
 
 const ImageFormatInterface* GetFormatInterface(const Path& path) {
     static const FormatInterfaces::PPM ppmInterface;
     static const FormatInterfaces::JPEG jpegInterface;
+    static const FormatInterfaces::BMP bmpInterface;
 
     switch (GetFormatByExtension(path)) {
         case Format::PPM:
             return &ppmInterface;
         case Format::JPEG:
             return &jpegInterface;
+        case Format::BMP:
+            return &bmpInterface;
         default:
             return nullptr;
     }
