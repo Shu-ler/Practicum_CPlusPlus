@@ -1,0 +1,15 @@
+[requires]
+boost/1.78.0
+
+[options]
+boost:without_iostreams=True
+boost:without_python=True
+boost:without_wave=True
+boost:without_graph=True
+boost:without_mpi=True
+boost:without_serialization=True
+boost:without_test=True
+boost:shared=False
+
+[generators]
+cmake
