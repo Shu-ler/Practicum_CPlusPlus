@@ -100,6 +100,9 @@ cd build
 
 # Устанавливаем зависимости через Conan
 conan install .. --output-folder=. --build=missing
+# Устанавливаем зависимости через Conan для папки out/build/x64-Debug для Visual Studio
+conan install ..\..\.. --output-folder=. --build=missing
+ 
 ✅ После этого в папке build появятся:
 
 conanbuildinfo.cmake
